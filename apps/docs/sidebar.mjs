@@ -23,6 +23,7 @@ export const sidebar = [
       { label: "PDF export and print", slug: "export-pdf" },
       { label: "Sorting", slug: "sorting" },
       { label: "Filtering", slug: "filtering" },
+      { label: "Advanced AND/OR filters", slug: "filter-tree" },
       { label: "Pagination", slug: "pagination" },
       { label: "Selection & bulk actions", slug: "selection" },
       { label: "Row expansion", slug: "row-expansion" },

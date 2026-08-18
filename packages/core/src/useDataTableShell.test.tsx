@@ -69,6 +69,26 @@ describe("useDataTableShell", () => {
     expect(result.current.toolbarProps.hasFilters).toBe(true);
   });
 
+  it("keeps Filters in header mode when the AND/OR tree is on", () => {
+    const filters: FilterDef<Row>[] = [
+      { key: "name", type: "text", label: "Name" },
+    ];
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlSync: false,
+          filters,
+          headerFilters: true,
+        },
+        () => <div>form</div>
+      )
+    );
+    expect(result.current.toolbarProps.hasFilters).toBe(true);
+  });
+
   it("passes hand-drawn JSX filters through untouched", () => {
     const jsx = <div>custom</div>;
     const { result } = renderHook(() =>

@@ -10,7 +10,7 @@ import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FacetMap } from "./filters/facets";
-import { resolveFilterMode } from "./filters/filterChrome";
+import { resolveFilterMode, toolbarShowsFilters } from "./filters/filterChrome";
 import type { FilterDef } from "./filters/filterDefs";
 import type { FilterTypeRegistry } from "./filters/filterRegistry";
 import { useFindFocus, useFindInTable } from "./find/useFindInTable";
@@ -433,9 +433,11 @@ export function useDataTableShell<TRow>(
     ...undoRedoToolbar(props.undoRedoButtons, history, labels),
     ...printToolbar(props.printButton, props.onPrint, labels),
     ...viewControlsToolbar(props, fullscreen),
-    hasFilters:
-      resolveFilterMode(props.filtersMode, props.headerFilters) !== "header" &&
+    hasFilters: toolbarShowsFilters(
+      resolveFilterMode(props.filtersMode, props.headerFilters),
       Boolean(filtersNode),
+      Boolean(table.source.setFilterTree)
+    ),
     activeFilterCount: chrome.activeFilterCount,
     filters: filtersNode,
     onClearFilters: chrome.clearFilters,

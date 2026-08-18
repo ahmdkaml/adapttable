@@ -1178,6 +1178,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     },
     {
       key: "allocations",
+      column: "load",
       type: "numberRange",
       label: s.allocationFilter,
       getValue: allocationCount,

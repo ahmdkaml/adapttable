@@ -144,15 +144,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration — data tier, filter runtime, chrome,
   // scroll reset, body windowing — lives in core's shell; this file renders
   // only semantic markup with class hooks over it.
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form" className={classNames.filtersForm}>
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        classNames={classNames}
-        labels={props.labels}
-        registry={registry}
-      />
+    <div
+      data-adapttable-part="filters-form"
+      className={classNames.filtersForm}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <FilterTreeBuilder
         defs={defs}
         source={source}
@@ -160,6 +159,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         classNames={classNames}
         registry={registry}
       />
+      {headerFiltersOn ? null : (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          classNames={classNames}
+          labels={props.labels}
+          registry={registry}
+        />
+      )}
     </div>
   ));
   const {

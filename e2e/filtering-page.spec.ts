@@ -106,8 +106,39 @@ test("switches the filter layout between popover, drawer and header", async ({
   await expect(
     demo(page).locator('[data-adapttable-part="filter-header-row"]')
   ).toHaveCount(0);
+  // Header icons own the simple fields; Filters stays for the AND/OR tree.
   await expect(
     demo(page).getByRole("button", { name: "Filters", exact: true })
+  ).toBeVisible();
+});
+
+test("puts Advanced at the top of the Filters panel", async ({ page }) => {
+  await page.goto(`/${KIT}/filtering/`);
+  await demo(page)
+    .getByRole("button", { name: "Filters", exact: true })
+    .click();
+  const form = page.locator('[data-adapttable-part="filters-form"]').first();
+  await expect(form).toBeVisible();
+  await expect(
+    form.locator(":scope > [data-adapttable-part='filter-tree']")
+  ).toBeVisible();
+});
+
+test("Advanced alone still uses the same Filters chrome", async ({ page }) => {
+  await page.goto(`/${KIT}/filtering/`);
+  await demo(page)
+    .getByRole("group", { name: "Filter form" })
+    .getByRole("button", { name: "Advanced" })
+    .click();
+  await demo(page)
+    .getByRole("button", { name: "Filters", exact: true })
+    .click();
+  const form = page.locator('[data-adapttable-part="filters-form"]').first();
+  await expect(
+    form.locator("[data-adapttable-part='filter-tree']")
+  ).toBeVisible();
+  await expect(
+    form.locator("[data-adapttable-part='filter-operator']")
   ).toHaveCount(0);
 });
 

@@ -4,7 +4,8 @@
 
 Declare a filter once and AdaptTable derives everything from it: the
 kit-native widget, the `f_<key>` URL param, the removable chip, and (on
-frontend data) the row predicate — no wiring.
+frontend data) the row predicate — no wiring. Nested AND/OR groups are
+the [advanced filter tree](./filter-tree.md).
 
 ## Example
 
@@ -200,16 +201,16 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` / `parseFilterTree` /
   `serializeFilterTree` / `isActiveFilterTree` / `evaluateFilterTree` /
   `conditionToExtra` over a `QueryFilterGroup` of `QueryCondition`s
-  (`isFilterGroup` narrows a child). The builder UI is a later issue;
-  the engine stores `ft=1.{…}` and evaluates the tree on the frontend
-  tier (ANDed with the flat extra bag). `useTableData` wires
-  `evaluateFilterTree` itself; a host that calls `useFrontendData`
+  (`isFilterGroup` narrows a child). Each adapter's `FilterTreeBuilder`
+  sits at the top of the Filters form when `source.setFilterTree` is
+  set; `toolbarShowsFilters` keeps the toolbar button in header mode
+  for that tree. The engine stores `ft=1.{…}` and evaluates the tree
+  on the frontend tier (ANDed with the flat extra bag). `useTableData`
+  wires `evaluateFilterTree` itself; a host that calls `useFrontendData`
   directly passes `filterTreeFn` over the same defs as `filterFn`. A
   server that declares `supports.filterTree` receives the same tree on
-  `query.filterTree`. The filter panel mounts each adapter's
-  `FilterTreeBuilder` — add condition, add group, AND/OR — over that
-  same model, with that kit's controls. Tree
-  leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
+  `query.filterTree`. Tree leaves become chips via `useFilterTreeChips`;
+  Clear all drops `ft`. See [filter-tree](./filter-tree.md).
 - **Facet counts**: `computeFilterFacets` / `rowsExcludingFilter` /
   `FacetMap` / `FacetCounts` count what selecting a value _would_ keep —
   the filtered set with that facet's own filter removed. Frontend

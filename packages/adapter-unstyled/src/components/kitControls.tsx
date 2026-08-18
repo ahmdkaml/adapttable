@@ -3,6 +3,12 @@
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
 import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+  type TableSource,
+} from "@adapttable/core";
+import {
   BatchEditBarChrome,
   type BatchEditBarProps,
   type BatchEditButtonProps,
@@ -45,8 +51,9 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
-import { filterLabel } from "@adapttable/core";
 import type { ChangeEvent } from "react";
+
+import { AutoFilterForm } from "./AutoFilterForm";
 
 export type {
   BatchEditBarProps,
@@ -275,16 +282,24 @@ function FilterGlyph() {
   );
 }
 
-function headerFilterActive(value: unknown): boolean {
-  if (value == null || value === "") return false;
-  return !(Array.isArray(value) && value.length === 0);
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
 }
 
-/** Funnel on the column header — opens that column's compact filter. */
+/** Funnel on the column header — the same field the Filters panel draws. */
 export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
-  const active = headerFilterActive(props.source.extra[props.def.key]);
+  const active = headerFilterActive(props);
   return (
     <details
       data-adapttable-part="filter-header-trigger"
@@ -310,14 +325,19 @@ export function FilterHeaderTrigger<TRow>(
           zIndex: 3,
           insetInlineStart: 0,
           top: "100%",
-          minWidth: "12rem",
+          minWidth: "20rem",
           padding: "0.5rem",
           background: "Canvas",
           color: "CanvasText",
           border: "1px solid currentColor",
         }}
       >
-        <FilterHeaderControl {...props} />
+        <AutoFilterForm
+          defs={[props.def]}
+          source={props.source as TableSource<TRow>}
+          labels={props.labels}
+          registry={props.registry}
+        />
       </div>
     </details>
   );

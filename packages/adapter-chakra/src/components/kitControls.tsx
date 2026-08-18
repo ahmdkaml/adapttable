@@ -2,7 +2,11 @@
  * Chakra kit controls — Input / NativeSelect / Button / IconButton / Checkbox.
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
-import { filterLabel } from "@adapttable/core";
+import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+} from "@adapttable/core";
 import {
   BatchEditBarChrome,
   type BatchEditBarProps,
@@ -55,6 +59,7 @@ import {
   Stack,
 } from "@chakra-ui/react";
 
+import { AutoFilterForm } from "./AutoFilterForm";
 import { Checkbox, NativeSelect } from "./primitives";
 
 export type {
@@ -229,16 +234,24 @@ export function FilterHeaderControl<TRow>(
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
 }
 
-function headerFilterActive(value: unknown): boolean {
-  if (value == null || value === "") return false;
-  return !(Array.isArray(value) && value.length === 0);
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
 }
 
-/** Funnel on the column header — opens that column's compact filter. */
+/** Funnel on the column header — the same field the Filters panel draws. */
 export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
-  const active = headerFilterActive(props.source.extra[props.def.key]);
+  const active = headerFilterActive(props);
   return (
     <Popover.Root positioning={{ placement: "bottom-start" }} lazyMount>
       <Popover.Trigger asChild>
@@ -262,11 +275,16 @@ export function FilterHeaderTrigger<TRow>(
         <Popover.Positioner>
           <Popover.Content
             width="max-content"
-            minWidth="12rem"
+            minWidth="20rem"
             p={2}
             data-adapttable-part="filter-header-cell"
           >
-            <FilterHeaderControl {...props} />
+            <AutoFilterForm
+              defs={[props.def]}
+              source={props.source}
+              labels={props.labels}
+              registry={props.registry}
+            />
           </Popover.Content>
         </Popover.Positioner>
       </Portal>

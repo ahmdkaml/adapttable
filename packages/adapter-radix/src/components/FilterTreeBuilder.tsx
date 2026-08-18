@@ -22,7 +22,7 @@ function TreeSelect({
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <div style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}>
+    <div style={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}>
       <NativeSelect
         size="1"
         width="100%"
@@ -93,9 +93,9 @@ function TreeDisclosure({
       className={className}
       data-adapttable-part="filter-tree"
       style={{
-        marginBlockStart: 4,
-        paddingBlockStart: 8,
-        borderBlockStart: "1px solid var(--gray-a5)",
+        marginBlockEnd: 4,
+        paddingBlockEnd: 16,
+        borderBlockEnd: "1px solid var(--gray-a5)",
       }}
     >
       <Button

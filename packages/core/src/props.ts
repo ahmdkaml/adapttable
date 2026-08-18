@@ -709,11 +709,11 @@ export interface BaseDataTableProps<TRow> {
    */
   onClearFilters?: () => void;
   /**
-   * Alias for `filtersMode="header"`: a compact per-column filter row
-   * under the header, bound to the same defs and extra bag as the panel.
-   * Desktop only. Mutually exclusive with the toolbar popover/drawer —
-   * passing this hides the Filters button. Omit the prop and nothing
-   * extra renders.
+   * Alias for `filtersMode="header"`: a per-column filter icon on the
+   * header, bound to the same defs and extra bag as the panel. Desktop
+   * only. Hides the toolbar Filters button unless `source.setFilterTree`
+   * is set (the AND/OR tree has no column of its own). Omit the prop and
+   * nothing extra renders.
    */
   headerFilters?: boolean;
 

@@ -326,6 +326,7 @@ function RangeFilter<TRow>({
             setOp(next);
             write(next, a, b);
           }}
+          data-adapttable-part="filter-operator"
           slotProps={{
             select: { native: false },
             htmlInput: { "aria-label": labels.operator },

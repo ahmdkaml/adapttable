@@ -38,7 +38,7 @@ function TreeSelect({
         htmlInput: { "aria-label": label },
         select: { native: false },
       }}
-      sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+      sx={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}
     >
       {options.map((option) => (
         <MenuItem key={option.value} value={option.value}>
@@ -106,9 +106,9 @@ function TreeDisclosure({
       data-adapttable-part="filter-tree"
       onChange={(_, next) => onExpandedChange(next)}
       sx={{
-        mt: 0.5,
-        pt: 1,
-        borderTop: 1,
+        mb: 0.5,
+        pb: 2,
+        borderBottom: 1,
         borderColor: "divider",
         background: "transparent",
         "&::before": { display: "none" },

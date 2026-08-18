@@ -98,6 +98,7 @@ export {
 export {
   type FilterChromeMode,
   resolveFilterMode,
+  toolbarShowsFilters,
 } from "./filters/filterChrome";
 export {
   AUTO_OPTIONS_LIMIT,

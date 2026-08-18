@@ -59,6 +59,7 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table sparkline columns — bar, line, area](https://orwa-mahmoud.github.io/adapttable/sparkline/): optional `@adapttable/core/sparkline` entry, inline SVG, export falls back to the numbers
 - [React table sorting — single, multi-column, server-side](https://orwa-mahmoud.github.io/adapttable/sorting/): sortable, sortValue, multi-sort, URL codec
 - [React table filters — chips, operators, URL-synced state](https://orwa-mahmoud.github.io/adapttable/filtering/): seven types including an Excel-style checklist with facet counts that exclude the facet's own filter, optional header filter row, operator widgets, option sources, custom JSX
+- [React table advanced filters — AND/OR filter tree](https://orwa-mahmoud.github.io/adapttable/filter-tree/): nested AND/OR groups, kit-native `FilterTreeBuilder`, `ft=1.{…}` in the URL, same Filters popover or drawer as the simple fields
 - [React table pagination — paged, infinite scroll, auto by device](https://orwa-mahmoud.github.io/adapttable/pagination/): paged, infinite, auto by device
 - [React table row selection & bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/): checkboxes, bulk bar, select-all-matching
 - [React table expandable rows & detail panels](https://orwa-mahmoud.github.io/adapttable/row-expansion/): renderRowDetail, useRowExpansion

@@ -131,7 +131,7 @@ function errorSlots(
 
 const AdvancedFiltersContext = createContext(false);
 
-/** Feature Lab only — the live demo stays a simple auto form. */
+/** Feature Lab and the Filtering page — the live root demo stays simple. */
 export const AdvancedFiltersProvider = AdvancedFiltersContext.Provider;
 
 function useAdvancedFilters(): boolean {
@@ -576,7 +576,8 @@ function Frontend({
     numberExtraKeys: DEMO_FILTER_RUNTIME.numberExtraKeys,
     filterFn: DEMO_FILTER_RUNTIME.filterFn,
     // Keep the headless engine active for deep links and restored query state.
-    // `withoutFilterTree` below hides only the builder UI outside Feature Lab.
+    // `withoutFilterTree` below hides only the builder UI outside Feature Lab
+    // and the Filtering page.
     filterTreeFn: (row: Person, tree: QueryFilterGroup) =>
       evaluateFilterTree(
         tree,

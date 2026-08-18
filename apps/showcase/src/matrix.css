@@ -254,6 +254,12 @@
   overflow: visible;
   min-width: 0;
 }
+/* Advanced-only: the same Filters chrome, without the simple field list. */
+.mx-demo[data-filter-form="advanced"]
+  [data-adapttable-part="filters-form"]
+  > :not([data-adapttable-part="filter-tree"]) {
+  display: none;
+}
 .mx-demo__body {
   padding: var(--sp-4);
   min-width: 0;

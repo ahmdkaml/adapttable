@@ -36,17 +36,17 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Filters & search
 
-| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                              |
-| ------------------- | ----------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                              |
-| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button. `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                           |
-| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                      |
-| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                  |
-| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                        |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                  |
-| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                 |
-| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                        |
+| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                                                                             |
+| ------------------- | ----------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                                                                             |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: per-column icons; hides the Filters button unless the AND/OR tree is on (`toolbarShowsFilters`). `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                                                                          |
+| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                                                                     |
+| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                                                                 |
+| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                                                                       |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                                                                 |
+| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                                                                |
+| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                                                                       |
 
 ### Selection & actions
 
@@ -211,10 +211,10 @@ server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
 `headerFilters` is an alias for `filtersMode="header"` (`resolveFilterMode` /
-`FilterChromeMode`): each adapter mounts `FilterHeaderRow` /
-`FilterHeaderControl` (`FilterHeaderRowProps` / `FilterHeaderControlProps`)
-as a second header row of compact kit inputs on the same extra bag and
-hides the toolbar Filters button. The shared layout is `FilterHeaderChrome`
+`FilterChromeMode` / `toolbarShowsFilters`): each adapter mounts a
+per-column filter icon (`FilterHeaderTrigger`) on the same extra bag and
+hides the toolbar Filters button unless `source.setFilterTree` is set, so
+the AND/OR tree still has a chrome. The shared layout is `FilterHeaderChrome`
 / `FilterHeaderControlChrome` / `FilterHeaderChromeProps` /
 `FilterHeaderControlChromeProps` / `FilterHeaderClassNames` /
 `FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
@@ -631,7 +631,7 @@ Layout (on `@adapttable/core/adapter`): `FilterHeaderChrome` /
 `FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
 / `FilterHeaderRangeProps` / `FilterHeaderMultiProps` / `FilterHeaderOption`.
 Helpers: `filterDefForColumn` / `headerFilterStickTop` /
-`resolveFilterMode` / `FilterChromeMode`. Facets: `computeFilterFacets` /
+`resolveFilterMode` / `toolbarShowsFilters` / `FilterChromeMode`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).

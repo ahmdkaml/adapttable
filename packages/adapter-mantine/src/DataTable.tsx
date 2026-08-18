@@ -111,21 +111,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration — data tier, filter runtime, chrome,
   // scroll reset, body windowing — lives in core. Mantine adds only what its
   // kit needs: a measured sticky toolbar, per-body stagger refs, and density.
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        labels={resolveLabels(props.labels)}
-        registry={registry}
-      />
+    <Stack gap="lg" data-adapttable-part="filters-form">
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         registry={registry}
       />
-    </div>
+      {headerFiltersOn ? null : (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          labels={resolveLabels(props.labels)}
+          registry={registry}
+        />
+      )}
+    </Stack>
   ));
   const {
     chrome,

@@ -139,18 +139,41 @@ const TREE_STACK: CSSProperties = {
   minWidth: 0,
 };
 
-const TREE_GROUP: CSSProperties = {
+const TREE_GROUP_ROOT: CSSProperties = {
   ...TREE_STACK,
-  border: 0,
+  position: "relative",
   margin: 0,
   padding: 0,
+  border: "none",
   minInlineSize: 0,
 };
 
-const TREE_LEGEND: CSSProperties = {
-  ...TREE_ROW,
+/** Nested groups sit on a rail so AND/OR depth is visible. */
+const TREE_GROUP_NESTED: CSSProperties = {
+  ...TREE_STACK,
+  position: "relative",
+  marginBlockStart: 4,
+  marginInlineStart: 16,
+  marginInlineEnd: 0,
+  paddingBlock: 8,
+  paddingInlineStart: 12,
+  border: "none",
+  borderInlineStart:
+    "2px solid color-mix(in srgb, currentColor 22%, transparent)",
+  backgroundColor: "color-mix(in srgb, currentColor 5%, transparent)",
+  minInlineSize: 0,
+};
+
+const TREE_LEGEND_HIDDEN: CSSProperties = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  margin: "-1px",
   padding: 0,
-  width: "100%",
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
 };
 
 /** Props for {@link FilterTreeChrome}. */
@@ -487,10 +510,16 @@ function GroupView<TRow>({
   return (
     <fieldset
       data-adapttable-part="filter-tree-group"
+      data-depth={path.length}
       className={classNames.filterTreeGroup}
-      style={TREE_GROUP}
+      style={path.length > 0 ? TREE_GROUP_NESTED : TREE_GROUP_ROOT}
     >
-      <legend style={TREE_LEGEND}>
+      <legend style={TREE_LEGEND_HIDDEN}>
+        {group.combinator === "or"
+          ? labels.filterCombinatorOr
+          : labels.filterCombinatorAnd}
+      </legend>
+      <div style={TREE_ROW}>
         <Select
           label={labels.filterTree}
           value={group.combinator}
@@ -512,7 +541,7 @@ function GroupView<TRow>({
             onClick={() => onRemove(path)}
           />
         ) : null}
-      </legend>
+      </div>
       {group.conditions.map((node, index) => {
         const childPath = [...path, index];
         if (isFilterGroup(node)) {

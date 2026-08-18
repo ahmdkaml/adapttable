@@ -54,23 +54,27 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     props.size ??
     ((props.density ?? "comfortable") === "compact" ? "sm" : "md");
 
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        accentColor={accentColor}
-        dir={props.dir}
-        labels={props.labels}
-        registry={registry}
-      />
+    <Stack gap={4} data-adapttable-part="filters-form">
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         registry={registry}
       />
-    </div>
+      {headerFiltersOn ? null : (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          accentColor={accentColor}
+          dir={props.dir}
+          labels={props.labels}
+          registry={registry}
+        />
+      )}
+    </Stack>
   ));
   const {
     source,

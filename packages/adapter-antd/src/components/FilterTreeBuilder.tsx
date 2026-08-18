@@ -31,7 +31,7 @@ function TreeSelect({
         value: option.value,
         label: option.label,
       }))}
-      style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+      style={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}
     />
   );
 }
@@ -106,9 +106,9 @@ function TreeDisclosure({
       data-adapttable-part="filter-tree"
       onChange={(keys) => onExpandedChange(keys.includes("advanced"))}
       style={{
-        marginBlockStart: 4,
-        paddingBlockStart: 8,
-        borderBlockStart: "1px solid var(--ant-color-border-secondary)",
+        marginBlockEnd: 4,
+        paddingBlockEnd: 16,
+        borderBlockEnd: "1px solid var(--ant-color-border-secondary)",
       }}
       items={[
         {

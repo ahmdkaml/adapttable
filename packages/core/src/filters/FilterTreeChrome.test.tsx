@@ -160,6 +160,13 @@ describe("FilterTreeChrome", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Add group" }));
     expect(screen.getAllByLabelText("Advanced")).toHaveLength(2);
+    const nested = document.querySelector(
+      '[data-adapttable-part="filter-tree-group"][data-depth="1"]'
+    );
+    expect(nested).not.toBeNull();
+    expect((nested as HTMLElement).style.marginInlineStart).not.toBe("");
+    expect((nested as HTMLElement).style.paddingInlineStart).not.toBe("");
+    expect((nested as HTMLElement).style.borderInlineStart).not.toBe("");
     fireEvent.click(screen.getByRole("button", { name: "Remove group" }));
     fireEvent.click(screen.getByRole("button", { name: "Remove condition" }));
     expect(screen.getByRole("button", { name: "Add condition" })).toBeVisible();

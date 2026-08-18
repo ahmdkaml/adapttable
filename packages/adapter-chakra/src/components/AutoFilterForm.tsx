@@ -150,6 +150,8 @@ function RangeField<TRow>({
           size="sm"
           flex="0 0 8.5rem"
           w="8.5rem"
+          aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
           placeholder={labels.operator}
           value={op ?? ""}
           onChange={(e) => {

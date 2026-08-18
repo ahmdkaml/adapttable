@@ -22,6 +22,7 @@ import {
   resolveColumnFooter,
   resolveExportCsv,
   resolveFilterMode,
+  toolbarShowsFilters,
   resolveLabels,
   type RowExpansionState,
   type RowPinningState,
@@ -827,23 +828,29 @@ function PagedFooter<TRow>({
 function autoFilterForm<TRow>(
   runtime: FilterRuntime<TRow>,
   source: TableSource<TRow>,
-  labels: Required<TableLabels>
+  labels: Required<TableLabels>,
+  header: boolean
 ) {
   if (runtime.defs.length === 0) return undefined;
   return (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={runtime.defs}
-        source={source}
-        labels={labels}
-        registry={runtime.registry}
-      />
+    <div
+      data-adapttable-part="filters-form"
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <FilterTreeBuilder
         defs={runtime.defs}
         source={source}
         labels={labels}
         registry={runtime.registry}
       />
+      {header ? null : (
+        <AutoFilterForm
+          defs={runtime.defs}
+          source={source}
+          labels={labels}
+          registry={runtime.registry}
+        />
+      )}
     </div>
   );
 }
@@ -1488,7 +1495,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const formLabels = useMemo(() => resolveLabels(props.labels), [props.labels]);
   const filtersNode =
     isDeclarativeFilters(props.filters) || props.filters === undefined
-      ? autoFilterForm(runtime, resolvedSource, formLabels)
+      ? autoFilterForm(
+          runtime,
+          resolvedSource,
+          formLabels,
+          resolveFilterMode(props.filtersMode, props.headerFilters) === "header"
+        )
       : props.filters;
   const filterLabels = useMemo(
     () => ({ ...runtime.filterLabels, ...props.filterLabels }),
@@ -1892,7 +1904,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             {...undoRedoToolbar(props.undoRedoButtons, history, labels)}
             {...printToolbar(props.printButton, props.onPrint, labels)}
             {...viewControls}
-            hasFilters={filtersMode !== "header" && Boolean(filtersNode)}
+            hasFilters={toolbarShowsFilters(
+              filtersMode,
+              Boolean(filtersNode),
+              Boolean(resolvedSource.setFilterTree)
+            )}
             activeFilterCount={c.activeFilterCount}
             filters={filtersNode}
             filtersMode={filtersMode}

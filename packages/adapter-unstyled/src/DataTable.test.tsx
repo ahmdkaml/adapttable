@@ -1111,11 +1111,85 @@ describe("header filter trigger", () => {
     expect(trigger).not.toBeNull();
     fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
     const input = document.querySelector(
-      '[data-adapttable-part="filter-header-input"]'
+      '[data-adapttable-part="filter-input"]'
     );
     expect(input).not.toBeNull();
     fireEvent.change(input!, { target: { value: "Ali" } });
     expect(input).toHaveValue("Ali");
+  });
+
+  it("opens the same AutoFilterForm field for every built-in widget", () => {
+    const option = { value: "a", label: "A" };
+    const extraColumns: ColumnDef<Row>[] = [
+      { key: "city", header: "City", accessor: (r) => r.city },
+      { key: "tags", header: "Tags", accessor: () => "a" },
+      { key: "skills", header: "Skills", accessor: () => "a" },
+      { key: "core", header: "Core", accessor: () => true },
+      { key: "budget", header: "Budget", accessor: () => 100 },
+      { key: "hired", header: "Hired", accessor: () => "2026-01-01" },
+    ];
+    renderHarness({
+      override: {
+        headerFilters: true,
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name },
+          ...extraColumns,
+        ],
+        filters: [
+          { key: "name", type: "text", label: "Name" },
+          {
+            key: "city",
+            type: "select",
+            label: "City",
+            options: [{ value: "Dubai", label: "Dubai" }],
+          },
+          {
+            key: "tags",
+            type: "multiSelect",
+            label: "Tags",
+            options: [option],
+          },
+          {
+            key: "skills",
+            type: "checklist",
+            label: "Skills",
+            options: [option],
+          },
+          { key: "core", type: "boolean", label: "Core" },
+          { key: "budget", type: "numberRange", label: "Budget" },
+          { key: "hired", type: "dateRange", label: "Hired" },
+        ],
+      },
+    });
+    const expectedPart: Record<string, string> = {
+      name: "filter-operator",
+      city: "filter-select",
+      tags: "filter-checkbox-group",
+      skills: "filter-checklist-search",
+      core: "filter-select",
+      budget: "filter-operator",
+      hired: "filter-operator",
+    };
+    for (const key of Object.keys(expectedPart)) {
+      const header = document.querySelector(`thead [data-column-key="${key}"]`);
+      expect(header, key).not.toBeNull();
+      const trigger = header!.querySelector(
+        '[data-adapttable-part="filter-header-trigger"]'
+      );
+      expect(trigger, key).not.toBeNull();
+      fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+      const panel = trigger!.querySelector(
+        '[data-adapttable-part="filter-header-cell"]'
+      );
+      expect(
+        panel!.querySelector(`[data-adapttable-part="${expectedPart[key]}"]`),
+        key
+      ).not.toBeNull();
+      expect(
+        panel!.querySelector('[data-adapttable-part="filter-header-input"]'),
+        key
+      ).toBeNull();
+    }
   });
 
   it("hides the header filter trigger on mobile cards", () => {

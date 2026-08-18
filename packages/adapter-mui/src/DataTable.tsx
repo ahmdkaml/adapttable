@@ -72,21 +72,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { filtersMode = "popover" } = props;
   // The whole shared orchestration lives in core's shell; MUI adds only its
   // kit's row `size` over the returned bundles.
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        labels={resolveLabels(props.labels)}
-        registry={registry}
-      />
+    <Stack spacing={3} data-adapttable-part="filters-form">
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         registry={registry}
       />
-    </div>
+      {headerFiltersOn ? null : (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          labels={resolveLabels(props.labels)}
+          registry={registry}
+        />
+      )}
+    </Stack>
   ));
   const {
     chrome: c,

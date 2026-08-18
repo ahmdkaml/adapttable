@@ -151,6 +151,7 @@ function RangeField<TRow>({
           size="1"
           width="8.5rem"
           aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
           placeholder={labels.operator}
           value={op ?? ""}
           options={opOptions}

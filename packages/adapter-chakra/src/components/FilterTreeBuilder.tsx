@@ -29,8 +29,9 @@ function TreeSelect({
       className={className}
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      flex="1 1 8.5rem"
+      flex="0 1 8.5rem"
       minW="8.5rem"
+      maxW="11rem"
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>
@@ -93,9 +94,9 @@ function TreeDisclosure({
   return (
     <Stack
       gap={2}
-      mt={1}
-      pt={2}
-      borderTopWidth="1px"
+      mb={1}
+      pb={4}
+      borderBottomWidth="1px"
       className={className}
       data-adapttable-part="filter-tree"
     >

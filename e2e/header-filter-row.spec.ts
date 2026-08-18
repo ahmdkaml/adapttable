@@ -44,12 +44,55 @@ for (const adapter of ADAPTERS) {
         .locator('[data-adapttable-part="filter-header-trigger"]')
         .first()
         .click();
-      const name = page.getByRole("searchbox", { name: "Person" });
+      const name = page.getByRole("textbox", { name: "Person" });
       await expect(name).toBeVisible();
       await name.fill("Ada");
       await expect(page).toHaveURL(/lab\.f_name=/);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
+    });
+
+    test("header popover is the same field as the Filters panel", async ({
+      page,
+    }) => {
+      await openDemo(page, adapter);
+      const table = demo(page).locator(`[data-adapter="${adapter}"]`);
+      // Every drawer/popover widget that has a column — text, number range,
+      // date range, multi-select — must open AutoFilterForm, not the compact
+      // header-row chrome. Team stays hidden; Core has no column.
+      for (const { column, field } of [
+        { column: "Person", field: "Person" },
+        { column: "Budget", field: "Budget" },
+        { column: "Timeline", field: "Start" },
+        { column: "Load", field: "Allocation count" },
+      ] as const) {
+        await table
+          .getByRole("columnheader", { name: new RegExp(column) })
+          .locator('[data-adapttable-part="filter-header-trigger"]')
+          .click();
+        const panel = page
+          .locator('[data-adapttable-part="filter-header-cell"]')
+          .filter({ hasText: field });
+        await expect(panel).toBeVisible();
+        await expect(
+          panel.locator('[data-adapttable-part="filter-operator"]')
+        ).toBeVisible();
+        await expect(
+          panel.locator('[data-adapttable-part="filter-header-input"]')
+        ).toHaveCount(0);
+        await page.keyboard.press("Escape");
+      }
+      await table
+        .getByRole("columnheader", { name: /Status/ })
+        .locator('[data-adapttable-part="filter-header-trigger"]')
+        .click();
+      const status = page
+        .locator('[data-adapttable-part="filter-header-cell"]')
+        .filter({ hasText: "Status" });
+      await expect(status).toBeVisible();
+      await expect(
+        status.locator('[data-adapttable-part="filter-header-input"]')
+      ).toHaveCount(0);
     });
 
     test("keeps the header filter icon under RTL", async ({ page }) => {
