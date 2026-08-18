@@ -54,6 +54,7 @@ import {
 import type { ChangeEvent } from "react";
 
 import { AutoFilterForm } from "./AutoFilterForm";
+import { FiltersIcon } from "./icons";
 
 export type {
   BatchEditBarProps,
@@ -274,14 +275,6 @@ export function FilterHeaderControl<TRow>(
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
 }
 
-function FilterGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-      <path fill="currentColor" d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z" />
-    </svg>
-  );
-}
-
 function headerFilterActive<TRow>(
   props: FilterHeaderControlProps<TRow>
 ): boolean {
@@ -295,7 +288,7 @@ function headerFilterActive<TRow>(
   });
 }
 
-/** Funnel on the column header — the same field the Filters panel draws. */
+/** Filters icon on the column header — the same field the Filters panel draws. */
 export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
@@ -316,7 +309,7 @@ export function FilterHeaderTrigger<TRow>(
           padding: 2,
         }}
       >
-        <FilterGlyph />
+        <FiltersIcon size={14} />
       </summary>
       <div
         data-adapttable-part="filter-header-cell"

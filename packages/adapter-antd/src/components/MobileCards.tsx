@@ -35,6 +35,7 @@ import { Button, Card, Checkbox, Descriptions, Space } from "antd";
 import { type CSSProperties, memo, type ReactNode, useMemo } from "react";
 
 import { isDangerColor } from "../colors";
+import { iconForRowAction } from "../icons";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import {
@@ -63,13 +64,15 @@ function CardActions<TRow>({
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
+        const icon = iconForRowAction(action);
         return (
           <Button
             key={action.key}
             size="small"
             danger={isDangerColor(action.color)}
             disabled={disabled}
-            title={reason}
+            icon={icon}
+            title={reason ?? (icon ? action.label : undefined)}
             aria-label={action.label}
             // The disabled attribute already blocks activation, so attach
             // the handler only when the action can run.
@@ -79,7 +82,7 @@ function CardActions<TRow>({
                 : () => runRowAction(action, row, confirm, labels.cancel)
             }
           >
-            {action.icon ?? action.label}
+            {icon ? undefined : action.label}
           </Button>
         );
       })}

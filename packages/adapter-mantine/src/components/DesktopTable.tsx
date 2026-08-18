@@ -79,7 +79,12 @@ import type {
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { type Density, DENSITY_SPACING } from "../density";
-import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  iconForRowAction,
+  SelectorIcon,
+} from "../icons";
 import { HAIRLINE, SURFACE } from "../surface";
 import { ColumnSelectCheckbox } from "./ColumnSelectCheckbox";
 import { EditableDataCell } from "./EditableCell";
@@ -338,7 +343,8 @@ function RowActions<TRow>({
             };
         // Icon-only actions render as an ActionIcon; without an icon, fall
         // back to a text button so the label is actually visible.
-        return action.icon ? (
+        const icon = iconForRowAction(action);
+        return icon ? (
           <Tooltip
             key={action.key}
             label={reason ?? action.label}
@@ -353,7 +359,7 @@ function RowActions<TRow>({
               aria-label={action.label}
               onClick={handleClick}
             >
-              {action.icon}
+              {icon}
             </ActionIcon>
           </Tooltip>
         ) : (

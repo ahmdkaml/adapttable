@@ -46,6 +46,7 @@ import {
 } from "react";
 
 import type { Density } from "../density";
+import { iconForRowAction } from "../icons";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
@@ -341,7 +342,8 @@ function MobileCardBase<TRow>({
               const run = disabled
                 ? undefined
                 : () => runRowAction(action, row, confirm, labels.cancel);
-              return action.icon ? (
+              const icon = iconForRowAction(action);
+              return icon ? (
                 <Tooltip
                   key={action.key}
                   label={reason ?? action.label}
@@ -356,7 +358,7 @@ function MobileCardBase<TRow>({
                     aria-label={action.label}
                     onClick={run}
                   >
-                    {action.icon}
+                    {icon}
                   </ActionIcon>
                 </Tooltip>
               ) : (

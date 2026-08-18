@@ -4,8 +4,9 @@
 
 ▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Pin rows** on. Pin to top keeps a row under the header; pin to bottom keeps it on the floor of the scroll box.
 
-Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains Pin to
-top / Pin to bottom / Unpin. Omit both and nothing renders, nothing ships in
+Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains icon-only
+Pin to top / Pin to bottom / Unpin (labels on hover and as the accessible name).
+Omit both and nothing renders, nothing ships in
 the hot path — the same opt-in rule as `onCellEdit`. The value is
 `{ top, bottom }` lists of row ids, not a flat array: which edge a row
 sticks to is the feature.

@@ -52,7 +52,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 | Prop                | Type                              | Default          | Description                                                                                                                                                                                                    |
 | ------------------- | --------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rowActions`        | `RowAction<TRow>[]`               | —                | Trailing per-row actions (icon buttons on desktop, card buttons on mobile).                                                                                                                                    |
+| `rowActions`        | `RowAction<TRow>[]`               | —                | Trailing per-row actions. Pass `icon` for an icon-only button (`label` is the tooltip and accessible name); omit it for a text button. Built-in duplicate, delete and pin actions use each kit's own icons.    |
 | `bulkActions`       | `BulkAction[]`                    | —                | Bulk actions — providing these turns on row selection.                                                                                                                                                         |
 | `selectionGetId`    | `(row: TRow) => string`           | `rowKey`         | Selection id extractor when it must differ from `rowKey`.                                                                                                                                                      |
 | `selectedIds`       | `readonly string[]`               | —                | Controlled selection; apply `onSelectionChange` requests to your own state.                                                                                                                                    |
@@ -461,9 +461,10 @@ so Take theirs is a choice, not a blind swap.
 The same notice appears on a mobile card.
 
 **Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
-toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on
-every row, after the host's own `rowActions`, under the keys
-`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. A delete confirms first
+toolbar; `onDuplicateRow` and `onDeleteRow` put icon-only Duplicate row and
+Delete row on every row, after the host's own `rowActions`, under the keys
+`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. The labels are the
+tooltip and accessible name. A delete confirms first
 unless `confirmDeleteRow={false}`. `useRowMutations(options)`
 (`UseRowMutationsOptions` in, `RowMutationsState` out, taking the
 `RowMutationHandlers`) is the state behind them; `labels.addRow`,

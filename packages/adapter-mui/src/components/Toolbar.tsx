@@ -15,25 +15,8 @@ import {
 } from "@mui/material";
 import { type ReactNode, useRef } from "react";
 
+import { FiltersIcon } from "../icons";
 import { FilterPopover } from "./FilterPopover";
-
-function FiltersIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z" />
-    </svg>
-  );
-}
 
 /** Magnifying-glass glyph for the search field (currentColor, no icon-lib). */
 function SearchIcon() {

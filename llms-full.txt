@@ -2149,7 +2149,9 @@ default is to ask.
 
 `onEditConflict` may return `"keep"` or `"take"` to resolve it; returning
 nothing uses the policy. `"ask"` puts Keep mine / Take theirs on the editor
-(`data-conflict`, the same `aria-describedby` channel as a validation message).
+(`data-conflict`, the same `aria-describedby` channel as a validation message)
+and shows the incoming value (`labels.theirsValue`) so the reader can see
+what they would take.
 Without `rowVersion`, only the edited column's stored value counts as a change.
 
 ### The editor set
@@ -2448,7 +2450,8 @@ handlers cover it, and each one puts its own control on screen:
 ```
 
 `onAddRow` puts an **Add row** button in the toolbar. `onDuplicateRow` and
-`onDeleteRow` put **Duplicate row** and **Delete row** on every row, after your
+`onDeleteRow` put icon-only **Duplicate row** and **Delete row** on every row
+(the labels are the tooltip and accessible name), after your
 own `rowActions` — so a delete stays last, where a destructive action belongs.
 They ride the actions column like any other row action: hideable and end-pinnable
 from the Columns menu, buttons on desktop and card buttons on mobile.
@@ -2728,8 +2731,9 @@ Each adapter mounts `RowReorderHandle` (`RowReorderHandleProps`) and
 
 ▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Pin rows** on. Pin to top keeps a row under the header; pin to bottom keeps it on the floor of the scroll box.
 
-Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains Pin to
-top / Pin to bottom / Unpin. Omit both and nothing renders, nothing ships in
+Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains icon-only
+Pin to top / Pin to bottom / Unpin (labels on hover and as the accessible name).
+Omit both and nothing renders, nothing ships in
 the hot path — the same opt-in rule as `onCellEdit`. The value is
 `{ top, bottom }` lists of row ids, not a flat array: which edge a row
 sticks to is the feature.
@@ -6042,27 +6046,27 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Filters
 
-| Part                                                                                                                    | Element                                                                                |
-| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `filtersButton`                                                                                                         | The Filters trigger button.                                                            |
-| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                    |
-| `filtersCount`                                                                                                          | The active-filter count badge.                                                         |
-| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                      |
-| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                       |
-| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
-| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                         |
-| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                   |
-| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                          |
-| `filtersPanel`                                                                                                          | The drawer panel.                                                                      |
-| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                         |
-| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                             |
-| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                  |
-| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                        |
-| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
-| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
-| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
-| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`                                       | Compact header filter row, one cell, its input, and the multi-select menu.             |
-| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
+| Part                                                                                                                    | Element                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `filtersButton`                                                                                                         | The Filters trigger button.                                                                        |
+| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                                |
+| `filtersCount`                                                                                                          | The active-filter count badge.                                                                     |
+| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                                  |
+| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                                   |
+| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.              |
+| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                                     |
+| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                               |
+| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                                      |
+| `filtersPanel`                                                                                                          | The drawer panel.                                                                                  |
+| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                                     |
+| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                                         |
+| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                              |
+| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                                    |
+| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`.             |
+| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                                      |
+| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                                   |
+| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`                                       | Compact header filter row, one cell, its input, and the multi-select menu.                         |
+| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                                    |
 
 ### Chips
 
@@ -7173,7 +7177,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 | Prop                | Type                              | Default          | Description                                                                                                                                                                                                    |
 | ------------------- | --------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rowActions`        | `RowAction<TRow>[]`               | —                | Trailing per-row actions (icon buttons on desktop, card buttons on mobile).                                                                                                                                    |
+| `rowActions`        | `RowAction<TRow>[]`               | —                | Trailing per-row actions. Pass `icon` for an icon-only button (`label` is the tooltip and accessible name); omit it for a text button. Built-in duplicate, delete and pin actions use each kit's own icons.    |
 | `bulkActions`       | `BulkAction[]`                    | —                | Bulk actions — providing these turns on row selection.                                                                                                                                                         |
 | `selectionGetId`    | `(row: TRow) => string`           | `rowKey`         | Selection id extractor when it must differ from `rowKey`.                                                                                                                                                      |
 | `selectedIds`       | `readonly string[]`               | —                | Controlled selection; apply `onSelectionChange` requests to your own state.                                                                                                                                    |
@@ -7576,13 +7580,16 @@ theirs on the same channel validation already owns (`aria-describedby`,
 `data-conflict`). `rowVersion` makes any version change a conflict, not only the
 edited column. `useEditConflict` (`EditConflictState` in, `ReconcileLiveEdit` the
 inspect input) is the headless state; `liveRowChanged` is the comparison.
-`labels.editConflict`, `labels.keepMine` and `labels.takeTheirs` name the notice.
+`labels.editConflict`, `labels.keepMine`, `labels.takeTheirs` and
+`labels.theirsValue` name the notice — `theirsValue` is the incoming cell
+so Take theirs is a choice, not a blind swap.
 The same notice appears on a mobile card.
 
 **Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the
-toolbar; `onDuplicateRow` and `onDeleteRow` put Duplicate row and Delete row on
-every row, after the host's own `rowActions`, under the keys
-`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. A delete confirms first
+toolbar; `onDuplicateRow` and `onDeleteRow` put icon-only Duplicate row and
+Delete row on every row, after the host's own `rowActions`, under the keys
+`DUPLICATE_ROW_ACTION_KEY` and `DELETE_ROW_ACTION_KEY`. The labels are the
+tooltip and accessible name. A delete confirms first
 unless `confirmDeleteRow={false}`. `useRowMutations(options)`
 (`UseRowMutationsOptions` in, `RowMutationsState` out, taking the
 `RowMutationHandlers`) is the state behind them; `labels.addRow`,

@@ -2,13 +2,13 @@
 import { pageSizeOptions } from "@adapttable/core";
 import {
   ExportAnnouncer,
-  FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
 } from "@adapttable/core/adapter";
 import { Badge, Button, HStack, Input, InputGroup } from "@chakra-ui/react";
 import { type ReactNode } from "react";
 
+import { FiltersIcon } from "../icons";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect } from "./primitives";
 

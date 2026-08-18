@@ -2,13 +2,13 @@
 import { pageSizeOptions } from "@adapttable/core";
 import {
   ExportAnnouncer,
-  FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
 } from "@adapttable/core/adapter";
 import { Badge, Box, Button, Flex, Spinner, TextField } from "@radix-ui/themes";
 import { type ReactNode } from "react";
 
+import { FiltersIcon } from "../icons";
 import type { RadixAccentColor } from "../types";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect, type SelectOption } from "./primitives";

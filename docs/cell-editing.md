@@ -437,7 +437,8 @@ handlers cover it, and each one puts its own control on screen:
 ```
 
 `onAddRow` puts an **Add row** button in the toolbar. `onDuplicateRow` and
-`onDeleteRow` put **Duplicate row** and **Delete row** on every row, after your
+`onDeleteRow` put icon-only **Duplicate row** and **Delete row** on every row
+(the labels are the tooltip and accessible name), after your
 own `rowActions` — so a delete stays last, where a destructive action belongs.
 They ride the actions column like any other row action: hideable and end-pinnable
 from the Columns menu, buttons on desktop and card buttons on mobile.

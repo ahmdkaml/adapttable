@@ -303,13 +303,17 @@ export interface ActionConfirm<TArg> {
   danger?: boolean;
 }
 
-/** A per-row action — trailing icon buttons on desktop, card buttons on mobile. */
+/** A per-row action — trailing buttons on desktop, card buttons on mobile. */
 export interface RowAction<TRow> {
   /** Identifier — not shown to the user. */
   key: string;
-  /** Pre-translated label; also used as the accessible name. */
+  /** Pre-translated label; the accessible name, and the tooltip when icon-only. */
   label: string;
-  /** Optional leading icon. */
+  /**
+   * When set, adapters render an icon-only button. Omit it for a text button.
+   * Built-in duplicate / delete / pin keys get each kit's own glyph when this
+   * is omitted.
+   */
   icon?: ReactNode;
   /** Click handler; fires after confirmation when `confirm` is set. */
   onClick: (row: TRow) => void;

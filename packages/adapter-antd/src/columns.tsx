@@ -67,6 +67,7 @@ import {
   RowReorderHandle,
   TreeCell,
 } from "./components/kitControls";
+import { iconForRowAction } from "./icons";
 
 /**
  * Map a logical pin side to antd's native physical `fixed` value. antd mirrors
@@ -910,6 +911,7 @@ export function buildColumns<TRow>({
               );
               const disabled =
                 reason !== undefined || (action.isDisabled?.(row) ?? false);
+              const icon = iconForRowAction(action);
               return (
                 <Tooltip key={action.key} title={reason ?? action.label}>
                   <Button
@@ -917,6 +919,7 @@ export function buildColumns<TRow>({
                     type="text"
                     danger={isDangerColor(action.color)}
                     disabled={disabled}
+                    icon={icon}
                     title={reason}
                     aria-label={action.label}
                     // The disabled attribute already blocks activation, so
@@ -930,7 +933,7 @@ export function buildColumns<TRow>({
                           }
                     }
                   >
-                    {action.icon ?? action.label}
+                    {icon ? undefined : action.label}
                   </Button>
                 </Tooltip>
               );

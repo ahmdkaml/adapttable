@@ -2,12 +2,12 @@
 import { pageSizeOptions } from "@adapttable/core";
 import {
   ExportAnnouncer,
-  FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
 } from "@adapttable/core/adapter";
 import { type ReactNode } from "react";
 
+import { FiltersIcon } from "../icons";
 import type { BaseUiAccentColor } from "../types";
 import { Badge, Box, Button, Flex, Spinner, TextField } from "../ui";
 import { FilterPopover } from "./FilterPopover";

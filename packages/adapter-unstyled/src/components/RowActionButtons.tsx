@@ -8,6 +8,7 @@ import { resolveDisabledReason } from "@adapttable/core/adapter";
 import type { MouseEvent } from "react";
 
 import type { DataTableClassNames } from "../types";
+import { iconForRowAction } from "./icons";
 
 export function RowActionButtons<TRow>({
   row,
@@ -37,19 +38,20 @@ export function RowActionButtons<TRow>({
               e.stopPropagation();
               runRowAction(action, row, confirm, cancelLabel);
             };
+        const icon = iconForRowAction(action);
         return (
           <button
             key={action.key}
             type="button"
             disabled={disabled}
-            title={reason}
+            title={reason ?? (icon ? action.label : undefined)}
             aria-label={action.label}
             data-adapttable-part="action-button"
             data-color={action.color}
             className={classNames.actionButton}
             onClick={handleClick}
           >
-            {action.icon ?? action.label}
+            {icon ?? action.label}
           </button>
         );
       })}

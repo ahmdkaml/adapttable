@@ -1,3 +1,10 @@
+import {
+  DELETE_ROW_ACTION_KEY,
+  DUPLICATE_ROW_ACTION_KEY,
+  PIN_BOTTOM_ACTION_KEY,
+  PIN_TOP_ACTION_KEY,
+  UNPIN_ROW_ACTION_KEY,
+} from "@adapttable/core";
 import type { CSSProperties, ReactNode } from "react";
 
 interface IconProps {
@@ -105,3 +112,65 @@ export const InboxIcon = (p: IconProps) => (
     <path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1Z" />
   </Svg>
 );
+
+/** Two overlapping pages — Tabler-style copy. */
+export const DuplicateRowIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect width="14" height="14" x="8" y="8" rx="2" />
+    <path d="M4 16V4a2 2 0 0 1 2-2h10" />
+  </Svg>
+);
+
+/** Trash can — Tabler-style delete. */
+export const DeleteRowIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 7h16" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12" />
+    <path d="M9 7V4h6v3" />
+  </Svg>
+);
+
+/** Pin pointing into the top of the table. */
+export const PinTopIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 17v5" />
+    <path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V17h14v-1.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 1 0 0-4H8a2 2 0 1 0 0 4 1 1 0 0 1 1 1z" />
+  </Svg>
+);
+
+/** Pin pointing into the bottom of the table. */
+export const PinBottomIcon = (p: IconProps) => (
+  <Svg {...p} style={{ ...p.style, transform: "rotate(180deg)" }}>
+    <path d="M12 17v5" />
+    <path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V17h14v-1.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 1 0 0-4H8a2 2 0 1 0 0 4 1 1 0 0 1 1 1z" />
+  </Svg>
+);
+
+/** Pin with a slash — unpin. */
+export const UnpinRowIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 17v5" />
+    <path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V17h14v-1.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 1 0 0-4H8a2 2 0 1 0 0 4 1 1 0 0 1 1 1z" />
+    <path d="M4 4l16 16" />
+  </Svg>
+);
+
+/**
+ * Host `icon` wins. Built-in duplicate / delete / pin keys get this kit's
+ * glyph so core can stay a key + label.
+ */
+export function iconForRowAction(
+  action: Readonly<{ key: string; icon?: ReactNode }>
+): ReactNode | undefined {
+  return (
+    action.icon ??
+    {
+      [DUPLICATE_ROW_ACTION_KEY]: <DuplicateRowIcon />,
+      [DELETE_ROW_ACTION_KEY]: <DeleteRowIcon />,
+      [PIN_TOP_ACTION_KEY]: <PinTopIcon />,
+      [PIN_BOTTOM_ACTION_KEY]: <PinBottomIcon />,
+      [UNPIN_ROW_ACTION_KEY]: <UnpinRowIcon />,
+    }[action.key]
+  );
+}

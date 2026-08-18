@@ -53,6 +53,7 @@ import {
 import { Button, Checkbox, Dropdown, Input, Popover, Select } from "antd";
 import { type ReactNode, useEffect, useState } from "react";
 
+import { FiltersIcon } from "../icons";
 import { AutoFilterForm } from "./AutoFilterForm";
 
 export type {
@@ -314,9 +315,7 @@ export function FilterHeaderTrigger<TRow>(
         data-adapttable-part="filter-header-trigger"
         data-active={active ? "" : undefined}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-          <path fill="currentColor" d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z" />
-        </svg>
+        <FiltersIcon size={14} />
       </Button>
     </Popover>
   );

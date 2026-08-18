@@ -7,6 +7,7 @@ import {
 import { resolveDisabledReason } from "@adapttable/core/adapter";
 import { Button, HStack, IconButton } from "@chakra-ui/react";
 
+import { iconForRowAction } from "../icons";
 import { Tooltip } from "./primitives";
 
 export function RowActionButtons<TRow>({
@@ -40,7 +41,8 @@ export function RowActionButtons<TRow>({
         // Icon-only actions use IconButton (with a tooltip for the name);
         // text actions use a real Button so the label actually renders
         // (IconButton renders only the icon child).
-        return action.icon ? (
+        const icon = iconForRowAction(action);
+        return icon ? (
           <Tooltip key={action.key} label={reason ?? action.label}>
             <IconButton
               size="sm"
@@ -50,7 +52,7 @@ export function RowActionButtons<TRow>({
               aria-label={action.label}
               onClick={handleClick}
             >
-              {action.icon}
+              {icon}
             </IconButton>
           </Tooltip>
         ) : (

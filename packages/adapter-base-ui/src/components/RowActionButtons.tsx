@@ -6,6 +6,7 @@ import {
 } from "@adapttable/core";
 import { resolveDisabledReason } from "@adapttable/core/adapter";
 
+import { iconForRowAction } from "../icons";
 import type { BaseUiAccentColor } from "../types";
 import { Button, Flex, IconButton } from "../ui";
 import { Tooltip } from "./primitives";
@@ -41,7 +42,8 @@ export function RowActionButtons<TRow>({
         // Icon-only actions use IconButton (with a tooltip for the name); text
         // actions use a real Button so the label renders (IconButton renders
         // only the icon child).
-        return action.icon ? (
+        const icon = iconForRowAction(action);
+        return icon ? (
           <Tooltip key={action.key} label={reason ?? action.label}>
             <IconButton
               size="1"
@@ -51,7 +53,7 @@ export function RowActionButtons<TRow>({
               aria-label={action.label}
               onClick={handleClick}
             >
-              {action.icon}
+              {icon}
             </IconButton>
           </Tooltip>
         ) : (
