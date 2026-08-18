@@ -17,12 +17,10 @@ import { ClassNamesProvider, useClassNames } from "./classNamesContext";
  * One saved view and its controls.
  *
  * The classes are the map's, on the two keys the saved-views *menu* already
- * uses for these two shapes: `viewsItem` for a captioned control, `viewsDelete`
- * for a compact one. One preset therefore styles the menu and the panel that
- * manages it. A preset writes those keys for the menu, where `viewsItem` is the
- * full-width name of one view — so the chrome's `control` layout follows the
- * class on each button: here they are six siblings that keep their own
- * captions, not one that fills the row.
+ * uses for these two shapes: `viewsItem` for the view's own name, which fills
+ * the row and applies it, and `viewsDelete` for the compact icon controls
+ * beside it. One preset therefore styles the menu and the panel that manages
+ * it, and a native panel mounted beside a styled table is styled with it.
  *
  * The slot reads the map from context rather than closing over it, which is
  * what keeps the rename box from being remounted — and losing the caret —
@@ -30,22 +28,15 @@ import { ClassNamesProvider, useClassNames } from "./classNamesContext";
  */
 function Row({
   name,
+  viewName,
+  isEditing,
   isDefault,
   readOnly,
   defaultLabel,
   readOnlyLabel,
   onApply,
-  onRename,
-  onMoveUp,
-  onMoveDown,
-  onSetDefault,
-  onRemove,
   applyLabel,
-  renameLabel,
-  moveUpLabel,
-  moveDownLabel,
-  setDefaultLabel,
-  removeLabel,
+  controls,
   layout,
   ...rest
 }: SavedViewsPanelRowProps) {
@@ -53,7 +44,24 @@ function Row({
   return (
     <div className={viewsRow} style={layout.row} {...rest}>
       <div style={layout.caption} data-adapttable-part="saved-view-caption">
-        <span>{name}</span>
+        {isEditing ? (
+          name
+        ) : (
+          <button
+            type="button"
+            className={viewsItem}
+            title={applyLabel}
+            style={{
+              flex: "1 1 auto",
+              minWidth: 0,
+              textAlign: "start",
+              fontWeight: isDefault ? 600 : 400,
+            }}
+            onClick={onApply}
+          >
+            {viewName}
+          </button>
+        )}
         {readOnly && (
           <span data-adapttable-part="saved-view-readonly">
             {readOnlyLabel}
@@ -64,63 +72,21 @@ function Row({
         )}
       </div>
       <div style={layout.controls} data-adapttable-part="saved-view-controls">
-        <button
-          type="button"
-          className={viewsItem}
-          style={layout.control}
-          onClick={onApply}
-        >
-          {applyLabel}
-        </button>
-        {(onRename ?? readOnly) && (
+        {controls.map((control) => (
           <button
+            key={control.key}
             type="button"
-            className={viewsItem}
+            className={viewsDelete}
             style={layout.control}
-            onClick={onRename}
-            disabled={!onRename}
+            aria-label={control.label}
+            aria-pressed={control.pressed}
+            title={control.label}
+            disabled={!control.onPress}
+            onClick={control.onPress}
           >
-            {renameLabel}
+            {control.icon}
           </button>
-        )}
-        <button
-          type="button"
-          className={viewsDelete}
-          style={layout.control}
-          onClick={onMoveUp}
-          disabled={!onMoveUp}
-          aria-label={moveUpLabel}
-        >
-          {"\u2191"}
-        </button>
-        <button
-          type="button"
-          className={viewsDelete}
-          style={layout.control}
-          onClick={onMoveDown}
-          disabled={!onMoveDown}
-          aria-label={moveDownLabel}
-        >
-          {"\u2193"}
-        </button>
-        <button
-          type="button"
-          className={viewsItem}
-          style={layout.control}
-          onClick={onSetDefault}
-          disabled={!onSetDefault}
-        >
-          {setDefaultLabel}
-        </button>
-        <button
-          type="button"
-          className={viewsItem}
-          style={layout.control}
-          onClick={onRemove}
-          disabled={!onRemove}
-        >
-          {removeLabel}
-        </button>
+        ))}
       </div>
     </div>
   );
@@ -142,6 +108,7 @@ function Input({
       className={viewsInput}
       value={value}
       ref={ref}
+      style={{ flex: "1 1 auto", minWidth: 0 }}
       onChange={(event) => {
         onChange(event.target.value);
       }}
@@ -158,17 +125,49 @@ function Input({
  * native has none, and a row that wraps its controls onto a second line runs
  * into the next view's name without one.
  */
-const PANEL: CSSProperties = {
+const LIST: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 8,
+  gap: 2,
   minWidth: 0,
 };
 
+/** The card's heading. Native has no typography scale, so this is the shape. */
+const TITLE: CSSProperties = {
+  display: "block",
+  marginBlockEnd: 8,
+  fontSize: "0.7rem",
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  opacity: 0.7,
+};
+
+const FOOTER: CSSProperties = {
+  display: "block",
+  marginBlockStart: 10,
+  fontSize: "0.78rem",
+  opacity: 0.75,
+};
+
 const slots: SavedViewsPanelSlots = {
-  Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <div className={className} style={PANEL} {...rest}>
-      {children}
+  Surface: ({
+    children,
+    className,
+    title,
+    footer,
+    ...rest
+  }: SavedViewsPanelSurfaceProps) => (
+    <div className={className} style={{ minWidth: 0 }} {...rest}>
+      <span style={TITLE} data-adapttable-part="saved-views-title">
+        {title}
+      </span>
+      <div style={LIST}>{children}</div>
+      {footer && (
+        <span style={FOOTER} data-adapttable-part="saved-views-footer">
+          {footer}
+        </span>
+      )}
     </div>
   ),
   Empty: ({ message }: SavedViewsPanelEmptyProps) => <p>{message}</p>,

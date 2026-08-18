@@ -8,13 +8,48 @@ import {
   type SavedViewsPanelSlots,
   type SavedViewsPanelSurfaceProps,
 } from "@adapttable/core/adapter";
-import { Badge, Button, Stack, Text, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 
 const slots: SavedViewsPanelSlots = {
-  Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <Stack gap="xs" className={className} {...rest}>
-      {children}
-    </Stack>
+  Surface: ({
+    children,
+    className,
+    title,
+    footer,
+    ...rest
+  }: SavedViewsPanelSurfaceProps) => (
+    <Card withBorder radius="md" padding="sm" className={className} {...rest}>
+      <Text
+        fz={11}
+        fw={700}
+        tt="uppercase"
+        c="dimmed"
+        mb={8}
+        data-adapttable-part="saved-views-title"
+      >
+        {title}
+      </Text>
+      <Stack gap={2}>{children}</Stack>
+      {footer && (
+        <Text
+          fz="xs"
+          c="dimmed"
+          mt={10}
+          data-adapttable-part="saved-views-footer"
+        >
+          {footer}
+        </Text>
+      )}
+    </Card>
   ),
   Empty: ({ message }: SavedViewsPanelEmptyProps) => (
     <Text fz="sm" c="dimmed">
@@ -34,6 +69,7 @@ const slots: SavedViewsPanelSlots = {
       aria-label={label}
       value={value}
       ref={ref}
+      w="100%"
       onChange={(event) => {
         onChange(event.currentTarget.value);
       }}
@@ -45,101 +81,71 @@ const slots: SavedViewsPanelSlots = {
   ),
   Row: ({
     name,
+    viewName,
+    isEditing,
     isDefault,
     readOnly,
     defaultLabel,
     readOnlyLabel,
     onApply,
-    onRename,
-    onMoveUp,
-    onMoveDown,
-    onSetDefault,
-    onRemove,
     applyLabel,
-    renameLabel,
-    moveUpLabel,
-    moveDownLabel,
-    setDefaultLabel,
-    removeLabel,
+    controls,
     layout,
     ...rest
   }: SavedViewsPanelRowProps) => (
     <div style={layout.row} {...rest}>
       <div style={layout.caption} data-adapttable-part="saved-view-caption">
-        <Text fz="sm">{name}</Text>
-        {readOnly && (
-          <Badge
-            size="xs"
-            color="gray"
-            data-adapttable-part="saved-view-readonly"
-          >
-            {readOnlyLabel}
-          </Badge>
-        )}
-        {isDefault && (
-          <Badge size="xs" data-adapttable-part="saved-view-default">
-            {defaultLabel}
-          </Badge>
-        )}
-      </div>
-      <div style={layout.controls} data-adapttable-part="saved-view-controls">
-        <Button
-          size="compact-xs"
-          variant="default"
-          style={layout.control}
-          onClick={onApply}
-        >
-          {applyLabel}
-        </Button>
-        {(onRename ?? readOnly) && (
+        {isEditing ? (
+          name
+        ) : (
           <Button
-            size="compact-xs"
-            variant="default"
-            style={layout.control}
-            onClick={onRename}
-            disabled={!onRename}
+            variant="subtle"
+            color="gray"
+            size="compact-sm"
+            justify="start"
+            title={applyLabel}
+            style={{ flex: "1 1 auto", minWidth: 0 }}
+            onClick={onApply}
           >
-            {renameLabel}
+            <Text fz="sm" fw={isDefault ? 650 : 400} truncate>
+              {viewName}
+            </Text>
           </Button>
         )}
-        <Button
-          size="compact-xs"
-          variant="default"
-          style={layout.control}
-          onClick={onMoveUp}
-          disabled={!onMoveUp}
-          aria-label={moveUpLabel}
-        >
-          {"\u2191"}
-        </Button>
-        <Button
-          size="compact-xs"
-          variant="default"
-          style={layout.control}
-          onClick={onMoveDown}
-          disabled={!onMoveDown}
-          aria-label={moveDownLabel}
-        >
-          {"\u2193"}
-        </Button>
-        <Button
-          size="compact-xs"
-          variant="default"
-          style={layout.control}
-          onClick={onSetDefault}
-          disabled={!onSetDefault}
-        >
-          {setDefaultLabel}
-        </Button>
-        <Button
-          size="compact-xs"
-          variant="default"
-          style={layout.control}
-          onClick={onRemove}
-          disabled={!onRemove}
-        >
-          {removeLabel}
-        </Button>
+        <Group gap={4} wrap="nowrap">
+          {readOnly && (
+            <Badge
+              size="xs"
+              color="gray"
+              variant="light"
+              data-adapttable-part="saved-view-readonly"
+            >
+              {readOnlyLabel}
+            </Badge>
+          )}
+          {isDefault && (
+            <Badge size="xs" data-adapttable-part="saved-view-default">
+              {defaultLabel}
+            </Badge>
+          )}
+        </Group>
+      </div>
+      <div style={layout.controls} data-adapttable-part="saved-view-controls">
+        {controls.map((control) => (
+          <ActionIcon
+            key={control.key}
+            size="sm"
+            variant={control.pressed ? "light" : "subtle"}
+            color={control.danger ? "red" : "gray"}
+            style={layout.control}
+            aria-label={control.label}
+            aria-pressed={control.pressed}
+            disabled={!control.onPress}
+            onClick={control.onPress}
+          >
+            {control.icon}
+          </ActionIcon>
+        ))}
       </div>
     </div>
   ),

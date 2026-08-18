@@ -8,13 +8,41 @@ import {
   type SavedViewsPanelSlots,
   type SavedViewsPanelSurfaceProps,
 } from "@adapttable/core/adapter";
-import { Button, Flex, Input, Tag, Typography } from "antd";
+import { Button, Card, Flex, Input, Tag, Typography } from "antd";
 
 const slots: SavedViewsPanelSlots = {
-  Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <Flex vertical gap={8} className={className} {...rest}>
-      {children}
-    </Flex>
+  Surface: ({
+    children,
+    className,
+    title,
+    footer,
+    ...rest
+  }: SavedViewsPanelSurfaceProps) => (
+    <Card
+      size="small"
+      title={
+        <span data-adapttable-part="saved-views-title">
+          <Typography.Text type="secondary" style={{ fontSize: 11 }} strong>
+            {title.toUpperCase()}
+          </Typography.Text>
+        </span>
+      }
+      className={className}
+      {...rest}
+    >
+      <Flex vertical gap={2}>
+        {children}
+      </Flex>
+      {footer && (
+        <Typography.Text
+          type="secondary"
+          style={{ display: "block", marginBlockStart: 10, fontSize: 12 }}
+          data-adapttable-part="saved-views-footer"
+        >
+          {footer}
+        </Typography.Text>
+      )}
+    </Card>
   ),
   Empty: ({ message }: SavedViewsPanelEmptyProps) => (
     <Typography.Text type="secondary">{message}</Typography.Text>
@@ -45,28 +73,38 @@ const slots: SavedViewsPanelSlots = {
   ),
   Row: ({
     name,
+    viewName,
+    isEditing,
     isDefault,
     readOnly,
     defaultLabel,
     readOnlyLabel,
     onApply,
-    onRename,
-    onMoveUp,
-    onMoveDown,
-    onSetDefault,
-    onRemove,
     applyLabel,
-    renameLabel,
-    moveUpLabel,
-    moveDownLabel,
-    setDefaultLabel,
-    removeLabel,
+    controls,
     layout,
     ...rest
   }: SavedViewsPanelRowProps) => (
     <div style={layout.row} {...rest}>
       <div style={layout.caption} data-adapttable-part="saved-view-caption">
-        <Typography.Text>{name}</Typography.Text>
+        {isEditing ? (
+          name
+        ) : (
+          <Button
+            type="text"
+            size="small"
+            title={applyLabel}
+            style={{
+              flex: "1 1 auto",
+              minWidth: 0,
+              textAlign: "start",
+              fontWeight: isDefault ? 600 : 400,
+            }}
+            onClick={onApply}
+          >
+            {viewName}
+          </Button>
+        )}
         {readOnly && (
           <Tag
             data-adapttable-part="saved-view-readonly"
@@ -85,53 +123,21 @@ const slots: SavedViewsPanelSlots = {
         )}
       </div>
       <div style={layout.controls} data-adapttable-part="saved-view-controls">
-        <Button size="small" style={layout.control} onClick={onApply}>
-          {applyLabel}
-        </Button>
-        {(onRename ?? readOnly) && (
+        {controls.map((control) => (
           <Button
+            key={control.key}
+            type="text"
             size="small"
+            danger={control.danger}
             style={layout.control}
-            onClick={onRename}
-            disabled={!onRename}
-          >
-            {renameLabel}
-          </Button>
-        )}
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onMoveUp}
-          disabled={!onMoveUp}
-          aria-label={moveUpLabel}
-        >
-          {"\u2191"}
-        </Button>
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onMoveDown}
-          disabled={!onMoveDown}
-          aria-label={moveDownLabel}
-        >
-          {"\u2193"}
-        </Button>
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onSetDefault}
-          disabled={!onSetDefault}
-        >
-          {setDefaultLabel}
-        </Button>
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onRemove}
-          disabled={!onRemove}
-        >
-          {removeLabel}
-        </Button>
+            aria-label={control.label}
+            aria-pressed={control.pressed}
+            title={control.label}
+            icon={control.icon}
+            disabled={!control.onPress}
+            onClick={control.onPress}
+          />
+        ))}
       </div>
     </div>
   ),

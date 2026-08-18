@@ -8,6 +8,7 @@
 import type { SavedView } from "@adapttable/core";
 import { Theme } from "@radix-ui/themes";
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { SavedViewsPanel } from "./components/SavedViewsPanel";
@@ -21,7 +22,10 @@ const VIEWS: SavedView[] = [
   { name: "Team", search: "t.q=b", isDefault: true },
 ];
 
-function renderPanel(views: SavedView[] = VIEWS) {
+function renderPanel(
+  views: SavedView[] = VIEWS,
+  extra: { footer?: ReactNode } = {}
+) {
   const handlers = {
     onApply: vi.fn(),
     onRename: vi.fn(),
@@ -31,7 +35,7 @@ function renderPanel(views: SavedView[] = VIEWS) {
   };
   render(
     <Wrapper>
-      <SavedViewsPanel views={views} {...handlers} />
+      <SavedViewsPanel views={views} {...handlers} {...extra} />
     </Wrapper>
   );
   return handlers;
@@ -50,7 +54,20 @@ describe("SavedViewsPanel", () => {
     ).not.toBeNull();
   });
 
-  it("groups the caption and the controls so a narrow panel wraps them", () => {
+  it("titles the card, and applies a view from the view's own name", () => {
+    const handlers = renderPanel();
+
+    expect(
+      document.querySelector('[data-adapttable-part="saved-views-title"]')
+    ).toHaveTextContent(/saved views/i);
+
+    // The row's primary action is its widest target and carries the view's
+    // name, rather than a sixth button competing with Delete for attention.
+    fireEvent.click(screen.getByRole("button", { name: "Mine" }));
+    expect(handlers.onApply).toHaveBeenCalledWith("Mine");
+  });
+
+  it("groups the name and the icon cluster so a narrow panel wraps them", () => {
     renderPanel();
 
     const row = rows()[0]!;
@@ -62,11 +79,25 @@ describe("SavedViewsPanel", () => {
     );
     expect(caption).not.toBeNull();
     expect(controls).not.toBeNull();
-    // Every control belongs to the group: one left outside it wraps on its
-    // own and lands under the next view's name.
-    expect(controls?.querySelectorAll("button")).toHaveLength(
-      row.querySelectorAll("button").length
+    // The name is one control in the caption; the five it manages with are one
+    // group beside it. A control left outside that group wraps on its own and
+    // lands under the next view's name.
+    expect(caption?.querySelectorAll("button")).toHaveLength(1);
+    expect(controls?.querySelectorAll("button")).toHaveLength(5);
+    expect(row.querySelectorAll("button")).toHaveLength(6);
+  });
+
+  it("puts the host's note inside the card", () => {
+    // Outside the card it reads as a caption belonging to whatever follows it
+    // on the page, which is what a dangling line under a panel always does.
+    renderPanel(VIEWS, { footer: "Upgraded on load: Legacy view (v1)" });
+
+    const panel = document.querySelector(
+      '[data-adapttable-part="saved-views-panel"]'
     );
+    expect(
+      panel?.querySelector('[data-adapttable-part="saved-views-footer"]')
+    ).toHaveTextContent("Upgraded on load: Legacy view (v1)");
   });
 
   it("marks the default view", () => {
@@ -147,7 +178,7 @@ describe("SavedViewsPanel", () => {
       screen.getByRole("button", { name: "Set as default" })
     ).toBeDisabled();
     // Applying someone else's view is still fine — that is the point of it.
-    expect(screen.getByRole("button", { name: "Apply view" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Theirs" })).toBeEnabled();
   });
 
   it("names the badge parts, so every kit is styleable the same way", () => {

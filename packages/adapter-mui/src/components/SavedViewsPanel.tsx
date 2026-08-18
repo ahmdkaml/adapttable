@@ -8,13 +8,45 @@ import {
   type SavedViewsPanelSlots,
   type SavedViewsPanelSurfaceProps,
 } from "@adapttable/core/adapter";
-import { Button, Chip, Stack, TextField, Typography } from "@mui/material";
+import {
+  Button,
+  Chip,
+  IconButton,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 const slots: SavedViewsPanelSlots = {
-  Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <Stack spacing={1} className={className} {...rest}>
-      {children}
-    </Stack>
+  Surface: ({
+    children,
+    className,
+    title,
+    footer,
+    ...rest
+  }: SavedViewsPanelSurfaceProps) => (
+    <Paper variant="outlined" sx={{ p: 1.5 }} className={className} {...rest}>
+      <Typography
+        variant="overline"
+        color="text.secondary"
+        sx={{ display: "block", lineHeight: 1.6, mb: 0.5 }}
+        data-adapttable-part="saved-views-title"
+      >
+        {title}
+      </Typography>
+      <Stack spacing={0.25}>{children}</Stack>
+      {footer && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mt: 1.25 }}
+          data-adapttable-part="saved-views-footer"
+        >
+          {footer}
+        </Typography>
+      )}
+    </Paper>
   ),
   Empty: ({ message }: SavedViewsPanelEmptyProps) => (
     <Typography variant="body2" color="text.secondary">
@@ -31,6 +63,7 @@ const slots: SavedViewsPanelSlots = {
   }: SavedViewsPanelInputProps) => (
     <TextField
       size="small"
+      fullWidth
       value={value}
       inputRef={ref}
       slotProps={{ htmlInput: { "aria-label": label } }}
@@ -45,28 +78,39 @@ const slots: SavedViewsPanelSlots = {
   ),
   Row: ({
     name,
+    viewName,
+    isEditing,
     isDefault,
     readOnly,
     defaultLabel,
     readOnlyLabel,
     onApply,
-    onRename,
-    onMoveUp,
-    onMoveDown,
-    onSetDefault,
-    onRemove,
     applyLabel,
-    renameLabel,
-    moveUpLabel,
-    moveDownLabel,
-    setDefaultLabel,
-    removeLabel,
+    controls,
     layout,
     ...rest
   }: SavedViewsPanelRowProps) => (
     <div style={layout.row} {...rest}>
       <div style={layout.caption} data-adapttable-part="saved-view-caption">
-        <Typography variant="body2">{name}</Typography>
+        {isEditing ? (
+          name
+        ) : (
+          <Button
+            size="small"
+            color="inherit"
+            title={applyLabel}
+            onClick={onApply}
+            sx={{
+              flex: "1 1 auto",
+              justifyContent: "flex-start",
+              textTransform: "none",
+              fontWeight: isDefault ? 600 : 400,
+              minWidth: 0,
+            }}
+          >
+            {viewName}
+          </Button>
+        )}
         {readOnly && (
           <Chip
             size="small"
@@ -84,53 +128,21 @@ const slots: SavedViewsPanelSlots = {
         )}
       </div>
       <div style={layout.controls} data-adapttable-part="saved-view-controls">
-        <Button size="small" style={layout.control} onClick={onApply}>
-          {applyLabel}
-        </Button>
-        {(onRename ?? readOnly) && (
-          <Button
+        {controls.map((control) => (
+          <IconButton
+            key={control.key}
             size="small"
+            color={control.danger ? "error" : "default"}
             style={layout.control}
-            onClick={onRename}
-            disabled={!onRename}
+            aria-label={control.label}
+            aria-pressed={control.pressed}
+            title={control.label}
+            disabled={!control.onPress}
+            onClick={control.onPress}
           >
-            {renameLabel}
-          </Button>
-        )}
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onMoveUp}
-          disabled={!onMoveUp}
-          aria-label={moveUpLabel}
-        >
-          {"\u2191"}
-        </Button>
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onMoveDown}
-          disabled={!onMoveDown}
-          aria-label={moveDownLabel}
-        >
-          {"\u2193"}
-        </Button>
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onSetDefault}
-          disabled={!onSetDefault}
-        >
-          {setDefaultLabel}
-        </Button>
-        <Button
-          size="small"
-          style={layout.control}
-          onClick={onRemove}
-          disabled={!onRemove}
-        >
-          {removeLabel}
-        </Button>
+            {control.icon}
+          </IconButton>
+        ))}
       </div>
     </div>
   ),

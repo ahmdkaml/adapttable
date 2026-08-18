@@ -8,13 +8,50 @@ import {
   type SavedViewsPanelSlots,
   type SavedViewsPanelSurfaceProps,
 } from "@adapttable/core/adapter";
-import { Badge, Button, Flex, Text, TextField } from "@radix-ui/themes";
+import {
+  Badge,
+  Button,
+  Card,
+  Flex,
+  IconButton,
+  Text,
+  TextField,
+} from "@radix-ui/themes";
 
 const slots: SavedViewsPanelSlots = {
-  Surface: ({ children, className, ...rest }: SavedViewsPanelSurfaceProps) => (
-    <Flex direction="column" gap="2" className={className} {...rest}>
-      {children}
-    </Flex>
+  Surface: ({
+    children,
+    className,
+    title,
+    footer,
+    ...rest
+  }: SavedViewsPanelSurfaceProps) => (
+    <Card size="1" className={className} {...rest}>
+      <Text
+        as="p"
+        size="1"
+        weight="bold"
+        color="gray"
+        mb="2"
+        data-adapttable-part="saved-views-title"
+      >
+        {title.toUpperCase()}
+      </Text>
+      <Flex direction="column" gap="1">
+        {children}
+      </Flex>
+      {footer && (
+        <Text
+          as="p"
+          size="1"
+          color="gray"
+          mt="3"
+          data-adapttable-part="saved-views-footer"
+        >
+          {footer}
+        </Text>
+      )}
+    </Card>
   ),
   Empty: ({ message }: SavedViewsPanelEmptyProps) => (
     <Text size="2" color="gray">
@@ -34,6 +71,7 @@ const slots: SavedViewsPanelSlots = {
       value={value}
       ref={ref}
       aria-label={label}
+      style={{ width: "100%" }}
       onChange={(event) => {
         onChange(event.target.value);
       }}
@@ -45,28 +83,39 @@ const slots: SavedViewsPanelSlots = {
   ),
   Row: ({
     name,
+    viewName,
+    isEditing,
     isDefault,
     readOnly,
     defaultLabel,
     readOnlyLabel,
     onApply,
-    onRename,
-    onMoveUp,
-    onMoveDown,
-    onSetDefault,
-    onRemove,
     applyLabel,
-    renameLabel,
-    moveUpLabel,
-    moveDownLabel,
-    setDefaultLabel,
-    removeLabel,
+    controls,
     layout,
     ...rest
   }: SavedViewsPanelRowProps) => (
     <div style={layout.row} {...rest}>
       <div style={layout.caption} data-adapttable-part="saved-view-caption">
-        <Text size="2">{name}</Text>
+        {isEditing ? (
+          name
+        ) : (
+          <Button
+            size="1"
+            variant="ghost"
+            color="gray"
+            title={applyLabel}
+            style={{
+              flex: "1 1 auto",
+              justifyContent: "flex-start",
+              minWidth: 0,
+              fontWeight: isDefault ? 600 : 400,
+            }}
+            onClick={onApply}
+          >
+            {viewName}
+          </Button>
+        )}
         {readOnly && (
           <Badge
             size="1"
@@ -83,63 +132,22 @@ const slots: SavedViewsPanelSlots = {
         )}
       </div>
       <div style={layout.controls} data-adapttable-part="saved-view-controls">
-        <Button
-          size="1"
-          variant="soft"
-          style={layout.control}
-          onClick={onApply}
-        >
-          {applyLabel}
-        </Button>
-        {(onRename ?? readOnly) && (
-          <Button
+        {controls.map((control) => (
+          <IconButton
+            key={control.key}
             size="1"
-            variant="soft"
+            variant={control.pressed ? "soft" : "ghost"}
+            color={control.danger ? "red" : "gray"}
             style={layout.control}
-            onClick={onRename}
-            disabled={!onRename}
+            aria-label={control.label}
+            aria-pressed={control.pressed}
+            title={control.label}
+            disabled={!control.onPress}
+            onClick={control.onPress}
           >
-            {renameLabel}
-          </Button>
-        )}
-        <Button
-          size="1"
-          variant="soft"
-          style={layout.control}
-          onClick={onMoveUp}
-          disabled={!onMoveUp}
-          aria-label={moveUpLabel}
-        >
-          {"\u2191"}
-        </Button>
-        <Button
-          size="1"
-          variant="soft"
-          style={layout.control}
-          onClick={onMoveDown}
-          disabled={!onMoveDown}
-          aria-label={moveDownLabel}
-        >
-          {"\u2193"}
-        </Button>
-        <Button
-          size="1"
-          variant="soft"
-          style={layout.control}
-          onClick={onSetDefault}
-          disabled={!onSetDefault}
-        >
-          {setDefaultLabel}
-        </Button>
-        <Button
-          size="1"
-          variant="soft"
-          style={layout.control}
-          onClick={onRemove}
-          disabled={!onRemove}
-        >
-          {removeLabel}
-        </Button>
+            {control.icon}
+          </IconButton>
+        ))}
       </div>
     </div>
   ),
