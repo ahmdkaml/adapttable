@@ -18,13 +18,14 @@ export function RealtimeDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
     <div className="mx-demo">
       <div className="hint-row">
         <span className="hint">
-          <Bolt size={12} /> budgets update on a timer, one row at a time
+          <Bolt size={12} /> a patch sits between two people already in rows 2–6
         </span>
         <span className="hint">
-          <Check size={12} /> sort by Budget and watch rows re-order live
+          <Check size={12} /> same Budget sort the table is using — it stays on
+          page 1
         </span>
         <span className="hint">
-          <Check size={12} /> the feed lists every patch as it lands
+          <Check size={12} /> the feed names the row that just moved
         </span>
       </div>
       <div className="mx-demo__body">
@@ -36,6 +37,7 @@ export function RealtimeDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
               dark={dark}
               urlKey="rt"
               realtime
+              density="compact"
               focused
             />
           </Suspense>

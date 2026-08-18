@@ -953,6 +953,16 @@ a {
 .demo-live-update button:hover {
   opacity: 0.88;
 }
+.demo-live-update--feed {
+  align-items: baseline;
+  padding-block: 7px;
+}
+.demo-live-update--feed ol {
+  margin: 0;
+  padding-inline-start: 1.15em;
+  display: grid;
+  gap: 1px;
+}
 
 /* ---------- footer ---------- */
 .foot {

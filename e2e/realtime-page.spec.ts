@@ -68,6 +68,23 @@ test("the feed fills as patches land", async ({ page }) => {
   });
 });
 
+test("a patch lands in the top six, not only on row 1", async ({ page }) => {
+  await page.goto(`/${KIT}/realtime/`);
+  const root = demo(page).locator(`[data-adapter="${KIT}"]`);
+  await expect(root.locator("tbody tr:visible")).toHaveCount(10);
+  await expect(feed(page).locator("li").first()).toBeVisible({
+    timeout: 10_000,
+  });
+  const line = (await feed(page).locator("li").first().innerText()).trim();
+  const name = line.split("·")[0]?.trim() ?? "";
+  expect(name.length).toBeGreaterThan(0);
+  const topSix = root.locator("tbody tr:visible");
+  const texts = await Promise.all(
+    [0, 1, 2, 3, 4, 5].map((index) => topSix.nth(index).innerText())
+  );
+  expect(texts.some((text) => text.includes(name))).toBe(true);
+});
+
 test("a selection survives the updates", async ({ page }) => {
   await page.goto(`/${KIT}/realtime/`);
   const root = demo(page).locator(`[data-adapter="${KIT}"]`);

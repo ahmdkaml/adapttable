@@ -27,6 +27,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -149,6 +150,15 @@ function withoutFilterTree<T>(source: TableSource<T>): TableSource<T> {
 const DEFAULTS = { limit: 5 };
 const TREE_DEFAULTS = { limit: 30 };
 /**
+ * The realtime page: ten rows, Budget sorted. The patcher reads the live
+ * direction so a row lands in the first six of what is actually on screen.
+ */
+const REALTIME_DEFAULTS = {
+  limit: 10,
+  sortBy: "budget",
+  sortDir: "desc" as const,
+};
+/**
  * A page large enough for the row window to be a window.
  *
  * Five rows would mount five rows, which proves nothing about scale. A
@@ -225,9 +235,49 @@ function usePeopleQuery(params: PeopleParams) {
 /** How often the realtime page applies a patch, in ms. */
 const REALTIME_INTERVAL_MS = 1200;
 
-/** The budget the nth live update writes — deterministic, so tests can rely on it. */
-function realtimeBudget(tick: number): number {
-  return 40000 + ((tick * 7919) % 160000);
+/** How many rows the realtime page treats as "the top of the sheet". */
+const REALTIME_TOP = 6;
+
+/** Visual order — the same Budget direction the table is showing. */
+function rankByBudget(rows: readonly Person[], dir: "asc" | "desc"): Person[] {
+  return [...rows].sort((left, right) => {
+    const delta =
+      dir === "asc"
+        ? budget(left) - budget(right)
+        : budget(right) - budget(left);
+    return delta !== 0 ? delta : Number(left.id) - Number(right.id);
+  });
+}
+
+/** A value strictly between two neighbors, so the row stays in that seat. */
+function budgetBetween(left: number, right: number): number {
+  const lo = Math.min(left, right);
+  const hi = Math.max(left, right);
+  if (hi - lo >= 2) return lo + Math.floor((hi - lo) / 2);
+  return left < right ? left + 1 : left - 1;
+}
+
+/**
+ * A budget that sorts `target` into `destRank` of the *visible* order
+ * (0 = the row on screen first). Must sit between the two neighbors
+ * already in that band — a 112k write against an ascending sheet is
+ * how a patch used to vanish onto page 3.
+ */
+function budgetForRank(
+  ranked: readonly Person[],
+  destRank: number,
+  targetId: string,
+  dir: "asc" | "desc"
+): number {
+  const others = ranked.filter((row) => row.id !== targetId);
+  const first = others[0];
+  const last = others[others.length - 1];
+  if (!first || !last) return 50_000;
+  const at = Math.min(Math.max(destRank, 0), others.length);
+  const beyondFirst = dir === "asc" ? -2500 : 2500;
+  if (at <= 0) return budget(first) + beyondFirst;
+  if (at >= others.length) return budget(last) - beyondFirst;
+  return budgetBetween(budget(others[at - 1]!), budget(others[at]!));
 }
 
 /**
@@ -236,26 +286,39 @@ function realtimeBudget(tick: number): number {
  * Through the patch API rather than by rebuilding the array: the log rides on
  * the returned rows, which is what lets the incremental engine re-run search,
  * filters and sort for the touched row only. Copying the result would drop it.
+ *
+ * Rank the way the table is ranked. Park the row between two people
+ * already in seats 2–6 so the change stays on page 1.
  */
-function nextRealtimeRows(
+function nextRealtimePatch(
   rows: readonly Person[],
-  tick: number
-): readonly Person[] {
-  const target = rows[tick % rows.length];
-  if (!target) return rows;
-  return applyRowPatchesWithLog(
-    rows,
-    [updateRow<Person>(target.id, { budget: realtimeBudget(tick) })],
-    (row) => row.id
-  ).rows;
-}
-
-/** The feed line for the nth update, newest first, capped. */
-function nextRealtimeFeed(lines: readonly string[], tick: number): string[] {
-  const target = PEOPLE[tick % PEOPLE.length];
-  if (!target) return [...lines];
-  const line = `${personName(target, "en")} · budget → ${realtimeBudget(tick)}`;
-  return [line, ...lines].slice(0, 6);
+  tick: number,
+  dir: "asc" | "desc"
+): { rows: readonly Person[]; id: string; line: string } | null {
+  if (rows.length < 2) return null;
+  const ranked = rankByBudget(rows, dir);
+  const belowFold = ranked.slice(REALTIME_TOP);
+  const destRank = 1 + (tick % (REALTIME_TOP - 1));
+  const fromBottom =
+    belowFold.length === 0
+      ? undefined
+      : belowFold[
+          belowFold.length - 1 - (Math.floor(tick / 2) % belowFold.length)
+        ];
+  const fromTop = ranked[(destRank + 2) % REALTIME_TOP];
+  const promote = tick % 2 === 0 && fromBottom !== undefined;
+  const target = promote ? fromBottom : (fromTop ?? ranked[destRank]);
+  if (!target) return null;
+  const nextBudget = budgetForRank(ranked, destRank, target.id, dir);
+  return {
+    rows: applyRowPatchesWithLog(
+      rows,
+      [updateRow<Person>(target.id, { budget: nextBudget })],
+      (row) => row.id
+    ).rows,
+    id: target.id,
+    line: `${personName(target, "en")} · budget → ${nextBudget}`,
+  };
 }
 
 /**
@@ -267,28 +330,44 @@ function nextRealtimeFeed(lines: readonly string[], tick: number): string[] {
  */
 function useRealtimeFeed(
   enabled: boolean,
-  setData: Dispatch<SetStateAction<readonly Person[]>>
+  data: readonly Person[],
+  setData: Dispatch<SetStateAction<readonly Person[]>>,
+  sortDir: "asc" | "desc",
+  onPatched?: (id: string) => void
 ): string[] {
   const [feed, setFeed] = useState<string[]>([]);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const sortDirRef = useRef(sortDir);
+  sortDirRef.current = sortDir;
   useEffect(() => {
     if (!enabled) return undefined;
     let tick = 0;
     const id = setInterval(() => {
-      const at = tick++;
-      setData((prev) => nextRealtimeRows(prev, at));
-      setFeed((lines) => nextRealtimeFeed(lines, at));
+      const next = nextRealtimePatch(
+        dataRef.current,
+        tick++,
+        sortDirRef.current
+      );
+      if (!next) return;
+      setData(next.rows);
+      setFeed((lines) => [next.line, ...lines].slice(0, 4));
+      onPatched?.(next.id);
     }, REALTIME_INTERVAL_MS);
     return () => {
       clearInterval(id);
     };
-  }, [enabled, setData]);
+  }, [enabled, setData, onPatched]);
   return feed;
 }
 
 /** What the live feed has applied, newest first. */
 function RealtimeFeed({ lines }: Readonly<{ lines: readonly string[] }>) {
   return (
-    <div className="demo-live-update" data-testid="realtime-feed">
+    <div
+      className="demo-live-update demo-live-update--feed"
+      data-testid="realtime-feed"
+    >
       <span>Applied updates</span>
       {lines.length === 0 ? (
         <span>waiting for the first patch…</span>
@@ -381,9 +460,15 @@ function seedRows(large: boolean, derivedFields: boolean): Person[] {
 }
 
 /** The page size each row shape asks for. */
-function pageDefaults(tree: boolean, large: boolean): { limit: number } {
+function pageDefaults(
+  tree: boolean,
+  large: boolean,
+  realtime: boolean
+): { limit: number; sortBy?: string; sortDir?: "asc" | "desc" } {
   if (tree) return TREE_DEFAULTS;
-  return large ? LARGE_DEFAULTS : DEFAULTS;
+  if (large) return LARGE_DEFAULTS;
+  if (realtime) return REALTIME_DEFAULTS;
+  return DEFAULTS;
 }
 
 /**
@@ -493,7 +578,7 @@ function Frontend({
   // The demo owns the data, so the demo is what knows which row changed —
   // exactly where a real app would flash it. Note there is no highlight prop
   // on the table: `rowClassName` is the seam, so this works in every kit.
-  const flash = useHighlight(highlight === true);
+  const flash = useHighlight(highlight === true || realtime === true);
   const onCellEdit = useCallback(
     (row: Person, key: string, nextValue: unknown) => {
       const field = EDIT_FIELD[key] ?? (key as keyof Person);
@@ -554,7 +639,6 @@ function Frontend({
     },
     [flash]
   );
-  const feed = useRealtimeFeed(realtime === true, setData);
   const sourceColumns = useMemo(
     () =>
       formulaColumns && formulaColumns.length > 0
@@ -588,10 +672,17 @@ function Frontend({
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
-    defaults: pageDefaults(tree === true, large === true),
+    defaults: pageDefaults(tree === true, large === true, realtime === true),
     paginationMode: paginationFor(large === true, pageMode),
     urlKey,
   });
+  const feed = useRealtimeFeed(
+    realtime === true,
+    data,
+    setData,
+    source.sortDir === "asc" ? "asc" : "desc",
+    realtime === true ? flash.flashRow : undefined
+  );
   const tableSource = advancedFilters ? source : withoutFilterTree(source);
   return (
     <>
