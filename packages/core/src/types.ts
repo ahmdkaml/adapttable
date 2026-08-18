@@ -35,6 +35,12 @@ export type ResolvedPaginationMode = "infinite" | "paged";
 /** Comparable primitive returned by a sort-value extractor. */
 export type SortableValue = string | number | boolean | null | undefined;
 
+/**
+ * When a leaf under a collapsible column group is visible.
+ * `"open"` — expanded group only; `"closed"` — collapsed only; `"always"` — both.
+ */
+export type ColumnGroupShow = "open" | "closed" | "always";
+
 /** A single extra-filter value as it round-trips through URL state. */
 export type FilterValue = string | string[] | number | undefined;
 
@@ -97,8 +103,19 @@ export interface ColumnDef<TRow> {
    * render under one spanning header cell. A string is one level; a
    * path (`["Finance", "Q1"]`) stacks rows. Reordering columns apart
    * splits the group (adjacency-based, never lies about layout).
+   *
+   * Prefer a {@link ColumnGroupDef} with `children` when the group has
+   * collapse options (`collapsedKey`, `collapsedRender`) — `group` is
+   * the shortcut for a spanning label only.
    */
   group?: string | readonly string[];
+  /**
+   * When this leaf sits under a collapsible group: shown only while the
+   * group is expanded (`open`), only while collapsed (`closed`), or in
+   * both states (`always`). Omit and the group decides — `collapsedKey`,
+   * `collapsedRender`, or an arrow stub when neither is set.
+   */
+  groupShow?: ColumnGroupShow;
   /**
    * Per-locale data paths for this column's VALUE. The active table
    * `locale` picks the path (exact tag first, then its primary subtag, then
@@ -739,7 +756,7 @@ export interface TableLabels {
   rowSeparator?: string;
   /** Expand a collapsed column group back to its leaves. */
   expandColumnGroup?: string;
-  /** Collapse a column group to its summary column. */
+  /** Collapse a column group (stub, kept child, or collapsedRender). */
   collapseColumnGroup?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges

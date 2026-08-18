@@ -36,7 +36,9 @@ import {
   budget,
   DEMO_FILTER_RUNTIME,
   DEMO_GROUP_AGGREGATES,
+  demoUrlSync,
   EDITING_DEFAULT_LAYOUT,
+  GROUPS_DEFAULT_LAYOUT,
   LIVE_DEFAULT_LAYOUT,
   makeLargeDirectory,
   PEOPLE,
@@ -186,6 +188,8 @@ const LARGE_ROW_ESTIMATE = 48;
 export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
+  /** Table chrome follows {@link demoUrlSync}: live + Feature Lab only. */
+  urlSync?: boolean;
   collapsibleColumnGroups?: boolean;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
   onRowReorder?: (from: number, to: number, row: Person) => void;
@@ -277,7 +281,7 @@ function budgetForRank(
   const beyondFirst = dir === "asc" ? -2500 : 2500;
   if (at <= 0) return budget(first) + beyondFirst;
   if (at >= others.length) return budget(last) - beyondFirst;
-  return budgetBetween(budget(others[at - 1]!), budget(others[at]!));
+  return budgetBetween(budget(others[at - 1]), budget(others[at]));
 }
 
 /**
@@ -388,6 +392,8 @@ interface DataProps {
   pageMode?: PageMode;
   /** URL-param namespace, so each table on the page has isolated state. */
   urlKey?: string;
+  /** When `false`, keep query in memory. Live demo and Feature Lab stay on. */
+  urlSync?: boolean;
   /**
    * Load the generated directory instead of the thirty-row seed, and window
    * the rows: a hundred per page, only the visible ones in the DOM.
@@ -545,11 +551,142 @@ const EDIT_FIELD: Record<string, keyof Person> = {
   timeline: "start",
 };
 
+/** Feature flags on the frontend demo, assembled away from the data hook. */
+function frontendColumnProps(
+  columns: DemoColumnProps,
+  flags: {
+    large?: boolean;
+    editing?: boolean;
+    rowMode?: boolean;
+    grouping?: boolean;
+    tree?: boolean;
+    batch?: boolean;
+    rowMutations?: boolean;
+    rowReorder?: boolean;
+    rowPinning?: boolean;
+    cellSpan?: boolean;
+    extraRows?: boolean;
+    rowStyle?: boolean;
+    customCard?: boolean;
+    failure?: Failure;
+    data: readonly Person[];
+    flashClass: (row: Person) => string | undefined;
+    onCellEdit: (row: Person, key: string, nextValue: unknown) => void;
+    onBatchEdit: (
+      edits: readonly { row: Person; patch: Record<string, unknown> }[]
+    ) => void;
+    onAddRow: () => void;
+    onDuplicateRow: (row: Person) => void;
+    onDeleteRow: (row: Person) => void;
+    onRowReorder: (from: number, to: number) => void;
+    setData: Dispatch<SetStateAction<readonly Person[]>>;
+    flashRow: (id: Person["id"]) => void;
+  }
+): DemoColumnProps {
+  const next: DemoColumnProps = {
+    ...columns,
+    rowClassName: flags.flashClass,
+    slots: errorSlots(flags.failure),
+    renderCard: cardRenderer(flags.customCard),
+    groupBy: null,
+  };
+  if (flags.large) {
+    Object.assign(next, {
+      virtualize: true,
+      estimateRowSize: LARGE_ROW_ESTIMATE,
+    });
+  }
+  if (flags.editing) {
+    Object.assign(next, {
+      onCellEdit: flags.onCellEdit,
+      rowVersion: (row: Person) => row.revision ?? 0,
+    });
+  }
+  if (flags.rowMode) {
+    Object.assign(next, {
+      rowEditing: true,
+      onRowEdit: (row: Person, patch: Record<string, unknown>) => {
+        flags.setData((prev) =>
+          prev.map((r) => (r.id === row.id ? applyRowPatch(r, patch) : r))
+        );
+        flags.flashRow(row.id);
+      },
+    });
+  }
+  if (flags.grouping) {
+    Object.assign(next, {
+      groupBy: ["team", "status"],
+      groupAggregates: DEMO_GROUP_AGGREGATES,
+      groupFooters: true,
+      groupSort: (a: GroupNode<Person>, b: GroupNode<Person>) =>
+        b.leafRows.length - a.leafRows.length,
+    });
+  }
+  if (flags.tree) {
+    Object.assign(next, { getParentId: reportsTo, treeColumn: "person" });
+  }
+  if (flags.batch) {
+    Object.assign(next, { batchEditing: true, onBatchEdit: flags.onBatchEdit });
+  }
+  if (flags.rowMutations) {
+    Object.assign(next, {
+      onAddRow: flags.onAddRow,
+      onDuplicateRow: flags.onDuplicateRow,
+      onDeleteRow: flags.onDeleteRow,
+    });
+  }
+  if (flags.rowReorder) {
+    Object.assign(next, { onRowReorder: flags.onRowReorder });
+  }
+  if (flags.rowPinning) {
+    Object.assign(next, { onPinnedRowIdsChange: () => undefined });
+  }
+  if (flags.cellSpan) {
+    Object.assign(next, {
+      getCellSpan: ({
+        column,
+        rowIndex,
+      }: {
+        column: { key: string };
+        rowIndex: number;
+      }) =>
+        column.key === "person" && rowIndex === 0 ? { colSpan: 2 } : undefined,
+    });
+  }
+  if (flags.extraRows) {
+    Object.assign(next, {
+      extraRows: [
+        {
+          key: "sep",
+          kind: "separator" as const,
+          beforeRowId: flags.data[1]?.id,
+        },
+        {
+          key: "note",
+          kind: "fullWidth" as const,
+          render: () => "Section note",
+        },
+      ],
+    });
+  }
+  if (flags.rowStyle) {
+    Object.assign(next, {
+      rowStyle: (_row: Person, index: number) =>
+        index === 0
+          ? { backgroundColor: "rgba(255, 193, 7, 0.22)" }
+          : undefined,
+      rowHeight: 48,
+    });
+  }
+  return next;
+}
+
 function Frontend({
   render,
   columns,
   pageMode,
   urlKey,
+  urlSync,
   large,
   grouping,
   editing,
@@ -675,6 +812,7 @@ function Frontend({
     defaults: pageDefaults(tree === true, large === true, realtime === true),
     paginationMode: paginationFor(large === true, pageMode),
     urlKey,
+    urlSync,
   });
   const feed = useRealtimeFeed(
     realtime === true,
@@ -704,106 +842,35 @@ function Frontend({
         </div>
       ) : null}
       {realtime ? <RealtimeFeed lines={feed} /> : null}
-      {render(tableSource, {
-        ...columns,
-        // A hundred rows per page, and the DOM holds only the ones on screen.
-        // The estimate matches the height the row-style toggle sets, so the
-        // two never disagree about how tall a row is.
-        ...(large
-          ? { virtualize: true, estimateRowSize: LARGE_ROW_ESTIMATE }
-          : {}),
-        // Always wired, never conditional: there is no highlight prop on the
-        // table, `rowClassName` is the seam every adapter already honours,
-        // and a disarmed `useHighlight` simply never returns a class.
-        rowClassName: flashClass,
-        slots: errorSlots(failure),
-        renderCard: cardRenderer(customCard),
-        // Both features are strictly opt-in: the toggles mirror the API —
-        // pass `onCellEdit` and cells edit; pass `groupBy` and groups appear.
-        ...(editing
-          ? {
-              onCellEdit,
-              rowVersion: (row: Person) => row.revision ?? 0,
-            }
-          : {}),
-        // Row mode changes the commit unit: every field of the row opens
-        // together and arrives as one patch.
-        ...(rowMode
-          ? {
-              rowEditing: true,
-              onRowEdit: (row: Person, patch: Record<string, unknown>) => {
-                setData((prev) =>
-                  prev.map((r) =>
-                    r.id === row.id ? applyRowPatch(r, patch) : r
-                  )
-                );
-                flash.flashRow(row.id);
-              },
-            }
-          : {}),
-        // Two keys, so the demo shows what nesting looks like: each status
-        // sits inside its team, and every header totals its whole subtree.
-        ...(grouping
-          ? {
-              groupBy: ["team", "status"],
-              groupAggregates: DEMO_GROUP_AGGREGATES,
-              groupFooters: true,
-              // Biggest team first, from the same rows the subtotal reads.
-              groupSort: (a: GroupNode<Person>, b: GroupNode<Person>) =>
-                b.leafRows.length - a.leafRows.length,
-            }
-          : { groupBy: null }),
-        // The same thirty people read as the org chart they already are:
-        // the first person on each team leads it, the rest report to them.
-        // Nothing about the data changes — only how it is declared.
-        ...(tree ? { getParentId: reportsTo, treeColumn: "person" } : {}),
-        // Batch mode: every editable cell is a field, one write at the end.
-        ...(batch ? { batchEditing: true, onBatchEdit } : {}),
-        // Three handlers, three controls: Add in the toolbar, Duplicate and
-        // Delete on every row.
-        ...(rowMutations ? { onAddRow, onDuplicateRow, onDeleteRow } : {}),
-        ...(rowReorder ? { onRowReorder } : {}),
-        ...(rowPinning ? { onPinnedRowIdsChange: () => undefined } : {}),
-        ...(cellSpan
-          ? {
-              getCellSpan: ({
-                column,
-                rowIndex,
-              }: {
-                column: { key: string };
-                rowIndex: number;
-              }) =>
-                column.key === "person" && rowIndex === 0
-                  ? { colSpan: 2 }
-                  : undefined,
-            }
-          : {}),
-        ...(extraRows
-          ? {
-              extraRows: [
-                {
-                  key: "sep",
-                  kind: "separator" as const,
-                  beforeRowId: data[1]?.id,
-                },
-                {
-                  key: "note",
-                  kind: "fullWidth" as const,
-                  render: () => "Section note",
-                },
-              ],
-            }
-          : {}),
-        ...(rowStyle
-          ? {
-              rowStyle: (_row: Person, index: number) =>
-                index === 0
-                  ? { backgroundColor: "rgba(255, 193, 7, 0.22)" }
-                  : undefined,
-              rowHeight: 48,
-            }
-          : {}),
-      })}
+      {render(
+        tableSource,
+        frontendColumnProps(columns, {
+          large,
+          editing,
+          rowMode,
+          grouping,
+          tree,
+          batch,
+          rowMutations,
+          rowReorder,
+          rowPinning,
+          cellSpan,
+          extraRows,
+          rowStyle,
+          customCard,
+          failure,
+          data,
+          flashClass,
+          onCellEdit,
+          onBatchEdit,
+          onAddRow,
+          onDuplicateRow,
+          onDeleteRow,
+          onRowReorder,
+          setData,
+          flashRow: flash.flashRow,
+        })
+      )}
     </>
   );
 }
@@ -813,6 +880,7 @@ function Backend({
   columns,
   pageMode,
   urlKey,
+  urlSync,
   advancedFilters,
 }: Readonly<DataProps>) {
   const source = useQuerySource<Person, PeopleParams, PeoplePage>({
@@ -822,6 +890,7 @@ function Backend({
     defaults: DEFAULTS,
     paginationMode: pageMode,
     urlKey,
+    urlSync,
     supports: { filterTree: Boolean(advancedFilters), facets: true },
     facetKeys: ["team"],
     selectPage: (page) => ({
@@ -841,7 +910,9 @@ function Backend({
  * mounted at a time (remounted on `mode` change), so the headless source is
  * the single thing that differs — the adapter markup is identical. The column
  * layout is URL-persisted here (shared by both paths) so pin/hide/reorder
- * survive the re-mount.
+ * survive the re-mount — but only on the live demo (`urlKey="live"`) and
+ * Feature Lab. Kit feature pages keep layout in memory so interacting does
+ * not rewrite the address bar. The live demo at `/` is unchanged.
  */
 export function DemoBody({
   mode,
@@ -898,14 +969,19 @@ export function DemoBody({
 }>) {
   const advancedFilters = useAdvancedFilters();
   // Demos mounted WITH editing (the /editing page) keep email visible — it
-  // is the column the walkthrough edits. Only the shared live default is
-  // swapped; explicit layouts (the wide showcase's pins) pass through.
-  const resolvedDefaultLayout =
-    editing && defaultColumnLayout === LIVE_DEFAULT_LAYOUT
-      ? EDITING_DEFAULT_LAYOUT
-      : defaultColumnLayout;
+  // is the column the walkthrough edits. Column-groups drop Person, Email
+  // and Load so the three groups plus Actions fit; Team stays visible as
+  // Assignment's kept child. Only the shared live default is swapped;
+  // explicit layouts (the wide showcase's pins) pass through.
+  let resolvedDefaultLayout = defaultColumnLayout;
+  if (defaultColumnLayout === LIVE_DEFAULT_LAYOUT) {
+    if (editing) resolvedDefaultLayout = EDITING_DEFAULT_LAYOUT;
+    else if (columnGroups) resolvedDefaultLayout = GROUPS_DEFAULT_LAYOUT;
+  }
+  const syncToUrl = demoUrlSync(urlKey);
   const { layout, onLayoutChange } = useColumnLayoutUrlState({
     urlKey,
+    urlSync: syncToUrl,
     defaultColumnLayout: resolvedDefaultLayout,
   });
   const onColumnLayoutChange = useCallback(
@@ -917,6 +993,7 @@ export function DemoBody({
     columnLayout: layout,
     onColumnLayoutChange,
     collapsibleColumnGroups: columnGroups !== false,
+    urlSync: syncToUrl,
   };
 
   return mode === "backend" ? (
@@ -925,6 +1002,7 @@ export function DemoBody({
       columns={columns}
       pageMode={pageMode}
       urlKey={urlKey}
+      urlSync={syncToUrl}
       advancedFilters={advancedFilters}
     />
   ) : (
@@ -937,6 +1015,7 @@ export function DemoBody({
       columns={columns}
       pageMode={pageMode}
       urlKey={urlKey}
+      urlSync={syncToUrl}
       large={mode === "large"}
       grouping={grouping}
       editing={editing}

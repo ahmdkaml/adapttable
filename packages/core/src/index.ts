@@ -17,6 +17,7 @@ export type {
   CellProps,
   ColorScheme,
   ColumnDef,
+  ColumnGroupShow,
   ColumnFooterContext,
   ColumnHeaderContext,
   ColumnHeaderController,
@@ -502,12 +503,34 @@ export {
 } from "./columns/columnWidths";
 export {
   applyCollapsedColumnGroups,
+  type ColumnGroupDef,
+  type ColumnGroupRecord,
+  type ColumnInput,
+  flattenColumnTree,
+  type FlattenedColumns,
+  isColumnGroup,
+  marriedOrderHolds,
+} from "./columns/columnTree";
+export {
   COLUMN_GROUP_ID_SEP,
+  COLUMN_GROUP_RENDER_PREFIX,
+  COLUMN_GROUP_STUB_PREFIX,
+  COLUMN_GROUP_STUB_WIDTH,
+  columnGroupHeaderCaption,
   columnGroupId,
   columnGroupPath,
+  columnGroupStubStyle,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  groupedHeaderChildRule,
   type HeaderGroupCell,
   headerGroupRow,
   headerGroupRows,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
+  isColumnGroupRenderKey,
+  isColumnGroupStubKey,
+  isColumnGroupSummaryKey,
   toggleCollapsedColumnGroup,
 } from "./columns/headerGroups";
 export {

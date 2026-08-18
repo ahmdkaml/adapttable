@@ -15,7 +15,7 @@
 import { type ReactNode, useMemo, useRef } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
-import type { PinOffset } from "./columns/useColumnLayout";
+import type { ColumnGroupRecord } from "./columns/columnTree";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import type { FilterDef } from "./filters/filterDefs";
 import type { FilterTypeRegistry } from "./filters/filterRegistry";
@@ -74,6 +74,8 @@ export interface SharedTableRenderProps<TRow> {
   collapsibleColumnGroups?: boolean;
   /** Collapsed column-group ids from the layout. */
   collapsedColumnGroups?: readonly string[];
+  /** Tree groups for the declared columns — collapse options, header align. */
+  columnGroups?: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
   /** Toggle one column group. No-op unless collapse is armed. */
   onToggleColumnGroup?: (id: string) => void;
   /** Conditional per-row style — see `BaseDataTableProps.rowStyle`. */

@@ -11,7 +11,7 @@ import { configureFeatureLab } from "./feature-lab";
  * claims can only be settled in a browser: what a real media query reports
  * about the pointer, and what a real tap does with no keyboard anywhere near it.
  *
- * The accessibility page arms `cellNavigation` and `columnSelectionCheckbox`.
+ * The editing page arms `cellNavigation` and `columnSelectionCheckbox`.
  */
 
 const KITS = [
@@ -36,7 +36,7 @@ const TOUCH_DEVICE = (() => {
 })();
 
 async function openKit(page: Page, kit: string): Promise<void> {
-  await page.goto(`/${kit}/accessibility/`);
+  await page.goto(`/${kit}/editing/`);
   await expect(demo(page).locator(`[data-adapter="${kit}"]`)).toBeVisible();
 }
 
@@ -157,7 +157,7 @@ test.describe("on a touchscreen", () => {
   test.use(TOUCH_DEVICE);
 
   test("a column selects with a tap and no keyboard", async ({ page }) => {
-    await page.goto("/mantine/accessibility/");
+    await page.goto("/mantine/editing/");
     const root = demo(page).locator('[data-adapter="mantine"]');
     await expect(root).toBeVisible();
 

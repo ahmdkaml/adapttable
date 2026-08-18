@@ -51,7 +51,7 @@ control via prop-getters.
 - **Pivot tables** — rows, columns and measures with subtotals and collapsible
   groups, from the optional `@adapttable/core/pivot` entry.
 - **Tree data** — `getChildren` / `getParentId`, hierarchical rows with their own expansion state.
-- **Column management** — show/hide, reorder, pin (sticky) and resize state.
+- **Column management** — show/hide, reorder, pin (sticky) and resize state, plus collapsible column groups.
 - **Sparkline columns** — `@adapttable/core/sparkline`; bar, line and area as inline SVG.
 - **PDF export and print layout** (`@adapttable/core/pdf`) — optional entry; `pdfWriter()` on `exportCsv`, `printTable` for the browser dialog.
 - **Formula engine** (`@adapttable/core/formula`) — spreadsheet formulas over rows and aggregates; circular refs report `#CYCLE!`.

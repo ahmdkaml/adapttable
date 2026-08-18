@@ -1,4 +1,8 @@
-import type { ColumnDef, NestedTableDefaults } from "@adapttable/core";
+import type {
+  ColumnDef,
+  ColumnLayoutState,
+  NestedTableDefaults,
+} from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import { DataTable, type DataTableProps } from "@adapttable/mantine";
 import {
@@ -127,6 +131,7 @@ export function MantineDemo({
   undoRedoButtons,
   sidePanel,
   wide,
+  defaultColumnLayout,
   focused,
 }: Readonly<{
   mode: DataMode;
@@ -186,6 +191,8 @@ export function MantineDemo({
   sidePanel?: DataTableProps<Person>["sidePanel"];
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /** The column layout the page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -213,7 +220,7 @@ export function MantineDemo({
                   ? { person: "start" }
                   : { person: "start", actions: "end" },
               }
-            : LIVE_DEFAULT_LAYOUT
+            : (defaultColumnLayout ?? LIVE_DEFAULT_LAYOUT)
         }
         grouping={grouping}
         tree={tree}
@@ -270,7 +277,9 @@ export function MantineDemo({
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
-            rowActions={focused ? undefined : makeActions(locale)}
+            rowActions={
+              focused && !columnGroups ? undefined : makeActions(locale)
+            }
             bulkActions={
               (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
             }

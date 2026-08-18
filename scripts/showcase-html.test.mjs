@@ -20,10 +20,12 @@ describe("the generated showcase pages", () => {
 
   it("writes one page per matrix entry and per replaced address", () => {
     // Sixteen pages per adapter — a landing plus fifteen features — across all
-    // eight kits, and the eight addresses they replaced. Written out rather
-    // than recomputed from the matrix: the writer reads that same list, so a
-    // derived count would agree with itself no matter what it produced.
-    assert.equal(files.length, 8 * 16 + 8);
+    // eight kits, plus the replaced addresses: eight old top-level demos and
+    // eight kit `/accessibility/` URLs that now forward to `/editing/`.
+    // Written out rather than recomputed from the matrix: the writer reads
+    // that same list, so a derived count would agree with itself no matter
+    // what it produced.
+    assert.equal(files.length, 8 * 16 + 16);
     assert.equal(new Set(files.map((file) => file.dir)).size, files.length);
   });
 

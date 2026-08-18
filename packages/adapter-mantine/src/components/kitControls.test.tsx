@@ -321,6 +321,7 @@ describe("kit affordances (mantine)", () => {
             id: "g",
             collapsed: true,
             collapsible: true,
+            hideLabel: false,
           }}
           labels={defaultLabels}
           onToggle={() => undefined}
@@ -334,6 +335,7 @@ describe("kit affordances (mantine)", () => {
             id: "g2",
             collapsed: false,
             collapsible: true,
+            hideLabel: false,
           }}
           labels={defaultLabels}
           onToggle={() => undefined}
@@ -346,6 +348,7 @@ describe("kit affordances (mantine)", () => {
             id: null,
             collapsed: false,
             collapsible: false,
+            hideLabel: false,
           }}
           labels={defaultLabels}
           onToggle={() => undefined}

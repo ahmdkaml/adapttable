@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { autoSizeColumns as autoSizeAllColumns } from "./columns/autoSizeColumns";
+import { flattenColumnTree } from "./columns/columnTree";
 import {
   ACTIONS_COLUMN_KEY,
   REORDER_COLUMN_KEY,
@@ -117,6 +118,10 @@ export function useDataTableShell<TRow>(
     props.urlSync === false ? undefined : props.urlAdapter,
     props.urlSync !== false
   );
+  const dataColumns = useMemo(
+    () => flattenColumnTree(props.columns).leaves,
+    [props.columns]
+  );
   // Resolve the data tier (source > onQueryChange server > frontend) and the
   // declarative-filter runtime (defs, chip labels, URL keys, predicate).
   const { source, runtime } = useTableData<TRow>({
@@ -134,7 +139,7 @@ export function useDataTableShell<TRow>(
     // the tier hooks would otherwise apply it a second time — routing the
     // active tier to a private store that saved views cannot see.
     urlKey: props.urlKey,
-    columns: props.columns,
+    columns: dataColumns,
     filters: props.filters,
     filterTypes: props.filterTypes,
     defaults: props.defaults,
@@ -143,8 +148,10 @@ export function useDataTableShell<TRow>(
     facetKeys: props.facetKeys,
     facets: props.facets,
   });
-  const { history, onCellEdit: recordingCellEdit } =
-    useTableEditHistory<TRow>(props);
+  const { history, onCellEdit: recordingCellEdit } = useTableEditHistory<TRow>({
+    ...props,
+    columns: dataColumns,
+  });
 
   // Declarative `filters` array → the auto-built form; JSX passes through.
   const autoForm =
@@ -409,6 +416,7 @@ export function useDataTableShell<TRow>(
     rowClassName: props.rowClassName,
     collapsibleColumnGroups: props.collapsibleColumnGroups === true,
     collapsedColumnGroups: chrome.columnLayout.state.collapsedGroups,
+    columnGroups: chrome.columnGroups,
     onToggleColumnGroup: chrome.columnLayout.toggleColumnGroup,
     rowStyle: props.rowStyle,
     rowHeight: props.rowHeight,

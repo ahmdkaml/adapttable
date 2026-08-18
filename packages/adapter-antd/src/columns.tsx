@@ -26,11 +26,15 @@ import {
   cellHighlightStyle,
   cellsForRow,
   columnFlexShares,
+  columnGroupHeaderCaption,
   columnSelectLabel,
   columnSizeStyle,
   EXTRA_ROW_PARTS,
+  groupedHeaderAlign,
+  groupedHeaderChildRule,
   type HeaderGroupCell,
   headerGroupRows,
+  isColumnGroupSummaryKey,
   REORDER_COLUMN_WIDTH,
   resolveDisabledReason,
   type RowReorderState,
@@ -248,7 +252,7 @@ function groupTitle(
       {onToggle ? (
         <ColumnGroupToggle cell={cell} labels={labels} onToggle={onToggle} />
       ) : null}
-      {cell.label}
+      {columnGroupHeaderCaption(cell)}
     </>
   );
 }
@@ -287,8 +291,35 @@ function nestGroupLevel<TRow>(
       Math.min(cellEnd, end),
       titleFor
     );
-    if (cell.label === null) out.push(...children);
-    else out.push({ key: cell.key, title: titleFor(cell), children });
+    if (cell.label === null) {
+      out.push(...children);
+      continue;
+    }
+    // A collapsedRender / stub group has no child header to show — flatten
+    // so antd rowspans the title like an ungrouped leaf.
+    if (
+      children.length > 0 &&
+      children.every((child) =>
+        isColumnGroupSummaryKey(String(child.key ?? ""))
+      )
+    ) {
+      const leaf = children[0];
+      if (leaf) out.push({ ...leaf, title: titleFor(cell) });
+      continue;
+    }
+    out.push({
+      key: cell.key,
+      title: titleFor(cell),
+      children,
+      onHeaderCell: () => ({
+        style: {
+          textAlign: groupedHeaderAlign(cell.align),
+          ...groupedHeaderChildRule(
+            "var(--ant-color-split, rgba(5, 5, 5, 0.06))"
+          ),
+        },
+      }),
+    });
   }
   return out;
 }
@@ -306,9 +337,10 @@ function groupColumns<TRow>(
   labels: Required<TableLabels>,
   collapsedIds: readonly string[] = [],
   collapsible = false,
-  onToggle?: (id: string) => void
+  onToggle?: (id: string) => void,
+  groups?: ReadonlyMap<string, { readonly align?: "start" | "center" | "end" }>
 ): TableColumnsType<TRow> {
-  const rows = headerGroupRows(columns, collapsedIds, collapsible);
+  const rows = headerGroupRows(columns, collapsedIds, collapsible, groups);
   if (!rows) return leaves;
   return nestGroupLevel(rows, leaves, 0, 0, leaves.length, (cell) =>
     groupTitle(cell, labels, onToggle)
@@ -385,6 +417,11 @@ export interface BuildColumnsOptions<TRow> {
   collapsibleColumnGroups?: boolean;
   /** Collapsed column-group ids from the layout. */
   collapsedColumnGroups?: readonly string[];
+  /** Tree groups for the declared columns — header align lives here. */
+  columnGroups?: ReadonlyMap<
+    string,
+    { readonly align?: "start" | "center" | "end" }
+  >;
   /** Toggle one column group. No-op unless collapse is armed. */
   onToggleColumnGroup?: (id: string) => void;
   /**
@@ -597,6 +634,7 @@ export function buildColumns<TRow>({
   cellsByRow,
   collapsibleColumnGroups,
   collapsedColumnGroups,
+  columnGroups,
   onToggleColumnGroup,
   headerFilters,
   filterDefs,
@@ -773,7 +811,8 @@ export function buildColumns<TRow>({
     labels,
     collapsedColumnGroups,
     collapsibleColumnGroups,
-    onToggleColumnGroup
+    onToggleColumnGroup,
+    columnGroups
   ) as TableColumnsType<GroupedDataRecord<TRow>>;
 
   if (rowReorder) {

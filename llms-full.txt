@@ -972,7 +972,10 @@ Rows must be objects, since the cache is keyed by row identity. The spec type is
 ## Grouped headers
 
 Give adjacent columns the same `group` and they render under one spanning
-header cell. A string is one level; a path stacks one header row per depth:
+header cell. A string is one level; a path stacks one header row per depth.
+That shortcut is presentational — for collapse options and groups that stay
+together through reorder, use a `ColumnGroupDef` parent with `children`.
+See [column groups](./column-groups.md).
 
 ```tsx
 const columns: ColumnDef<Person>[] = [
@@ -997,13 +1000,14 @@ column out of the middle of a group splits it into two spans rather than
 pretending the layout is something it is not. Reorder them back together and
 the group closes up again.
 
-Pass `collapsibleColumnGroups` and each real group header gains a toggle. A
-collapsed group keeps its first leaf as the summary column and hides the
-rest. Collapse state lives on `columnLayout.collapsedGroups` and the URL
-(`colGroupCollapse`); group ids are `path.join("\u001f")` so a label may
-contain `/`. On mobile the card layout has no header row, but the same
-visible-column filter applies — cards hide the same leaves a collapsed
-group hid on desktop.
+Pass `collapsibleColumnGroups` and each real group header gains a toggle. What
+a collapsed group shows is that group's own options — an arrow stub by
+default, a kept child via `collapsedKey`, or a cell via `collapsedRender`.
+See [column groups](./column-groups.md). Collapse state lives on
+`columnLayout.collapsedGroups` and the URL (`colGroupCollapse`); group ids are
+`path.join("\u001f")` so a label may contain `/`. On mobile the card layout has
+no header row, but the same visible-column filter applies — cards hide the same
+leaves a collapsed group hid on desktop.
 
 ## Notes
 
@@ -1014,6 +1018,141 @@ group hid on desktop.
 - Duplicate column keys trigger a development warning — keys must be unique within the table.
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
+
+---
+
+# React table column groups — spanning headers, collapsible
+
+▶ **See it working:** [collapse column groups in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/column-groups/) — one table, three groups, open by default: Contact folds to a chevron, Assignment keeps Team, Delivery shows a money-for-days brief (`align: "start"`). Actions stays ungrouped at the end. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+
+A parent with `children` is a **column group**: one spanning header over its
+leaves. Collapse is per group — each parent decides what remains. Omit
+`collapsibleColumnGroups` and the headers stay static.
+
+This is not [row grouping](./row-grouping.md). Rows fold under a `groupBy`;
+columns span under a parent header.
+
+**Related:** [Columns](./columns.md) · [Column management](./column-management.md)
+
+## Tree columns
+
+`columns` accepts a mix of leaf `ColumnDef`s and `ColumnGroupDef`
+parents (`ColumnInput`). Tree groups default `marryChildren: true`, so a
+reorder cannot split them.
+
+```tsx
+import { DataTable, type ColumnInput } from "@adapttable/mantine";
+
+const columns: ColumnInput<Person>[] = [
+  {
+    header: "Contact",
+    children: [
+      { key: "name", header: "Name" },
+      { key: "role", header: "Role" },
+    ],
+  },
+  {
+    header: "Assignment",
+    collapsedKey: "team",
+    children: [
+      { key: "team", header: "Team" },
+      { key: "status", header: "Status" },
+    ],
+  },
+  {
+    header: "Delivery",
+    align: "start",
+    collapsedRender: (row) => `${row.budget} for 35 days`,
+    children: [
+      { key: "timeline", header: "Timeline" },
+      { key: "budget", header: "Budget" },
+    ],
+  },
+];
+
+<DataTable
+  data={rows}
+  columns={columns}
+  rowKey={(row) => row.id}
+  collapsibleColumnGroups
+/>;
+```
+
+HTML-table kits (Mantine, MUI, Chakra, Radix, Base UI, unstyled) render the
+same tree with `rowSpan` on ungrouped leaves, so Actions sits beside Delivery
+and its children instead of under a blank group row. Ant uses native grouped
+columns; `htmlGroupedHeaderPlan` is that tree flattened for `<th>`. HTML kits
+draw the line under an open group with `groupedHeaderChildRule` so adjacent
+groups do not share one stroke.
+
+## Collapse
+
+Pass `collapsibleColumnGroups` and each real group header gains a toggle. What
+a collapsed group shows is that group's own options — there is no table-wide
+mode.
+
+| Result                                        | How                                                                     |
+| --------------------------------------------- | ----------------------------------------------------------------------- |
+| Thin **arrow stub** (chevron + hairline cell) | No `collapsedKey`, no `collapsedRender`, no child `groupShow: "closed"` |
+| Keep one child                                | `collapsedKey: "timeline"` (or that leaf `groupShow: "closed"`)         |
+| Custom one cell                               | `collapsedRender: (row) => …` (wins over `collapsedKey`)                |
+| Always visible child                          | `groupShow: "always"`                                                   |
+| Open-only child                               | `groupShow: "open"` (default under a collapsible group)                 |
+
+A collapsed `collapsedRender` or stub group drops the child header row — the
+title fills the header height, the same way an ungrouped leaf does.
+`collapsedKey` keeps both rows: the group title and the stayed child's
+header. Each group's rule under the title covers only that group's children;
+adjacent groups do not share one stroke.
+
+The stub hides the visible caption (`hideLabel`). The toggle's `aria-label`
+still names the group (`Expand column group: Delivery`). The stub column is
+locked to a chevron width so leftover table space cannot stretch it into a
+blank data column.
+
+`collapsedRender` wins over `collapsedKey`. State lives on
+`columnLayout.collapsedGroups` and the URL (`colGroupCollapse`); group ids are
+`path.join("\u001f")` (`columnGroupId`) so a label may contain `/`.
+
+## The flat `group` shortcut
+
+Adjacent leaves with the same `group` still span under one header. A string is
+one level; a path stacks rows. That shortcut is **presentational**: a reorder
+that breaks adjacency splits the span, and collapse (when armed) is an arrow
+stub unless a child sets `groupShow`. Prefer a tree parent when the group has
+collapse options or must stay married.
+
+```tsx
+const columns: ColumnDef<Person>[] = [
+  { key: "firstName", header: "First", group: "Name" },
+  { key: "lastName", header: "Last", group: "Name" },
+  { key: "hiredAt", header: "Hired" },
+];
+```
+
+## Mobile
+
+The card layout has no header row. The same visible-column filter applies —
+cards hide the leaves a collapsed group hid on desktop. The arrow stub itself
+is `hideOnMobile`, so a collapsed Delivery does not become an empty card field.
+
+## Helpers
+
+`flattenColumnTree` turns a mixed `ColumnInput[]` into leaves plus a
+`ColumnGroupRecord` map. `applyCollapsedColumnGroups` hides leaves under
+collapsed ids and inserts a stub (`COLUMN_GROUP_STUB_PREFIX`,
+`isColumnGroupStubKey`) or a `collapsedRender` column
+(`COLUMN_GROUP_RENDER_PREFIX`, `isColumnGroupRenderKey`).
+`marriedOrderHolds` rejects a reorder that would split a married tree group.
+`columnGroupHeaderCaption` returns the visible caption, or `null` on a stub.
+`htmlGroupedHeaderPlan` is the HTML-table rowspan plan (ungrouped leaves
+beside the group band; a collapsed brief fills the header).
+`groupedHeaderChildRule` is the inset hairline under an open group title.
+`groupedHeaderCellStyle` applies that hairline and `columnGroupStubStyle`
+(the 36px lock so a stub cannot stretch).
+`isColumnGroup` narrows a `ColumnInput` to a parent.
+
+See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/column-groups/).
 
 ---
 
@@ -1539,7 +1678,9 @@ export function People() {
   screen-reader-friendly fallback.
 - Page and page size live in the URL (`?page=`, `?limit=`), so reloads and
   shared links restore the exact view. `defaults={{ limit }}` applies only
-  while the URL is silent about a key.
+  while the URL is silent about a key. The rows-per-page list is 10 / 25 /
+  50 / 100, plus that default when it isn't already in the list — so a
+  table that starts at 500 still offers 500 after you pick 10.
 - On the server tier, pagination state arrives in the consolidated
   `TableQuery` (`{ page, limit, … }`) passed to `onQueryChange` — forward both
   to your API and return `rows` + `total`; `total` drives the pager.
@@ -4465,15 +4606,15 @@ export function People() {
 
 ## Options
 
-| Prop                      | Type                                | Default | Description                                                              |
-| ------------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
-| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
-| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
-| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
-| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
-| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
-| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; state is `collapsedGroups`.        |
-| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
+| Prop                      | Type                                | Default | Description                                                                                                     |
+| ------------------------- | ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).                                                     |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                     |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                                                       |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                                                                 |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                                                       |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; each group decides what remains. See [column groups](./column-groups.md). |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning.                                        |
 
 ## Notes
 
@@ -6884,7 +7025,7 @@ const sw = { ...en, search: "Tafuta", noData: "Hakuna data" };
 
 # Accessible React data table — keyboard, screen readers, labelled controls
 
-▶ **See it working:** [use a Mantine table from the keyboard](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/) — Tab in, arrow between cells, and read what a screen reader would hear. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+▶ **See it working:** [edit a Mantine table from the keyboard](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/) — Tab in, arrow between cells (`cellNavigation` is on that page). Keyboard walk and announcements are documented in [cell navigation](./cell-navigation.md).
 
 An accessible data table is one a person can use without a mouse, and one a
 screen reader can describe. AdaptTable ships that way. There is no
@@ -6906,15 +7047,13 @@ Every adapter is audited with `axe` in CI, on desktop and mobile card layouts.
 
 ## Try it yourself
 
-On the [accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/):
+On the [editing demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/):
 
 1. Press **Tab** until a cell shows a focus ring.
 2. Press the **arrow keys**. The ring moves cell to cell.
-3. Read the **transcript**. Each move adds a line — column, value, row of how
-   many — the same words a screen reader speaks.
+3. Open a cell with Enter or a double-click; Escape cancels.
 
-If Tab never enters the table, arrows do nothing, or the transcript stays
-empty, that page is failing.
+If Tab never enters the table or arrows do nothing, that page is failing.
 
 ## What this page is not
 
@@ -7001,20 +7140,20 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Columns & layout
 
-| Prop                      | Type                                | Default | Description                                                                                                                                                                         |
-| ------------------------- | ----------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `columns`                 | `ColumnDef<TRow>[]`                 | —       | Column definitions (required) — see [ColumnDef](#columndef).                                                                                                                        |
-| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in "Columns" menu (show/hide, pin, reorder).                                                                                                                       |
-| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                                                                                         |
-| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled column layout (hidden/order/pinned/widths).                                                                                                                              |
-| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled column layout.                                                                                                                                    |
-| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial column layout for the uncontrolled mode.                                                                                                                                    |
-| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; a collapsed group keeps its first leaf as the summary column. State lives on `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`). |
-| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.                                                                                    |
-| `multiSort`               | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed).                                                                                  |
-| `sortByOptions`           | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                                                                                                                |
-| `responsivePriority`      | `number`                            | —       | How readily this column is given up when the table is too narrow. Priority 1 is kept longest; omitting it means never dropped. See [mobile](./mobile.md).                           |
-| `mobileIdentityColumns`   | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                                                                                                              |
+| Prop                      | Type                                | Default | Description                                                                                                                                                                                                                                          |
+| ------------------------- | ----------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `columns`                 | `ColumnInput<TRow>[]`               | —       | Leaf `ColumnDef`s and optional `ColumnGroupDef` parents — see [ColumnDef](#columndef) and [column groups](./column-groups.md).                                                                                                                       |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in "Columns" menu (show/hide, pin, reorder).                                                                                                                                                                                        |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                                                                                                                                                          |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled column layout (hidden/order/pinned/widths).                                                                                                                                                                                               |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled column layout.                                                                                                                                                                                                     |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial column layout for the uncontrolled mode.                                                                                                                                                                                                     |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle. Each group decides what remains: an arrow stub, `collapsedKey`, or `collapsedRender`. State lives on `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`). See [column groups](./column-groups.md). |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px) enabling sideways scrolling + column pinning; omit for page scroll.                                                                                                                                                     |
+| `multiSort`               | `boolean`                           | `false` | Shift-click (or shift-Enter) on a header adds the column to the sort chain (asc → desc → removed).                                                                                                                                                   |
+| `sortByOptions`           | `SortByOption[]`                    | —       | Options for a mobile sort-by select.                                                                                                                                                                                                                 |
+| `responsivePriority`      | `number`                            | —       | How readily this column is given up when the table is too narrow. Priority 1 is kept longest; omitting it means never dropped. See [mobile](./mobile.md).                                                                                            |
+| `mobileIdentityColumns`   | `number`                            | `3`     | Leading desktop-visible columns kept on mobile even if `hideOnMobile`.                                                                                                                                                                               |
 
 ### Filters & search
 
@@ -7058,7 +7197,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `error`                     | `Error \| null`                                                 | `null`          | Forwarded error to display in the table's error state (retry via the source's `refetch`).                                                                                                                                                                                                                                                                                        |
 | `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                                                                                                                                                           |
 | `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                                                                                                                                                            |
-| `stickyToolbar`             | `boolean`                                                       | `stickyHeader`  | Keep search and page-size pinned with the header on page-scroll tables. Pass `false` to let the toolbar scroll away.                                                                                                                                                                                                                                                              |
+| `stickyToolbar`             | `boolean`                                                       | `stickyHeader`  | Keep search and page-size pinned with the header on page-scroll tables. Pass `false` to let the toolbar scroll away.                                                                                                                                                                                                                                                             |
 | `stickyTop`                 | `number`                                                        | `0`             | Inset in px for the sticky header (and the sticky toolbar) so they clear an app bar.                                                                                                                                                                                                                                                                                             |
 | `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                                                                                                                                                        |
 | `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                                                                                                                                                               |
@@ -7115,39 +7254,57 @@ surface — see [Adapter extras](#adapter-extras) and
 
 ## ColumnDef
 
-| Prop             | Type                                                | Default       | Description                                                                                                                                                 |
-| ---------------- | --------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`            | `string`                                            | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                               |
-| `header`         | `ReactNode`                                         | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                       |
-| `renderHeader`   | `(ctx: ColumnHeaderContext<TRow>) => ReactNode`     | —             | Replace the header caption. The cell still owns sort, resize and the menu; `ctx.controller` exposes them.                                                   |
-| `renderFooter`   | `(ctx: ColumnFooterContext<TRow>) => ReactNode`     | —             | Replace one summary-row cell. `value` is the `summaryRow` result for this key.                                                                              |
-| `headerTooltip`  | `string`                                            | —             | Native tooltip on the header caption.                                                                                                                       |
-| `headerActions`  | `ReactNode`                                         | —             | Host controls after the caption, before the resize handle.                                                                                                  |
-| `group`          | `string \| readonly string[]`                       | —             | Presentational header group: a string is one level; a path stacks one header row per depth. Contiguous same-path columns merge; a reorder splits the group. |
-| `i18n`           | `Record<string, string>`                            | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path.     |
-| `filter`         | `ColumnFilter<TRow>`                                | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                      |
-| `Cell`           | `ComponentType<CellProps<TRow>>`                    | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                                |
-| `accessor`       | `(row: TRow) => ReactNode`                          | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                    |
-| `sortValue`      | `(row: TRow) => SortableValue`                      | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                                 |
-| `exportValue`    | `(row: TRow) => unknown`                            | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                      |
-| `formatValue`    | `(row: TRow) => string`                             | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                           |
-| `parseValue`     | `(draft: string, row: TRow) => unknown`             | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                      |
-| `sortable`       | `boolean`                                           | `false`       | Enable sorting for this column.                                                                                                                             |
-| `colSpan`        | `number \| ((row: TRow) => number)`                 | `1`           | Columns this cell covers. Covered neighbours are omitted. See [row and column spanning](./row-spanning.md).                                                 |
-| `rowSpan`        | `number \| ((row: TRow) => number)`                 | `1`           | Rows this cell covers. Stays inside one tbody.                                                                                                              |
-| `width`          | `number \| string`                                  | —             | Column width passed through to the rendered header/cell.                                                                                                    |
-| `align`          | `"start" \| "center" \| "end"`                      | `"start"`     | Text alignment within the cell.                                                                                                                             |
-| `mobileLabel`    | `string`                                            | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                         |
-| `hideOnMobile`   | `boolean`                                           | `false`       | Hide this column entirely on mobile layouts.                                                                                                                |
-| `hideOnDesktop`  | `boolean`                                           | `false`       | Hide this column entirely on desktop layouts.                                                                                                               |
-| `lockPosition`   | `boolean`                                           | `false`       | Gray out the column menu's reorder grip.                                                                                                                    |
-| `lockVisibility` | `boolean`                                           | `false`       | Gray out the column menu's show/hide control.                                                                                                               |
-| `lockWidth`      | `boolean`                                           | `false`       | Gray out resize and per-column auto-size.                                                                                                                   |
-| `lockPin`        | `boolean`                                           | `false`       | Gray out the column menu's pin control.                                                                                                                     |
-| `editable`       | `boolean \| ((row: TRow) => boolean)`               | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                               |
-| `editor`         | `"text" \| "number" \| { type: "select"; options }` | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                          |
-| `editValue`      | `(row: TRow) => string`                             | —             | Draft seed when display formatting differs from the value you want to edit.                                                                                 |
-| `meta`           | `Record<string, unknown>`                           | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                               |
+| Prop             | Type                                                 | Default       | Description                                                                                                                                                                                                                                                              |
+| ---------------- | ---------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `key`            | `string`                                             | —             | Unique id (required); also the backend `sortBy` value and — absent `accessor`/`Cell` — the row's dot-path for the cell value.                                                                                                                                            |
+| `header`         | `ReactNode`                                          | humanized key | Header content; omit it and the header derives from `key` (`"hiredAt"` → "Hired At").                                                                                                                                                                                    |
+| `renderHeader`   | `(ctx: ColumnHeaderContext<TRow>) => ReactNode`      | —             | Replace the header caption. The cell still owns sort, resize and the menu; `ctx.controller` exposes them.                                                                                                                                                                |
+| `renderFooter`   | `(ctx: ColumnFooterContext<TRow>) => ReactNode`      | —             | Replace one summary-row cell. `value` is the `summaryRow` result for this key.                                                                                                                                                                                           |
+| `headerTooltip`  | `string`                                             | —             | Native tooltip on the header caption.                                                                                                                                                                                                                                    |
+| `headerActions`  | `ReactNode`                                          | —             | Host controls after the caption, before the resize handle.                                                                                                                                                                                                               |
+| `group`          | `string \| readonly string[]`                        | —             | Presentational header group shortcut. A string is one level; a path stacks rows. Contiguous same-path columns merge; a reorder splits the group. Prefer a `ColumnGroupDef` with `children` when the group has collapse options. See [column groups](./column-groups.md). |
+| `groupShow`      | `ColumnGroupShow` (`"open" \| "closed" \| "always"`) | `"open"`      | When this leaf sits under a collapsible group: expanded only, collapsed only, or both.                                                                                                                                                                                   |
+| `i18n`           | `Record<string, string>`                             | —             | Per-locale data paths for the column's value (`{ key: "nameEn", i18n: { ar: "nameAr" } }`); cell, client-side sort and filter follow the resolved path.                                                                                                                  |
+| `filter`         | `ColumnFilter<TRow>`                                 | —             | Declarative filter for this column: a bare type (`"dateRange"`) or a definition without `key`/`label`.                                                                                                                                                                   |
+| `Cell`           | `ComponentType<CellProps<TRow>>`                     | —             | Component rendered per row (receives `{ row, rowIndex }`); define at module level so its identity is stable.                                                                                                                                                             |
+| `accessor`       | `(row: TRow) => ReactNode`                           | —             | Lightweight alternative to `Cell`; returns cell content.                                                                                                                                                                                                                 |
+| `sortValue`      | `(row: TRow) => SortableValue`                       | —             | Primitive extractor used by the client-side sort comparator; unused for server-sorted data.                                                                                                                                                                              |
+| `exportValue`    | `(row: TRow) => unknown`                             | —             | Value written to a CSV export when the file should carry something other than the formatted cell (a number rather than `"$1,240.00"`).                                                                                                                                   |
+| `formatValue`    | `(row: TRow) => string`                              | derived       | The cell as plain text, for contexts that cannot render JSX — screen-reader announcements, `aria-label`, tooltips, the clipboard.                                                                                                                                        |
+| `parseValue`     | `(draft: string, row: TRow) => unknown`              | —             | Turns an edited draft into the value committed to `onCellEdit`. See [cell editing](./cell-editing.md).                                                                                                                                                                   |
+| `sortable`       | `boolean`                                            | `false`       | Enable sorting for this column.                                                                                                                                                                                                                                          |
+| `colSpan`        | `number \| ((row: TRow) => number)`                  | `1`           | Columns this cell covers. Covered neighbours are omitted. See [row and column spanning](./row-spanning.md).                                                                                                                                                              |
+| `rowSpan`        | `number \| ((row: TRow) => number)`                  | `1`           | Rows this cell covers. Stays inside one tbody.                                                                                                                                                                                                                           |
+| `width`          | `number \| string`                                   | —             | Column width passed through to the rendered header/cell.                                                                                                                                                                                                                 |
+| `align`          | `"start" \| "center" \| "end"`                       | `"start"`     | Text alignment within the cell.                                                                                                                                                                                                                                          |
+| `mobileLabel`    | `string`                                             | `header`      | Label used on mobile card layouts; falls back to a string `header`.                                                                                                                                                                                                      |
+| `hideOnMobile`   | `boolean`                                            | `false`       | Hide this column entirely on mobile layouts.                                                                                                                                                                                                                             |
+| `hideOnDesktop`  | `boolean`                                            | `false`       | Hide this column entirely on desktop layouts.                                                                                                                                                                                                                            |
+| `lockPosition`   | `boolean`                                            | `false`       | Gray out the column menu's reorder grip.                                                                                                                                                                                                                                 |
+| `lockVisibility` | `boolean`                                            | `false`       | Gray out the column menu's show/hide control.                                                                                                                                                                                                                            |
+| `lockWidth`      | `boolean`                                            | `false`       | Gray out resize and per-column auto-size.                                                                                                                                                                                                                                |
+| `lockPin`        | `boolean`                                            | `false`       | Gray out the column menu's pin control.                                                                                                                                                                                                                                  |
+| `editable`       | `boolean \| ((row: TRow) => boolean)`                | —             | Opt-in cell editing for this column (still requires table-level `onCellEdit`; omit both and nothing changes).                                                                                                                                                            |
+| `editor`         | `"text" \| "number" \| { type: "select"; options }`  | `"text"`      | Widget for the active cell when `editable` is set.                                                                                                                                                                                                                       |
+| `editValue`      | `(row: TRow) => string`                              | —             | Draft seed when display formatting differs from the value you want to edit.                                                                                                                                                                                              |
+| `meta`           | `Record<string, unknown>`                            | —             | Arbitrary metadata adapters (or your own code) may read back.                                                                                                                                                                                                            |
+
+## ColumnGroupDef
+
+A parent header with `children`. Collapse options live here, not on the table.
+
+| Prop              | Type                           | Default    | Description                                                                                             |
+| ----------------- | ------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------- |
+| `header`          | `string`                       | —          | Caption on the spanning header cell, and the group's id.                                                |
+| `children`        | `ColumnInput<TRow>[]`          | —          | Nested groups or leaf columns.                                                                          |
+| `collapsedKey`    | `string`                       | —          | Leaf `key` to keep when this group is collapsed. Omit with `collapsedRender` omitted for an arrow stub. |
+| `collapsedRender` | `(row: TRow) => ReactNode`     | —          | Cell shown for every row while collapsed. Takes precedence over `collapsedKey`.                         |
+| `marryChildren`   | `boolean`                      | `true`     | Keep these children adjacent through reorder. The flat `group` shortcut still splits on drag.           |
+| `align`           | `"start" \| "center" \| "end"` | `"center"` | Spanning header alignment. Omit and it stays `"center"` — the previous hardcoded look.                  |
+| `headerTooltip`   | `string`                       | —          | Optional native tooltip. The collapse chevron does not show one.                                        |
+
+`ColumnInput<TRow>` is `ColumnDef<TRow> \| ColumnGroupDef<TRow>`. See
+[column groups](./column-groups.md).
 
 ## FilterDef
 
@@ -8126,8 +8283,15 @@ by its tag: `ar`, `de`, `en`, `es`, `fa`, `fr`, `he`, `hi`, `it`, `ja`, `ko`,
 Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 (CSV export — or pass `exportCsv` on `<DataTable>` for a built-in button),
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
-`computePagination`, `headerGroupRow` / `headerGroupRows`,
-`columnGroupPath` / `columnGroupId` / `COLUMN_GROUP_ID_SEP`,
+`computePagination`, `headerGroupRow` / `headerGroupRows` /
+`htmlGroupedHeaderPlan` / `groupedHeaderChildRule` /
+`groupedHeaderCellStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`,
+`columnGroupPath` / `columnGroupId` / `COLUMN_GROUP_ID_SEP` /
+`COLUMN_GROUP_STUB_PREFIX` / `COLUMN_GROUP_RENDER_PREFIX` /
+`isColumnGroupStubKey` / `isColumnGroupRenderKey` /
+`isColumnGroupSummaryKey` /
+`columnGroupHeaderCaption`,
+`flattenColumnTree` / `isColumnGroup` / `marriedOrderHolds` /
 `applyCollapsedColumnGroups` / `toggleCollapsedColumnGroup`,
 `columnHeaderLabel` / `columnHeaderController` /
 `resolveColumnHeader` / `resolveColumnFooter` / `columnsHaveFooter`,
@@ -8139,7 +8303,7 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 `columnResizeHandleProps` (RTL-aware), `pinnedCellStyle` / `edgePinStyle` /
 `PIN_Z`, `tableMinWidth` / `resolveColumnWidth` / `parsePxWidth`,
 `rowClickProps`, `resolveFilterDefs` / `buildFilterRuntime` /
-`filterPredicate` / `materializeAutoOptions` / `clearedFilterExtras`,
+`filterPredicate` / `showSimpleFilterFields` / `materializeAutoOptions` / `clearedFilterExtras`,
 `builtInFilterSpecs` / `defaultFilterRegistry` / `resolveFilterRegistry` /
 `createFilterRegistry` / `emptyFilterRegistry` / `filterTypeSpec` /
 `filterWidgetKind` / `filterTypeOps` / `filterTypeDefaultOp` /
@@ -8151,50 +8315,53 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 
 ## Types
 
-| Type                                                                      | What it is                                                                                                                                         |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TableSource<TRow>`                                                       | The uniform data + state contract a table consumes (rows, total, `allFilteredRows`, `allSearchedRows`, `facets`, loading flags, state read/write). |
-| `TableQuery`                                                              | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                                       |
-| `TableQueryParams`                                                        | Baseline query params a backend list endpoint receives.                                                                                            |
-| `QuerySupport`                                                            | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                                     |
-| `QueryExtensions`                                                         | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                                      |
-| `QueryAggregate`                                                          | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                                  |
-| `aggregate`                                                               | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                                       |
-| `AggregateName` / `AGGREGATE_NAMES`                                       | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                 |
-| `Aggregator` / `AggregateSpec` / `AggregateOptions`                       | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                                        |
-| `AggregateFn`                                                             | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                 |
-| `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                                       |
-| `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                                              |
-| `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                                   |
-| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                                   |
-| `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                                     |
-| `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                   |
-| `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                  |
-| `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                         |
-| `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                                            |
-| `defaultConfirm`                                                          | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                                    |
-| `ActiveFilterChip` / `ChipLabelResolver`                                  | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                                     |
-| `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                             |
-| `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                                            |
-| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                      |
-| `FilterTypeSpec` / `FilterTypeRegistry` / `FilterWidgetKind`              | One registered type / the immutable registry / which built-in widget to draw.                                                                      |
-| `FilterWidgetRenderProps`                                                 | Props a custom `FilterTypeSpec.render` receives.                                                                                                   |
-| `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                            |
-| `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                             |
-| `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                                  |
-| `ColorScheme`                                                             | `"light" \| "dark" \| "auto"`.                                                                                                                     |
-| `PaginationMode`                                                          | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                                              |
-| `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                                        |
-| `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                                           |
-| `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                                  |
-| `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).                               |
-| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                  |
-| `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                                     |
-| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                    |
-| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                                        |
-| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                                      |
-| `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                                             |
-| `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                                   |
+| Type                                                                      | What it is                                                                                                                                                         |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TableSource<TRow>`                                                       | The uniform data + state contract a table consumes (rows, total, `defaultLimit`, `allFilteredRows`, `allSearchedRows`, `facets`, loading flags, state read/write). |
+| `TableQuery`                                                              | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                                                       |
+| `TableQueryParams`                                                        | Baseline query params a backend list endpoint receives.                                                                                                            |
+| `QuerySupport`                                                            | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                                                     |
+| `QueryExtensions`                                                         | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                                                      |
+| `QueryAggregate`                                                          | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                                                  |
+| `aggregate`                                                               | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                                                       |
+| `AggregateName` / `AGGREGATE_NAMES`                                       | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                                 |
+| `Aggregator` / `AggregateSpec` / `AggregateOptions`                       | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                                                        |
+| `AggregateFn`                                                             | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                                 |
+| `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                                                       |
+| `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                                                              |
+| `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                                                   |
+| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                                                   |
+| `ColumnGroupDef<TRow>` / `ColumnInput<TRow>`                              | A parent header with `children`, or a leaf-or-parent union. See [column groups](./column-groups.md).                                                               |
+| `ColumnGroupShow`                                                         | `"open" \| "closed" \| "always"` — when a leaf under a collapsible group is visible.                                                                               |
+| `ColumnGroupRecord` / `FlattenedColumns`                                  | Collapse policy for one parent, and the `{ leaves, groups }` result of `flattenColumnTree`.                                                                        |
+| `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                                                     |
+| `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                                   |
+| `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                                  |
+| `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                                         |
+| `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                                                            |
+| `defaultConfirm`                                                          | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                                                    |
+| `ActiveFilterChip` / `ChipLabelResolver`                                  | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                                                     |
+| `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                                             |
+| `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                                                            |
+| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                                      |
+| `FilterTypeSpec` / `FilterTypeRegistry` / `FilterWidgetKind`              | One registered type / the immutable registry / which built-in widget to draw.                                                                                      |
+| `FilterWidgetRenderProps`                                                 | Props a custom `FilterTypeSpec.render` receives.                                                                                                                   |
+| `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                                            |
+| `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                                             |
+| `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                                                  |
+| `ColorScheme`                                                             | `"light" \| "dark" \| "auto"`.                                                                                                                                     |
+| `PaginationMode`                                                          | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                                                              |
+| `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                                                        |
+| `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                                                           |
+| `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                                                  |
+| `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).                                               |
+| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                                  |
+| `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                                                     |
+| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                                    |
+| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                                                        |
+| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                                                      |
+| `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                                                             |
+| `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                                                   |
 
 ## Development warnings
 
@@ -8282,8 +8449,9 @@ column's pin, `pinActionLabel` labels the action, and
 reorder/resize/pin rows. Toolbar glue: `SearchInputState` (debounced
 search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
-`rowEditingSignature`, `HeaderGroupCell`, `headerGroupRow` /
-`headerGroupRows`. Each adapter mounts `ColumnGroupToggle` /
+`rowEditingSignature`, `HeaderGroupCell`, `HtmlGroupedHeaderCell`, `headerGroupRow` /
+`headerGroupRows` / `htmlGroupedHeaderPlan` / `groupedHeaderChildRule` /
+`groupedHeaderCellStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`, `columnGroupHeaderCaption`. Each adapter mounts `ColumnGroupToggle` /
 `ColumnGroupToggleProps` over `ColumnGroupToggleChrome` /
 `ColumnGroupToggleChromeProps` / `ColumnGroupToggleSlots` /
 `ColumnGroupToggleButtonProps`. Shared

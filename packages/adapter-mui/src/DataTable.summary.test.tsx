@@ -128,21 +128,25 @@ describe("summary row (desktop)", () => {
 });
 
 describe("header groups (desktop)", () => {
-  it("spans contiguous grouped columns with a centered semibold cell and a gap over ungrouped ones", () => {
+  it("lifts ungrouped leaves into the group band with rowspan, beside the spanning group cell", () => {
     const { container } = renderHarness({ columns: GROUPED });
     const headRows = container.querySelectorAll("thead tr");
     expect(headRows).toHaveLength(2);
     const groupCells = headRows[0]!.querySelectorAll("th");
     expect(groupCells).toHaveLength(2);
-    expect(groupCells[0]).toBeEmptyDOMElement(); // gap over "name"
-    expect(groupCells[0]).toHaveAttribute("colspan", "1");
+    expect(groupCells[0]).toHaveTextContent("Name");
+    expect(groupCells[0]).toHaveAttribute("rowspan", "2");
     expect(groupCells[1]).toHaveTextContent("Place");
     expect(groupCells[1]).toHaveAttribute("colspan", "2");
     expect(getComputedStyle(groupCells[1]!).textAlign).toBe("center");
     expect(getComputedStyle(groupCells[1]!).fontWeight).toBe("600");
+    expect(screen.getByRole("columnheader", { name: "Name" })).toHaveAttribute(
+      "rowspan",
+      "2"
+    );
   });
 
-  it("pads the group row past the expand/selection columns and under actions", () => {
+  it("pads the first header row past the expand/selection columns and under actions", () => {
     const { container } = renderHarness({
       columns: GROUPED,
       override: {
@@ -151,19 +155,24 @@ describe("header groups (desktop)", () => {
         renderRowDetail: (r) => <div>detail {r.id}</div>,
       },
     });
-    const groupCells = container
-      .querySelectorAll("thead tr")[0]!
-      .querySelectorAll("th");
-    // expand + selection + gap + "Place" + actions.
+    const headRows = container.querySelectorAll("thead tr");
+    const groupCells = headRows[0]!.querySelectorAll("th");
+    // expand + selection + Name + "Place" + actions.
     expect(groupCells).toHaveLength(5);
-    expect(groupCells[0]).toBeEmptyDOMElement();
-    expect(groupCells[1]).toBeEmptyDOMElement();
+    expect(groupCells[2]).toHaveTextContent("Name");
+    expect(groupCells[2]).toHaveAttribute("rowspan", "2");
     expect(groupCells[3]).toHaveTextContent("Place");
     expect(groupCells[3]).toHaveAttribute("colspan", "2");
-    expect(groupCells[4]).toBeEmptyDOMElement();
+    expect(groupCells[0]).toHaveAttribute("rowspan", "2");
+    expect(groupCells[1]).toHaveAttribute("rowspan", "2");
+    expect(groupCells[4]).toHaveAttribute("rowspan", "2");
+    const leafCells = headRows[1]!.querySelectorAll("th");
+    expect(leafCells).toHaveLength(2);
+    expect(leafCells[0]).toHaveTextContent("City");
+    expect(leafCells[1]).toHaveTextContent("Amount");
   });
 
-  it("collapses a group to its summary column when armed", () => {
+  it("collapses a group to an arrow stub when armed", () => {
     const { container } = renderHarness({
       columns: GROUPED,
       override: { collapsibleColumnGroups: true },
@@ -174,9 +183,7 @@ describe("header groups (desktop)", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(toggle!);
     expect(screen.queryByRole("columnheader", { name: "Amount" })).toBeNull();
-    expect(
-      screen.getByRole("columnheader", { name: "City" })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "City" })).toBeNull();
   });
 
   it("renders a single header row when no column declares a group", () => {

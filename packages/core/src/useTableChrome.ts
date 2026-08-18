@@ -6,6 +6,10 @@ import {
   ACTIONS_COLUMN_KEY,
   REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
+import {
+  flattenColumnTree,
+  type ColumnGroupRecord,
+} from "./columns/columnTree";
 import { resolveColumns } from "./columns/resolveColumns";
 import { responsiveColumns } from "./columns/responsiveColumns";
 import {
@@ -418,6 +422,8 @@ export interface TableChrome<TRow> {
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
   columnLayout: UseColumnLayoutResult<TRow>;
+  /** Tree groups for the declared columns — collapse options, header align. */
+  columnGroups: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
   /** All declared columns (pre layout/device filtering) for the column menu. */
   allColumns: ColumnDef<TRow>[];
 }
@@ -557,9 +563,10 @@ export function useTableChrome<TRow>(
 
   // Declarative defaults (auto headers, dot-path accessors) resolve once
   // here, so the layout, the column menu and the table all see them.
+  const flattened = useMemo(() => flattenColumnTree(columns), [columns]);
   const resolvedColumns = useMemo(
-    () => resolveColumns(columns, props.locale),
-    [columns, props.locale]
+    () => resolveColumns(flattened.leaves, props.locale),
+    [flattened.leaves, props.locale]
   );
 
   // User column layout (hide/order/…) applied on top of the declared columns,
@@ -576,6 +583,7 @@ export function useTableChrome<TRow>(
     onLayoutChange: onColumnLayoutChange,
     defaultColumnLayout,
     collapsibleColumnGroups: props.collapsibleColumnGroups === true,
+    columnGroups: flattened.groups,
   });
 
   // Effective groupBy: prop wins when provided (including `null` to force
@@ -1259,6 +1267,7 @@ export function useTableChrome<TRow>(
     editingRows,
     showFooter,
     columnLayout,
+    columnGroups: flattened.groups,
     allColumns: resolvedColumns,
   };
 }

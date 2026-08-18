@@ -2,6 +2,7 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnGroupHeaderCaption,
   columnHeaderController,
   columnResizeHandleProps,
   columnsHaveFooter,
@@ -34,7 +35,10 @@ import {
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   fittedTableStyle,
-  headerGroupRows,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
   insertExtraRows,
   logicalAlign,
   type PinLeads,
@@ -69,6 +73,7 @@ import { Box, chakra, Table, Text } from "@chakra-ui/react";
 import {
   type CSSProperties,
   memo,
+  type ReactElement,
   type ReactNode,
   type RefObject,
   useCallback,
@@ -839,6 +844,7 @@ export function DesktopTable<TRow>({
   rowClassName,
   collapsibleColumnGroups,
   collapsedColumnGroups,
+  columnGroups,
   onToggleColumnGroup,
   rowStyle,
   rowHeight,
@@ -912,11 +918,16 @@ export function DesktopTable<TRow>({
   const [theadRef, headerHeight] = useOffsetHeight();
   const [headerRowRef] = useOffsetHeight();
   const expandable = expansion !== undefined;
-  const groupRows = headerGroupRows(
+  // Nested like Ant: ungrouped leaves rowspan through the group band so they
+  // sit beside a group and its children, not under a blank gap. `null` means
+  // a single header row. Pads on the first header row span the whole band.
+  const headerPlan = htmlGroupedHeaderPlan(
     columns,
     collapsedColumnGroups,
-    collapsibleColumnGroups
+    collapsibleColumnGroups,
+    columnGroups
   );
+  const headerBand = headerPlan?.length ?? 1;
   const summary = useSummaryCells(summaryRow, rows);
   const showColumnFooter = summary !== undefined || columnsHaveFooter(columns);
   // Stick the header *cells* (a `<thead>` does not pin against the document
@@ -1101,6 +1112,226 @@ export function DesktopTable<TRow>({
     []
   );
 
+  const renderLeafHeader = (
+    column: ColumnDef<TRow>,
+    headerIndex: number,
+    rowSpan = 1
+  ): ReactElement => {
+    const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
+      | "ascending"
+      | "descending"
+      | "none"
+      | undefined;
+    // Core's sort onClick receives the click EVENT: with `multiSort`
+    // a shift-click cycles the column through the sort chain while a
+    // plain click keeps single-sorting.
+    const sortButton = table.getSortButtonProps(column);
+    const sortClick = sortButton.onClick;
+    const sortIndex = sortButton["data-sort-index"];
+    const caption = resolveColumnHeader(
+      column,
+      columnHeaderController(column, {
+        sortIndex: typeof sortIndex === "number" ? sortIndex : undefined,
+        toggleSort: sortClick,
+      })
+    );
+    const actions = column.headerActions ? (
+      <span data-adapttable-part="header-actions">{column.headerActions}</span>
+    ) : null;
+    const columnSelect =
+      gridFocus?.columnCheckbox === true ? (
+        <ColumnSelectCheckbox
+          label={columnSelectLabel(labels.selectColumn, column)}
+          checked={gridFocus.isColumnSelected(headerIndex)}
+          onToggle={() => gridFocus.toggleColumn(headerIndex)}
+        />
+      ) : null;
+    const headerDef =
+      headerFilters === true
+        ? filterDefForColumn(filterDefs ?? [], column.key)
+        : undefined;
+    const leafStyle = {
+      ...headCellStyle(column),
+      ...(rowSpan > 1 ? { verticalAlign: "middle" as const } : {}),
+    };
+    return (
+      <Table.ColumnHeader
+        key={column.key}
+        data-adapttable-part="header-cell"
+        {...(gridFocus?.getColumnHeaderProps(headerIndex, {
+          sortable: column.sortable,
+        }) ?? {})}
+        textAlign={logicalAlign(column.align)}
+        width={column.width}
+        aria-sort={ariaSort}
+        data-column-key={column.key}
+        rowSpan={rowSpan > 1 ? rowSpan : undefined}
+        {...stickyTh}
+        style={leafStyle}
+      >
+        {column.sortable ? (
+          <chakra.button
+            type="button"
+            cursor="pointer"
+            aria-label={`${labels.sortBy}: ${columnName(column)}`}
+            onClick={sortClick}
+            title={column.headerTooltip}
+          >
+            {caption}
+            <Text as="span" aria-hidden>
+              {sortGlyph(ariaSort)}
+            </Text>
+            {sortIndex !== undefined && (
+              <Text
+                as="span"
+                aria-hidden
+                data-sort-index={sortIndex}
+                fontSize="0.7em"
+                fontWeight="bold"
+                borderRadius="full"
+                px={1.5}
+                ms={1}
+                bg="blackAlpha.200"
+                _dark={{ bg: "whiteAlpha.300" }}
+              >
+                {sortIndex}
+              </Text>
+            )}
+          </chakra.button>
+        ) : (
+          <span title={column.headerTooltip}>{caption}</span>
+        )}
+        {columnSelect}
+        {actions}
+        {headerDef ? (
+          <FilterHeaderTrigger
+            def={headerDef}
+            source={table.source}
+            labels={labels}
+            registry={filterRegistry}
+          />
+        ) : null}
+        {setWidth && (
+          <Box
+            as="span"
+            style={RESIZE_HANDLE_STYLE}
+            {...columnResizeHandleProps(
+              column.key,
+              setWidth,
+              `${resizeLabel}: ${columnName(column)}`
+            )}
+          />
+        )}
+      </Table.ColumnHeader>
+    );
+  };
+
+  const renderPlanCell = (cell: HtmlGroupedHeaderCell): ReactElement => {
+    if (cell.kind === "leaf") {
+      return renderLeafHeader(
+        columns[cell.columnIndex]!,
+        cell.columnIndex,
+        cell.rowSpan
+      );
+    }
+    return (
+      <Table.ColumnHeader
+        key={cell.key}
+        colSpan={cell.colSpan}
+        rowSpan={cell.rowSpan > 1 ? cell.rowSpan : undefined}
+        textAlign={groupedHeaderAlign(cell.cell.align)}
+        fontWeight="semibold"
+        textTransform="none"
+        data-adapttable-part="header-group-cell"
+        style={groupedHeaderCellStyle(
+          cell,
+          "var(--chakra-colors-border, color-mix(in srgb, currentColor 22%, transparent))"
+        )}
+      >
+        {onToggleColumnGroup ? (
+          <ColumnGroupToggle
+            cell={cell.cell}
+            labels={labels}
+            onToggle={onToggleColumnGroup}
+          />
+        ) : null}
+        {columnGroupHeaderCaption(cell.cell)}
+      </Table.ColumnHeader>
+    );
+  };
+
+  const leadingHeaders = (rowSpan: number): ReactElement => (
+    <>
+      {expandable && (
+        <Table.ColumnHeader
+          {...stickyTh}
+          aria-label={labels.expandRow}
+          width={`${EXPANSION_WIDTH}px`}
+          px={1}
+          rowSpan={rowSpan > 1 ? rowSpan : undefined}
+          style={edgeCellStyle("start", hasStartPin, PIN_Z.headerPinned)}
+        />
+      )}
+      <When show={showReorder}>
+        <Table.ColumnHeader
+          {...stickyTh}
+          aria-label={labels.reorderRow}
+          data-adapttable-part="reorder-header"
+          width={`${REORDER_COLUMN_WIDTH}px`}
+          px={1}
+          rowSpan={rowSpan > 1 ? rowSpan : undefined}
+          style={edgeCellStyle(
+            "start",
+            hasStartPin || reorderPinned,
+            PIN_Z.headerPinned,
+            expand
+          )}
+        />
+      </When>
+      {selection && (
+        <Table.ColumnHeader
+          data-adapttable-part="selection-header"
+          {...stickyTh}
+          rowSpan={rowSpan > 1 ? rowSpan : undefined}
+          style={edgeCellStyle(
+            "start",
+            hasStartPin,
+            PIN_Z.headerPinned,
+            selectionLead
+          )}
+        >
+          <Checkbox
+            aria-label={labels.selectAll}
+            checked={selection.headerState === "all"}
+            indeterminate={selection.headerState === "some"}
+            onToggle={selection.toggleAll}
+          />
+        </Table.ColumnHeader>
+      )}
+      {columnSpacers && (
+        <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
+      )}
+    </>
+  );
+
+  const trailingHeaders = (rowSpan: number): ReactElement => (
+    <>
+      {columnSpacers && (
+        <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
+      )}
+      {showActions && (
+        <Table.ColumnHeader
+          textAlign="end"
+          {...stickyTh}
+          rowSpan={rowSpan > 1 ? rowSpan : undefined}
+          style={edgeCellStyle("end", actionsStick, PIN_Z.headerPinned)}
+        >
+          {labels.actions}
+        </Table.ColumnHeader>
+      )}
+    </>
+  );
+
   return (
     <Box
       ref={(node: HTMLDivElement | null) => {
@@ -1124,201 +1355,32 @@ export function DesktopTable<TRow>({
         style={fittedTableStyle(fitColumns)}
       >
         <Table.Header data-adapttable-part="thead" ref={theadRef}>
-          {groupRows?.map((groups) => (
-            <Table.Row key={groups.map((cell) => cell.key).join("|")}>
-              {expandable && <Table.ColumnHeader px={1} />}
-              <When show={showReorder}>
-                <Table.ColumnHeader px={1} />
-              </When>
-              {selection && <Table.ColumnHeader />}
-              {groups.map((cell) => (
-                <Table.ColumnHeader
-                  key={cell.key}
-                  colSpan={cell.span}
-                  textAlign="center"
-                  fontWeight="semibold"
-                  textTransform="none"
-                >
-                  {onToggleColumnGroup ? (
-                    <ColumnGroupToggle
-                      cell={cell}
-                      labels={labels}
-                      onToggle={onToggleColumnGroup}
-                    />
-                  ) : null}
-                  {cell.label}
-                </Table.ColumnHeader>
-              ))}
-              {showActions && <Table.ColumnHeader />}
-            </Table.Row>
-          ))}
-          <Table.Row ref={headerRowRef}>
-            {expandable && (
-              <Table.ColumnHeader
-                {...stickyTh}
-                aria-label={labels.expandRow}
-                width={`${EXPANSION_WIDTH}px`}
-                px={1}
-                style={edgeCellStyle("start", hasStartPin, PIN_Z.headerPinned)}
-              />
-            )}
-            <When show={showReorder}>
-              <Table.ColumnHeader
-                {...stickyTh}
-                aria-label={labels.reorderRow}
-                data-adapttable-part="reorder-header"
-                width={`${REORDER_COLUMN_WIDTH}px`}
-                px={1}
-                style={edgeCellStyle(
-                  "start",
-                  hasStartPin || reorderPinned,
-                  PIN_Z.headerPinned,
-                  expand
-                )}
-              />
-            </When>
-            {selection && (
-              <Table.ColumnHeader
-                data-adapttable-part="selection-header"
-                {...stickyTh}
-                style={edgeCellStyle(
-                  "start",
-                  hasStartPin,
-                  PIN_Z.headerPinned,
-                  selectionLead
-                )}
-              >
-                <Checkbox
-                  aria-label={labels.selectAll}
-                  checked={selection.headerState === "all"}
-                  indeterminate={selection.headerState === "some"}
-                  onToggle={selection.toggleAll}
-                />
-              </Table.ColumnHeader>
-            )}
-            {columnSpacers && (
-              <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
-            )}
-            {columns.map((column, headerIndex) => {
-              const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
-                | "ascending"
-                | "descending"
-                | "none"
-                | undefined;
-              // Core's sort onClick receives the click EVENT: with `multiSort`
-              // a shift-click cycles the column through the sort chain while a
-              // plain click keeps single-sorting.
-              const sortButton = table.getSortButtonProps(column);
-              const sortClick = sortButton.onClick;
-              const sortIndex = sortButton["data-sort-index"];
-              const caption = resolveColumnHeader(
-                column,
-                columnHeaderController(column, {
-                  sortIndex:
-                    typeof sortIndex === "number" ? sortIndex : undefined,
-                  toggleSort: sortClick,
-                })
-              );
-              const actions = column.headerActions ? (
-                <span data-adapttable-part="header-actions">
-                  {column.headerActions}
-                </span>
-              ) : null;
-              const columnSelect =
-                gridFocus?.columnCheckbox === true ? (
-                  <ColumnSelectCheckbox
-                    label={columnSelectLabel(labels.selectColumn, column)}
-                    checked={gridFocus.isColumnSelected(headerIndex)}
-                    onToggle={() => gridFocus.toggleColumn(headerIndex)}
-                  />
-                ) : null;
-              const headerDef =
-                headerFilters === true
-                  ? filterDefForColumn(filterDefs ?? [], column.key)
-                  : undefined;
+          {headerPlan ? (
+            headerPlan.map((row, rowIndex) => {
+              const last = rowIndex === headerPlan.length - 1;
               return (
-                <Table.ColumnHeader
-                  key={column.key}
-                  data-adapttable-part="header-cell"
-                  {...(gridFocus?.getColumnHeaderProps(headerIndex, {
-                    sortable: column.sortable,
-                  }) ?? {})}
-                  textAlign={logicalAlign(column.align)}
-                  width={column.width}
-                  aria-sort={ariaSort}
-                  data-column-key={column.key}
-                  {...stickyTh}
-                  style={headCellStyle(column)}
+                <Table.Row
+                  key={row.map((cell) => cell.key).join("|")}
+                  ref={last ? headerRowRef : undefined}
+                  data-adapttable-part={
+                    last ? "header-row" : "header-group-row"
+                  }
                 >
-                  {column.sortable ? (
-                    <chakra.button
-                      type="button"
-                      cursor="pointer"
-                      aria-label={`${labels.sortBy}: ${columnName(column)}`}
-                      onClick={sortClick}
-                      title={column.headerTooltip}
-                    >
-                      {caption}
-                      <Text as="span" aria-hidden>
-                        {sortGlyph(ariaSort)}
-                      </Text>
-                      {sortIndex !== undefined && (
-                        <Text
-                          as="span"
-                          aria-hidden
-                          data-sort-index={sortIndex}
-                          fontSize="0.7em"
-                          fontWeight="bold"
-                          borderRadius="full"
-                          px={1.5}
-                          ms={1}
-                          bg="blackAlpha.200"
-                          _dark={{ bg: "whiteAlpha.300" }}
-                        >
-                          {sortIndex}
-                        </Text>
-                      )}
-                    </chakra.button>
-                  ) : (
-                    <span title={column.headerTooltip}>{caption}</span>
-                  )}
-                  {columnSelect}
-                  {actions}
-                  {headerDef ? (
-                    <FilterHeaderTrigger
-                      def={headerDef}
-                      source={table.source}
-                      labels={labels}
-                      registry={filterRegistry}
-                    />
-                  ) : null}
-                  {setWidth && (
-                    <Box
-                      as="span"
-                      style={RESIZE_HANDLE_STYLE}
-                      {...columnResizeHandleProps(
-                        column.key,
-                        setWidth,
-                        `${resizeLabel}: ${columnName(column)}`
-                      )}
-                    />
-                  )}
-                </Table.ColumnHeader>
+                  {rowIndex === 0 ? leadingHeaders(headerBand) : null}
+                  {row.map(renderPlanCell)}
+                  {rowIndex === 0 ? trailingHeaders(headerBand) : null}
+                </Table.Row>
               );
-            })}
-            {columnSpacers && (
-              <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
-            )}
-            {showActions && (
-              <Table.ColumnHeader
-                textAlign="end"
-                {...stickyTh}
-                style={edgeCellStyle("end", actionsStick, PIN_Z.headerPinned)}
-              >
-                {labels.actions}
-              </Table.ColumnHeader>
-            )}
-          </Table.Row>
+            })
+          ) : (
+            <Table.Row ref={headerRowRef} data-adapttable-part="header-row">
+              {leadingHeaders(1)}
+              {columns.map((column, headerIndex) =>
+                renderLeafHeader(column, headerIndex)
+              )}
+              {trailingHeaders(1)}
+            </Table.Row>
+          )}
         </Table.Header>
         {pinnedTopRows.length > 0 && (
           <Table.Body

@@ -289,7 +289,9 @@ export function ChakraDemo({
               locale={locale}
               dir={getDirection(locale)}
               searchPlaceholder={s.search}
-              rowActions={focused ? undefined : makeActions(locale)}
+              rowActions={
+                focused && !columnGroups ? undefined : makeActions(locale)
+              }
               bulkActions={
                 (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
               }

@@ -1772,6 +1772,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       : undefined,
     collapsibleColumnGroups: props.collapsibleColumnGroups === true,
     collapsedColumnGroups: c.columnLayout.state.collapsedGroups,
+    columnGroups: c.columnGroups,
     onToggleColumnGroup: c.columnLayout.toggleColumnGroup,
     rowReorder: c.rowReorder,
     windowStart,

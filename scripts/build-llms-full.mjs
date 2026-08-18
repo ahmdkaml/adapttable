@@ -22,6 +22,7 @@ const DOCS = [
   "concepts.md",
   "data-tiers.md",
   "columns.md",
+  "column-groups.md",
   "sparkline.md",
   "sorting.md",
   "filtering.md",

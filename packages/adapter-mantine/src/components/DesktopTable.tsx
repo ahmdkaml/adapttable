@@ -1,6 +1,7 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnGroupHeaderCaption,
   columnHeaderController,
   columnResizeHandleProps,
   columnsHaveFooter,
@@ -30,7 +31,10 @@ import {
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   fittedTableStyle,
-  headerGroupRows,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
   insertExtraRows,
   type PinLeads,
   PINNED_BOTTOM_PART,
@@ -211,6 +215,7 @@ function HeaderCell<TRow>({
   columnProps,
   columnSelect,
   filterTrigger,
+  rowSpan = 1,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
@@ -222,6 +227,8 @@ function HeaderCell<TRow>({
   columnSelect?: ReactNode;
   /** Per-column filter icon, when `headerFilters` is on. */
   filterTrigger?: ReactNode;
+  /** Ungrouped leaves rowspan through the group band (Ant-style). */
+  rowSpan?: number;
 }>) {
   // The part name is added here rather than taken from the prop-getter:
   // the kits that pull only `aria-sort` out of it would not get one, so the
@@ -234,7 +241,9 @@ function HeaderCell<TRow>({
   const headerStyle = {
     ...cellProps.style,
     ...stickyStyle,
+    ...(rowSpan > 1 ? { verticalAlign: "middle" as const } : {}),
   };
+  const spanProps = rowSpan > 1 ? { rowSpan } : {};
   const buttonProps = table.getSortButtonProps(column);
   const sortIndex = buttonProps["data-sort-index"];
   const level = table.source.sortLevels.find((l) => l.key === column.key);
@@ -252,7 +261,7 @@ function HeaderCell<TRow>({
   ) : null;
   if (!column.sortable) {
     return (
-      <Table.Th {...cellProps} style={headerStyle}>
+      <Table.Th {...cellProps} {...spanProps} style={headerStyle}>
         <span title={column.headerTooltip}>{caption}</span>
         {columnSelect}
         {actions}
@@ -268,7 +277,7 @@ function HeaderCell<TRow>({
   // because chaining clears the single-sort `sortBy`.
   const active = level !== undefined || table.sortBy === column.key;
   return (
-    <Table.Th {...cellProps} style={headerStyle}>
+    <Table.Th {...cellProps} {...spanProps} style={headerStyle}>
       <Group
         component="button"
         gap={6}
@@ -835,6 +844,7 @@ export function DesktopTable<TRow>({
   rowClassName,
   collapsibleColumnGroups,
   collapsedColumnGroups,
+  columnGroups,
   onToggleColumnGroup,
   rowStyle,
   rowHeight,
@@ -915,11 +925,13 @@ export function DesktopTable<TRow>({
   const expandable = expansion !== undefined;
   // Grouped header row over the VISIBLE columns (`null` → no extra row) and
   // the per-column footer summary cells (`undefined` → no footer).
-  const groupRows = headerGroupRows(
+  const headerPlan = htmlGroupedHeaderPlan(
     columns,
     collapsedColumnGroups,
-    collapsibleColumnGroups
+    collapsibleColumnGroups,
+    columnGroups
   );
+  const headerBand = headerPlan?.length ?? 1;
   const summaryCells = useSummaryCells(summaryRow, rows);
   const showColumnFooter =
     summaryCells !== undefined || columnsHaveFooter(columns);
@@ -1055,6 +1067,49 @@ export function DesktopTable<TRow>({
         style={RESIZE_HANDLE_STYLE}
       />
     ) : undefined;
+  const renderMantineLeaf = (
+    cell: Extract<HtmlGroupedHeaderCell, { kind: "leaf" }>
+  ): ReactElement => {
+    const column = columns[cell.columnIndex];
+    if (!column) return <></>;
+    const headerIndex = cell.columnIndex;
+    const headerDef =
+      headerFilters === true
+        ? filterDefForColumn(filterDefs ?? [], column.key)
+        : undefined;
+    return (
+      <HeaderCell
+        key={column.key}
+        table={table}
+        column={column}
+        stickyStyle={headerStyleFor(column)}
+        resizeHandle={resizeHandleFor(column)}
+        rowSpan={cell.rowSpan}
+        columnProps={gridFocus?.getColumnHeaderProps(headerIndex, {
+          sortable: column.sortable,
+        })}
+        columnSelect={
+          gridFocus?.columnCheckbox === true ? (
+            <ColumnSelectCheckbox
+              label={columnSelectLabel(labels.selectColumn, column)}
+              checked={gridFocus.isColumnSelected(headerIndex)}
+              onToggle={() => gridFocus.toggleColumn(headerIndex)}
+            />
+          ) : undefined
+        }
+        filterTrigger={
+          headerDef ? (
+            <FilterHeaderTrigger
+              def={headerDef}
+              source={table.source}
+              labels={labels}
+              registry={filterRegistry}
+            />
+          ) : undefined
+        }
+      />
+    );
+  };
   // Row separators, but drawn on the CELLS. A sticky header forces the table
   // into `border-collapse: separate` (below), and the separated model tells
   // the browser to ignore borders declared on a `<tr>` — which is exactly
@@ -1255,113 +1310,142 @@ export function DesktopTable<TRow>({
           ref={theadRef}
           style={{ background: SURFACE }}
         >
-          {groupRows?.map((groups) => (
-            <Table.Tr key={groups.map((cell) => cell.key).join("|")}>
-              {expandable && <Table.Th />}
-              <When show={showReorder}>
-                <Table.Th />
-              </When>
-              {selection && <Table.Th />}
-              {groups.map((cell) => (
-                <Table.Th
-                  key={cell.key}
-                  colSpan={cell.span}
-                  ta="center"
-                  fw={600}
-                  style={{
-                    borderBottom: `1px solid ${HAIRLINE}`,
-                  }}
-                >
-                  {onToggleColumnGroup ? (
-                    <ColumnGroupToggle
-                      cell={cell}
-                      labels={labels}
-                      onToggle={onToggleColumnGroup}
-                    />
-                  ) : null}
-                  {cell.label}
-                </Table.Th>
-              ))}
-              {showActions && <Table.Th />}
-            </Table.Tr>
-          ))}
-          <Table.Tr {...table.getHeaderRowProps()} ref={headerRowRef}>
-            {expandable && (
-              <Table.Th
-                w={expansionWidth}
-                ta="center"
-                style={expansionHeaderStyle}
-              >
-                <VisuallyHidden>{labels.expandRow}</VisuallyHidden>
-              </Table.Th>
-            )}
-            <When show={showReorder}>
-              <Table.Th
-                w={REORDER_COLUMN_WIDTH}
-                ta="center"
-                aria-label={labels.reorderRow}
-                data-adapttable-part="reorder-header"
-                style={reorderHeaderStyle}
-              />
-            </When>
-            {selection && (
-              <Table.Th
-                data-adapttable-part="selection-header"
-                w={selectionWidth}
-                ta="center"
-                style={selectionHeaderStyle}
-              >
-                <Checkbox
-                  aria-label={labels.selectAll}
-                  checked={selection.headerState === "all"}
-                  indeterminate={selection.headerState === "some"}
-                  onChange={selection.toggleAll}
-                />
-              </Table.Th>
-            )}
-            {columns.map((column, headerIndex) => {
-              const headerDef =
-                headerFilters === true
-                  ? filterDefForColumn(filterDefs ?? [], column.key)
-                  : undefined;
+          {headerPlan ? (
+            headerPlan.map((row, rowIndex) => {
+              const last = rowIndex === headerPlan.length - 1;
               return (
-                <HeaderCell
-                  key={column.key}
-                  table={table}
-                  column={column}
-                  stickyStyle={headerStyleFor(column)}
-                  resizeHandle={resizeHandleFor(column)}
-                  columnProps={gridFocus?.getColumnHeaderProps(headerIndex, {
-                    sortable: column.sortable,
-                  })}
-                  columnSelect={
-                    gridFocus?.columnCheckbox === true ? (
-                      <ColumnSelectCheckbox
-                        label={columnSelectLabel(labels.selectColumn, column)}
-                        checked={gridFocus.isColumnSelected(headerIndex)}
-                        onToggle={() => gridFocus.toggleColumn(headerIndex)}
-                      />
-                    ) : undefined
-                  }
-                  filterTrigger={
-                    headerDef ? (
-                      <FilterHeaderTrigger
-                        def={headerDef}
-                        source={table.source}
-                        labels={labels}
-                        registry={filterRegistry}
-                      />
-                    ) : undefined
-                  }
-                />
+                <Table.Tr
+                  key={row.map((cell) => cell.key).join("|")}
+                  {...(last ? table.getHeaderRowProps() : {})}
+                  ref={last ? headerRowRef : undefined}
+                >
+                  {rowIndex === 0 ? (
+                    <>
+                      {expandable && (
+                        <Table.Th
+                          w={expansionWidth}
+                          ta="center"
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          style={expansionHeaderStyle}
+                        >
+                          <VisuallyHidden>{labels.expandRow}</VisuallyHidden>
+                        </Table.Th>
+                      )}
+                      <When show={showReorder}>
+                        <Table.Th
+                          w={REORDER_COLUMN_WIDTH}
+                          ta="center"
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          aria-label={labels.reorderRow}
+                          data-adapttable-part="reorder-header"
+                          style={reorderHeaderStyle}
+                        />
+                      </When>
+                      {selection && (
+                        <Table.Th
+                          data-adapttable-part="selection-header"
+                          w={selectionWidth}
+                          ta="center"
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          style={selectionHeaderStyle}
+                        >
+                          <Checkbox
+                            aria-label={labels.selectAll}
+                            checked={selection.headerState === "all"}
+                            indeterminate={selection.headerState === "some"}
+                            onChange={selection.toggleAll}
+                          />
+                        </Table.Th>
+                      )}
+                    </>
+                  ) : null}
+                  {row.map((cell) =>
+                    cell.kind === "group" ? (
+                      <Table.Th
+                        key={cell.key}
+                        colSpan={cell.colSpan}
+                        rowSpan={cell.rowSpan > 1 ? cell.rowSpan : undefined}
+                        ta={groupedHeaderAlign(cell.cell.align)}
+                        fw={600}
+                        data-adapttable-part="header-group-cell"
+                        style={groupedHeaderCellStyle(cell, HAIRLINE)}
+                      >
+                        {onToggleColumnGroup ? (
+                          <ColumnGroupToggle
+                            cell={cell.cell}
+                            labels={labels}
+                            onToggle={onToggleColumnGroup}
+                          />
+                        ) : null}
+                        {columnGroupHeaderCaption(cell.cell)}
+                      </Table.Th>
+                    ) : (
+                      renderMantineLeaf(cell)
+                    )
+                  )}
+                  {rowIndex === 0 && showActions ? (
+                    <Table.Th
+                      ta="end"
+                      w={actionsWidth}
+                      rowSpan={headerBand > 1 ? headerBand : undefined}
+                      style={actionsHeaderStyle}
+                    >
+                      {labels.actions}
+                    </Table.Th>
+                  ) : null}
+                </Table.Tr>
               );
-            })}
-            {showActions && (
-              <Table.Th ta="end" w={actionsWidth} style={actionsHeaderStyle}>
-                {labels.actions}
-              </Table.Th>
-            )}
-          </Table.Tr>
+            })
+          ) : (
+            <Table.Tr {...table.getHeaderRowProps()} ref={headerRowRef}>
+              {expandable && (
+                <Table.Th
+                  w={expansionWidth}
+                  ta="center"
+                  style={expansionHeaderStyle}
+                >
+                  <VisuallyHidden>{labels.expandRow}</VisuallyHidden>
+                </Table.Th>
+              )}
+              <When show={showReorder}>
+                <Table.Th
+                  w={REORDER_COLUMN_WIDTH}
+                  ta="center"
+                  aria-label={labels.reorderRow}
+                  data-adapttable-part="reorder-header"
+                  style={reorderHeaderStyle}
+                />
+              </When>
+              {selection && (
+                <Table.Th
+                  data-adapttable-part="selection-header"
+                  w={selectionWidth}
+                  ta="center"
+                  style={selectionHeaderStyle}
+                >
+                  <Checkbox
+                    aria-label={labels.selectAll}
+                    checked={selection.headerState === "all"}
+                    indeterminate={selection.headerState === "some"}
+                    onChange={selection.toggleAll}
+                  />
+                </Table.Th>
+              )}
+              {columns.map((column, headerIndex) =>
+                renderMantineLeaf({
+                  kind: "leaf",
+                  key: column.key,
+                  columnIndex: headerIndex,
+                  rowSpan: 1,
+                })
+              )}
+              {showActions && (
+                <Table.Th ta="end" w={actionsWidth} style={actionsHeaderStyle}>
+                  {labels.actions}
+                </Table.Th>
+              )}
+            </Table.Tr>
+          )}
         </Table.Thead>
         {pinnedTopRows.length > 0 && (
           <Table.Tbody

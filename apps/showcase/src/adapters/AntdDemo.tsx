@@ -1,5 +1,9 @@
 import { DataTable, type DataTableProps } from "@adapttable/antd";
-import type { ColumnDef, NestedTableDefaults } from "@adapttable/core";
+import type {
+  ColumnDef,
+  ColumnLayoutState,
+  NestedTableDefaults,
+} from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   Avatar,
@@ -123,6 +127,7 @@ export function AntdDemo({
   cellNavigation,
   columnSelectionCheckbox,
   wide,
+  defaultColumnLayout,
   exportCsv,
   headerFilters,
   filterFields,
@@ -177,6 +182,8 @@ export function AntdDemo({
   columnSelectionCheckbox?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /** The column layout the page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
    * Export configuration for the toolbar button. Defaults to a plain CSV of
    * the current page; the columns demo overrides it to write the highlighted
@@ -236,7 +243,7 @@ export function AntdDemo({
                   ? { person: "start" }
                   : { person: "start", actions: "end" },
               }
-            : LIVE_DEFAULT_LAYOUT
+            : (defaultColumnLayout ?? LIVE_DEFAULT_LAYOUT)
         }
         grouping={grouping}
         tree={tree}
@@ -295,7 +302,9 @@ export function AntdDemo({
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
-            rowActions={focused ? undefined : makeActions(locale)}
+            rowActions={
+              focused && !columnGroups ? undefined : makeActions(locale)
+            }
             bulkActions={
               (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
             }

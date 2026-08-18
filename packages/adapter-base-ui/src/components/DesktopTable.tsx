@@ -2,6 +2,7 @@
 import {
   bodyRowEntries,
   type ColumnDef,
+  columnGroupHeaderCaption,
   columnHeaderController,
   columnResizeHandleProps,
   columnsHaveFooter,
@@ -34,7 +35,10 @@ import {
   ColumnSpacer,
   EXTRA_ROW_PARTS,
   fittedTableStyle,
-  headerGroupRows,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
   insertExtraRows,
   logicalAlign,
   type PinLeads,
@@ -68,6 +72,7 @@ import {
 import {
   type CSSProperties,
   memo,
+  type ReactElement,
   type ReactNode,
   type RefObject,
   useCallback,
@@ -617,6 +622,7 @@ export function DesktopTable<TRow>({
   rowClassName,
   collapsibleColumnGroups,
   collapsedColumnGroups,
+  columnGroups,
   onToggleColumnGroup,
   rowStyle,
   rowHeight,
@@ -690,11 +696,13 @@ export function DesktopTable<TRow>({
   const [theadRef, headerHeight] = useOffsetHeight();
   const [headerRowRef] = useOffsetHeight();
   const expandable = expansion !== undefined;
-  const groupRows = headerGroupRows(
+  const headerPlan = htmlGroupedHeaderPlan(
     columns,
     collapsedColumnGroups,
-    collapsibleColumnGroups
+    collapsibleColumnGroups,
+    columnGroups
   );
+  const headerBand = headerPlan?.length ?? 1;
   const summary = useSummaryCells(summaryRow, rows);
   const showColumnFooter = summary !== undefined || columnsHaveFooter(columns);
   // End-pinned actions count as a pin too: sticking them needs the wrapper to
@@ -881,6 +889,160 @@ export function DesktopTable<TRow>({
     []
   );
 
+  const renderLeafHeader = (
+    column: ColumnDef<TRow>,
+    headerIndex: number,
+    rowSpan = 1
+  ): ReactElement => {
+    const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
+      | "ascending"
+      | "descending"
+      | "none"
+      | undefined;
+    // Core's sort onClick receives the click EVENT: with `multiSort` a
+    // shift-click cycles the column through the sort chain while a
+    // plain click keeps single-sorting.
+    const sortButton = table.getSortButtonProps(column);
+    const sortClick = sortButton.onClick;
+    const sortIndex = sortButton["data-sort-index"];
+    const caption = resolveColumnHeader(
+      column,
+      columnHeaderController(column, {
+        sortIndex: typeof sortIndex === "number" ? sortIndex : undefined,
+        toggleSort: sortClick,
+      })
+    );
+    const actions = column.headerActions ? (
+      <span data-adapttable-part="header-actions">{column.headerActions}</span>
+    ) : null;
+    const columnSelect =
+      gridFocus?.columnCheckbox === true ? (
+        <ColumnSelectCheckbox
+          label={columnSelectLabel(labels.selectColumn, column)}
+          checked={gridFocus.isColumnSelected(headerIndex)}
+          onToggle={() => gridFocus.toggleColumn(headerIndex)}
+        />
+      ) : null;
+    const headerDef =
+      headerFilters === true
+        ? filterDefForColumn(filterDefs ?? [], column.key)
+        : undefined;
+    const style = {
+      ...headCellStyle(column),
+      ...(rowSpan > 1 ? { verticalAlign: "middle" as const } : {}),
+    };
+    return (
+      <Table.ColumnHeaderCell
+        key={column.key}
+        data-adapttable-part="header-cell"
+        {...(gridFocus?.getColumnHeaderProps(headerIndex, {
+          sortable: column.sortable,
+        }) ?? {})}
+        justify={justifyFor(column.align)}
+        aria-sort={ariaSort}
+        data-column-key={column.key}
+        rowSpan={rowSpan > 1 ? rowSpan : undefined}
+        style={style}
+      >
+        {column.sortable ? (
+          <button
+            type="button"
+            className="adapttable-sort-btn"
+            style={{
+              cursor: "pointer",
+              font: "inherit",
+              color: "inherit",
+              background: "none",
+              border: 0,
+              padding: 0,
+              display: "inline-flex",
+              alignItems: "center",
+            }}
+            aria-label={`${labels.sortBy}: ${columnName(column)}`}
+            onClick={sortClick}
+            title={column.headerTooltip}
+          >
+            {caption}
+            <Text as="span" aria-hidden>
+              {sortGlyph(ariaSort)}
+            </Text>
+            {sortIndex !== undefined && (
+              <Text
+                as="span"
+                aria-hidden
+                data-sort-index={sortIndex}
+                size="1"
+                weight="bold"
+                ml="1"
+                style={{
+                  borderRadius: "9999px",
+                  padding: "0 0.4em",
+                  background: "var(--gray-a3)",
+                }}
+              >
+                {sortIndex}
+              </Text>
+            )}
+          </button>
+        ) : (
+          <span title={column.headerTooltip}>{caption}</span>
+        )}
+        {columnSelect}
+        {actions}
+        {headerDef ? (
+          <FilterHeaderTrigger
+            def={headerDef}
+            source={table.source}
+            labels={labels}
+            registry={filterRegistry}
+          />
+        ) : null}
+        {setWidth && (
+          <span
+            style={RESIZE_HANDLE_STYLE}
+            {...columnResizeHandleProps(
+              column.key,
+              setWidth,
+              `${resizeLabel}: ${columnName(column)}`
+            )}
+          />
+        )}
+      </Table.ColumnHeaderCell>
+    );
+  };
+
+  const renderPlanCell = (cell: HtmlGroupedHeaderCell): ReactElement => {
+    if (cell.kind === "leaf") {
+      return renderLeafHeader(
+        columns[cell.columnIndex]!,
+        cell.columnIndex,
+        cell.rowSpan
+      );
+    }
+    return (
+      <Table.ColumnHeaderCell
+        key={cell.key}
+        colSpan={cell.colSpan}
+        rowSpan={cell.rowSpan > 1 ? cell.rowSpan : undefined}
+        justify={groupedHeaderAlign(cell.cell.align)}
+        data-adapttable-part="header-group-cell"
+        style={groupedHeaderCellStyle(
+          cell,
+          "var(--color-gray-6, color-mix(in srgb, currentColor 22%, transparent))"
+        )}
+      >
+        {onToggleColumnGroup ? (
+          <ColumnGroupToggle
+            cell={cell.cell}
+            labels={labels}
+            onToggle={onToggleColumnGroup}
+          />
+        ) : null}
+        {columnGroupHeaderCaption(cell.cell)}
+      </Table.ColumnHeaderCell>
+    );
+  };
+
   return (
     <Box
       ref={(node: HTMLDivElement | null) => {
@@ -914,207 +1076,173 @@ export function DesktopTable<TRow>({
         tableStyle={fittedTableStyle(fitColumns)}
       >
         <thead data-adapttable-part="thead" ref={theadRef}>
-          {groupRows?.map((groups) => (
-            <Table.Row key={groups.map((cell) => cell.key).join("|")}>
-              {expandable && <Table.ColumnHeaderCell />}
-              <When show={showReorder}>
-                <Table.ColumnHeaderCell />
-              </When>
-              {selection && <Table.ColumnHeaderCell />}
-              {groups.map((cell) => (
-                <Table.ColumnHeaderCell
-                  key={cell.key}
-                  colSpan={cell.span}
-                  justify="center"
-                >
-                  {onToggleColumnGroup ? (
-                    <ColumnGroupToggle
-                      cell={cell}
-                      labels={labels}
-                      onToggle={onToggleColumnGroup}
-                    />
-                  ) : null}
-                  {cell.label}
-                </Table.ColumnHeaderCell>
-              ))}
-              {showActions && <Table.ColumnHeaderCell />}
-            </Table.Row>
-          ))}
-          <Table.Row ref={headerRowRef}>
-            {expandable && (
-              <Table.ColumnHeaderCell
-                aria-label={labels.expandRow}
-                style={stickify(
-                  edgeCellStyle("start", hasStartPin, PIN_Z.headerPinned)
-                )}
-              />
-            )}
-            <When show={showReorder}>
-              <Table.ColumnHeaderCell
-                aria-label={labels.reorderRow}
-                data-adapttable-part="reorder-header"
-                style={stickify(
-                  edgeCellStyle(
-                    "start",
-                    hasStartPin || reorderPinned,
-                    PIN_Z.headerPinned,
-                    expand
-                  )
-                )}
-              />
-            </When>
-            {selection && (
-              <Table.ColumnHeaderCell
-                data-adapttable-part="selection-header"
-                style={stickify(
-                  edgeCellStyle(
-                    "start",
-                    hasStartPin,
-                    PIN_Z.headerPinned,
-                    selectionLead
-                  )
-                )}
-              >
-                <Checkbox
-                  aria-label={labels.selectAll}
-                  checked={selection.headerState === "all"}
-                  indeterminate={selection.headerState === "some"}
-                  onToggle={selection.toggleAll}
-                />
-              </Table.ColumnHeaderCell>
-            )}
-            {columnSpacers && (
-              <ColumnSpacer width={columnSpacers.start} side="start" as="th" />
-            )}
-            {columns.map((column, headerIndex) => {
-              const ariaSort = table.getHeaderCellProps(column)["aria-sort"] as
-                | "ascending"
-                | "descending"
-                | "none"
-                | undefined;
-              // Core's sort onClick receives the click EVENT: with `multiSort` a
-              // shift-click cycles the column through the sort chain while a
-              // plain click keeps single-sorting.
-              const sortButton = table.getSortButtonProps(column);
-              const sortClick = sortButton.onClick;
-              const sortIndex = sortButton["data-sort-index"];
-              const caption = resolveColumnHeader(
-                column,
-                columnHeaderController(column, {
-                  sortIndex:
-                    typeof sortIndex === "number" ? sortIndex : undefined,
-                  toggleSort: sortClick,
-                })
-              );
-              const actions = column.headerActions ? (
-                <span data-adapttable-part="header-actions">
-                  {column.headerActions}
-                </span>
-              ) : null;
-              const columnSelect =
-                gridFocus?.columnCheckbox === true ? (
-                  <ColumnSelectCheckbox
-                    label={columnSelectLabel(labels.selectColumn, column)}
-                    checked={gridFocus.isColumnSelected(headerIndex)}
-                    onToggle={() => gridFocus.toggleColumn(headerIndex)}
-                  />
-                ) : null;
-              const headerDef =
-                headerFilters === true
-                  ? filterDefForColumn(filterDefs ?? [], column.key)
-                  : undefined;
+          {headerPlan ? (
+            headerPlan.map((row, rowIndex) => {
+              const last = rowIndex === headerPlan.length - 1;
               return (
-                <Table.ColumnHeaderCell
-                  key={column.key}
-                  data-adapttable-part="header-cell"
-                  {...(gridFocus?.getColumnHeaderProps(headerIndex, {
-                    sortable: column.sortable,
-                  }) ?? {})}
-                  justify={justifyFor(column.align)}
-                  aria-sort={ariaSort}
-                  data-column-key={column.key}
-                  style={headCellStyle(column)}
+                <Table.Row
+                  key={row.map((cell) => cell.key).join("|")}
+                  ref={last ? headerRowRef : undefined}
                 >
-                  {column.sortable ? (
-                    <button
-                      type="button"
-                      className="adapttable-sort-btn"
-                      style={{
-                        cursor: "pointer",
-                        font: "inherit",
-                        color: "inherit",
-                        background: "none",
-                        border: 0,
-                        padding: 0,
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                      aria-label={`${labels.sortBy}: ${columnName(column)}`}
-                      onClick={sortClick}
-                      title={column.headerTooltip}
-                    >
-                      {caption}
-                      <Text as="span" aria-hidden>
-                        {sortGlyph(ariaSort)}
-                      </Text>
-                      {sortIndex !== undefined && (
-                        <Text
-                          as="span"
-                          aria-hidden
-                          data-sort-index={sortIndex}
-                          size="1"
-                          weight="bold"
-                          ml="1"
-                          style={{
-                            borderRadius: "9999px",
-                            padding: "0 0.4em",
-                            background: "var(--gray-a3)",
-                          }}
+                  {rowIndex === 0 ? (
+                    <>
+                      {expandable && (
+                        <Table.ColumnHeaderCell
+                          aria-label={labels.expandRow}
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          style={stickify(
+                            edgeCellStyle(
+                              "start",
+                              hasStartPin,
+                              PIN_Z.headerPinned
+                            )
+                          )}
+                        />
+                      )}
+                      <When show={showReorder}>
+                        <Table.ColumnHeaderCell
+                          aria-label={labels.reorderRow}
+                          data-adapttable-part="reorder-header"
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          style={stickify(
+                            edgeCellStyle(
+                              "start",
+                              hasStartPin || reorderPinned,
+                              PIN_Z.headerPinned,
+                              expand
+                            )
+                          )}
+                        />
+                      </When>
+                      {selection && (
+                        <Table.ColumnHeaderCell
+                          data-adapttable-part="selection-header"
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          style={stickify(
+                            edgeCellStyle(
+                              "start",
+                              hasStartPin,
+                              PIN_Z.headerPinned,
+                              selectionLead
+                            )
+                          )}
                         >
-                          {sortIndex}
-                        </Text>
+                          <Checkbox
+                            aria-label={labels.selectAll}
+                            checked={selection.headerState === "all"}
+                            indeterminate={selection.headerState === "some"}
+                            onToggle={selection.toggleAll}
+                          />
+                        </Table.ColumnHeaderCell>
                       )}
-                    </button>
-                  ) : (
-                    <span title={column.headerTooltip}>{caption}</span>
-                  )}
-                  {columnSelect}
-                  {actions}
-                  {headerDef ? (
-                    <FilterHeaderTrigger
-                      def={headerDef}
-                      source={table.source}
-                      labels={labels}
-                      registry={filterRegistry}
-                    />
+                      {columnSpacers && (
+                        <ColumnSpacer
+                          width={columnSpacers.start}
+                          side="start"
+                          as="th"
+                        />
+                      )}
+                    </>
                   ) : null}
-                  {setWidth && (
-                    <span
-                      style={RESIZE_HANDLE_STYLE}
-                      {...columnResizeHandleProps(
-                        column.key,
-                        setWidth,
-                        `${resizeLabel}: ${columnName(column)}`
+                  {row.map(renderPlanCell)}
+                  {rowIndex === 0 ? (
+                    <>
+                      {columnSpacers && (
+                        <ColumnSpacer
+                          width={columnSpacers.end}
+                          side="end"
+                          as="th"
+                        />
                       )}
-                    />
-                  )}
-                </Table.ColumnHeaderCell>
+                      {showActions && (
+                        <Table.ColumnHeaderCell
+                          justify="end"
+                          rowSpan={headerBand > 1 ? headerBand : undefined}
+                          style={stickify(
+                            edgeCellStyle(
+                              "end",
+                              actionsStick,
+                              PIN_Z.headerPinned
+                            )
+                          )}
+                        >
+                          {labels.actions}
+                        </Table.ColumnHeaderCell>
+                      )}
+                    </>
+                  ) : null}
+                </Table.Row>
               );
-            })}
-            {columnSpacers && (
-              <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
-            )}
-            {showActions && (
-              <Table.ColumnHeaderCell
-                justify="end"
-                style={stickify(
-                  edgeCellStyle("end", actionsStick, PIN_Z.headerPinned)
-                )}
-              >
-                {labels.actions}
-              </Table.ColumnHeaderCell>
-            )}
-          </Table.Row>
+            })
+          ) : (
+            <Table.Row ref={headerRowRef}>
+              {expandable && (
+                <Table.ColumnHeaderCell
+                  aria-label={labels.expandRow}
+                  style={stickify(
+                    edgeCellStyle("start", hasStartPin, PIN_Z.headerPinned)
+                  )}
+                />
+              )}
+              <When show={showReorder}>
+                <Table.ColumnHeaderCell
+                  aria-label={labels.reorderRow}
+                  data-adapttable-part="reorder-header"
+                  style={stickify(
+                    edgeCellStyle(
+                      "start",
+                      hasStartPin || reorderPinned,
+                      PIN_Z.headerPinned,
+                      expand
+                    )
+                  )}
+                />
+              </When>
+              {selection && (
+                <Table.ColumnHeaderCell
+                  data-adapttable-part="selection-header"
+                  style={stickify(
+                    edgeCellStyle(
+                      "start",
+                      hasStartPin,
+                      PIN_Z.headerPinned,
+                      selectionLead
+                    )
+                  )}
+                >
+                  <Checkbox
+                    aria-label={labels.selectAll}
+                    checked={selection.headerState === "all"}
+                    indeterminate={selection.headerState === "some"}
+                    onToggle={selection.toggleAll}
+                  />
+                </Table.ColumnHeaderCell>
+              )}
+              {columnSpacers && (
+                <ColumnSpacer
+                  width={columnSpacers.start}
+                  side="start"
+                  as="th"
+                />
+              )}
+              {columns.map((column, headerIndex) =>
+                renderLeafHeader(column, headerIndex)
+              )}
+              {columnSpacers && (
+                <ColumnSpacer width={columnSpacers.end} side="end" as="th" />
+              )}
+              {showActions && (
+                <Table.ColumnHeaderCell
+                  justify="end"
+                  style={stickify(
+                    edgeCellStyle("end", actionsStick, PIN_Z.headerPinned)
+                  )}
+                >
+                  {labels.actions}
+                </Table.ColumnHeaderCell>
+              )}
+            </Table.Row>
+          )}
         </thead>
         {pinnedTopRows.length > 0 && (
           <tbody

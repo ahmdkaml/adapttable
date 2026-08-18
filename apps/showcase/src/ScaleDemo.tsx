@@ -294,6 +294,7 @@ function ServerScaleTable({
     rows,
     total,
     urlKey: "scale",
+    urlSync: false,
     paginationMode: "infinite",
     defaults: { limit: 500 },
     onQueryChange: (query) => {
@@ -309,6 +310,7 @@ function ServerScaleTable({
         columns={columns}
         rowKey={(r) => String(r.id)}
         labels={getLabels("en")}
+        urlSync={false}
         searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
         virtualize={virtual}
         virtualizeColumns={virtualCols}
@@ -477,6 +479,7 @@ function FrontendScaleTable({
     data: rows,
     columns,
     urlKey: "scale",
+    urlSync: false,
     // Virtualization needs a continuous list, not pages: infinite mode keeps
     // ONE growing window that the virtualizer extends automatically whenever
     // the scroller nears the end (no Load-more button needed). `?all=1` loads
@@ -502,6 +505,7 @@ function FrontendScaleTable({
           columns={columns}
           rowKey={(r) => String(r.id)}
           labels={getLabels("en")}
+          urlSync={false}
           searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
           virtualize={virtual}
           virtualizeColumns={virtualCols}

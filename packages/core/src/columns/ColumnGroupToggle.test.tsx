@@ -13,6 +13,7 @@ const cell = (over: Partial<HeaderGroupCell> = {}): HeaderGroupCell => ({
   id: "People",
   collapsed: false,
   collapsible: true,
+  hideLabel: false,
   ...over,
 });
 
@@ -40,10 +41,26 @@ describe("ColumnGroupToggle", () => {
       />
     );
     const button = screen.getByRole("button", {
-      name: defaultLabels.collapseColumnGroup,
+      name: `${defaultLabels.collapseColumnGroup}: People`,
     });
     expect(button).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(button);
     expect(onToggle).toHaveBeenCalledWith("People");
+  });
+
+  it("names the stub from the accessible label, without a hover tooltip", () => {
+    render(
+      <ColumnGroupToggleChrome
+        slots={columnGroupTestSlots}
+        cell={cell({ hideLabel: true, collapsed: true })}
+        labels={defaultLabels}
+        onToggle={vi.fn()}
+      />
+    );
+    expect(
+      screen.getByRole("button", {
+        name: `${defaultLabels.expandColumnGroup}: People`,
+      })
+    ).not.toHaveAttribute("title");
   });
 });

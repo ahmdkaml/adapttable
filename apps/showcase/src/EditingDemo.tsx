@@ -39,6 +39,8 @@ export function EditingDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
               dark={dark}
               urlKey="edit"
               editing
+              cellNavigation
+              columnSelectionCheckbox
               focused
             />
           </Suspense>

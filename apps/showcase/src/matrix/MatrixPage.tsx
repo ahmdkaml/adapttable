@@ -32,7 +32,6 @@ import {
   Filter,
   Formula,
   Globe,
-  Keyboard,
   Pencil,
   Phone,
   Pivot,
@@ -61,8 +60,8 @@ import { FEATURE_BODIES, LandingTable } from "./featureBodies";
  * grid is scannable before any of it is read.
  */
 const FEATURE_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
-  accessibility: Keyboard,
   columns: Columns,
+  "column-groups": Columns,
   editing: Pencil,
   export: Download,
   filtering: Filter,

@@ -4,6 +4,7 @@ import type { ConfirmHandler } from "./actions/confirm";
 import type { CommandPaletteOptions } from "./actions/useCommandPalette";
 import type { ContextMenuOptions } from "./actions/useTableContextMenu";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
+import type { ColumnInput } from "./columns/columnTree";
 import type { BatchRowEdit } from "./editing/batchEditing";
 import type {
   EditConflictHandler,
@@ -89,8 +90,8 @@ export interface SidePanelOptions {
 export interface BaseDataTableProps<TRow> {
   /** Data + state contract from `useFrontendData` / `useQuerySource`. */
   source: TableSource<TRow>;
-  /** Column definitions. */
-  columns: ColumnDef<TRow>[];
+  /** Column definitions. A parent with `children` is a column group. */
+  columns: ColumnInput<TRow>[];
   /** Stable React key extractor for a row. */
   rowKey: (row: TRow) => string;
 
@@ -618,9 +619,9 @@ export interface BaseDataTableProps<TRow> {
   /** Initial column layout for the uncontrolled mode. */
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
-   * Column-group headers gain a collapse toggle. A collapsed group keeps
-   * its first leaf as the summary column. State lives on
-   * `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`).
+   * Column-group headers gain a collapse toggle. Each group decides what
+   * remains: an arrow stub, `collapsedKey`, or `collapsedRender`. State
+   * lives on `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`).
    * Omit and group headers stay static.
    */
   collapsibleColumnGroups?: boolean;

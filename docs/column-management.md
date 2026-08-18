@@ -93,15 +93,15 @@ export function People() {
 
 ## Options
 
-| Prop                      | Type                                | Default | Description                                                              |
-| ------------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
-| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
-| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
-| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
-| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
-| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
-| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; state is `collapsedGroups`.        |
-| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
+| Prop                      | Type                                | Default | Description                                                                                                     |
+| ------------------------- | ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).                                                     |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                     |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                                                       |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                                                                 |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                                                       |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; each group decides what remains. See [column groups](./column-groups.md). |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning.                                        |
 
 ## Notes
 

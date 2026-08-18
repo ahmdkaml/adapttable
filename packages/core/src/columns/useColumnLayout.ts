@@ -4,8 +4,10 @@ import type { ColumnDef } from "../types";
 import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 import {
   applyCollapsedColumnGroups,
-  toggleCollapsedColumnGroup,
-} from "./headerGroups";
+  marriedOrderHolds,
+  type ColumnGroupRecord,
+} from "./columnTree";
+import { toggleCollapsedColumnGroup } from "./headerGroups";
 
 /** Edge a column can be pinned to — logical, so it follows the writing
  *  direction (`"start"` is the right edge under `dir="rtl"`). */
@@ -48,9 +50,11 @@ export interface UseColumnLayoutOptions<TRow> {
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
    * When true, `visibleColumns` hides leaves under a collapsed group
-   * except the summary column. Omit and collapse is inert.
+   * according to that group's collapse options. Omit and collapse is inert.
    */
   collapsibleColumnGroups?: boolean;
+  /** Tree-group collapse options from {@link flattenColumnTree}. */
+  columnGroups?: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
 }
 
 /** Result of {@link useColumnLayout}. */
@@ -200,6 +204,7 @@ export function useColumnLayout<TRow>({
   onLayoutChange,
   defaultColumnLayout,
   collapsibleColumnGroups = false,
+  columnGroups,
 }: UseColumnLayoutOptions<TRow>): UseColumnLayoutResult<TRow> {
   const [internal, setInternal] = useState<ColumnLayoutState>(() => ({
     ...EMPTY_COLUMN_LAYOUT,
@@ -273,7 +278,11 @@ export function useColumnLayout<TRow>({
     );
     if (!collapsibleColumnGroups) return ordered;
     return [
-      ...applyCollapsedColumnGroups(ordered, state.collapsedGroups ?? []),
+      ...applyCollapsedColumnGroups(
+        ordered,
+        state.collapsedGroups ?? [],
+        columnGroups
+      ),
     ];
   }, [
     columns,
@@ -281,6 +290,7 @@ export function useColumnLayout<TRow>({
     state.hidden,
     state.collapsedGroups,
     collapsibleColumnGroups,
+    columnGroups,
   ]);
 
   const toggleColumnGroup = useCallback(
@@ -311,9 +321,10 @@ export function useColumnLayout<TRow>({
       if (from === clamped) return;
       current.splice(from, 1);
       current.splice(clamped, 0, key);
+      if (columnGroups && !marriedOrderHolds(current, columnGroups)) return;
       commit({ ...latest, order: current });
     },
-    [commit, columns]
+    [commit, columns, columnGroups]
   );
 
   const reset = useCallback(() => commit(EMPTY_COLUMN_LAYOUT), [commit]);

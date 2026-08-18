@@ -1,6 +1,7 @@
 import type {
   BulkAction,
   ColumnDef,
+  ColumnInput,
   ColumnLayoutState,
   ConfirmHandler,
   ConfirmRequest,
@@ -149,10 +150,14 @@ interface Strings {
   coreFilter: string;
   edit: string;
   remove: string;
-  /** Spanning header over the two assignment columns. */
+  /** Spanning header over Name + Role (arrow stub). */
+  groupContact: string;
+  /** Spanning header over Team + Status. */
   groupAssignment: string;
-  /** Spanning header over the two delivery columns. */
+  /** Spanning header over Timeline + Budget. */
   groupDelivery: string;
+  /** Collapsed Delivery cell: money and the timeline length in days. */
+  deliveryBrief: (money: string, days: number) => string;
   confirmMessage: (name: string) => string;
   confirmTitle: string;
   /** Rejection message for the editing demo's validated name column. */
@@ -184,8 +189,10 @@ const STRINGS: Record<Locale, Strings> = {
     coreFilter: "Core team",
     edit: "Edit",
     remove: "Delete",
+    groupContact: "Contact",
     groupAssignment: "Assignment",
     groupDelivery: "Delivery",
+    deliveryBrief: (money, days) => `${money} for ${days} days`,
     confirmTitle: "Delete person?",
     confirmMessage: (name) => `Permanently delete "${name}"?`,
   },
@@ -213,8 +220,10 @@ const STRINGS: Record<Locale, Strings> = {
     coreFilter: "الفريق الأساسي",
     edit: "تعديل",
     remove: "حذف",
+    groupContact: "التواصل",
     groupAssignment: "التعيين",
     groupDelivery: "التسليم",
+    deliveryBrief: (money, days) => `${money} لمدة ${days} يومًا`,
     confirmTitle: "حذف الشخص؟",
     confirmMessage: (name) => `هل تريد حذف "${name}" نهائيًا؟`,
   },
@@ -281,10 +290,26 @@ export const demoConfirm: ConfirmHandler = (request: ConfirmRequest) => {
  * the menu has no table `urlKey` to inherit its namespace from. The storage
  * key is scoped the same way, so each demo keeps its own views — and every
  * adapter on a page shares one key, so a view saved under Mantine is there
- * when you switch to MUI.
+ * when you switch to MUI. Kit feature pages keep views in memory
+ * (`urlSync: false`); only the live demo and Feature Lab write them
+ * to the address bar.
  */
 export function demoSavedViews(urlKey?: string): UseSavedViewsOptions {
-  return { storageKey: `adapttable-demo-views-${urlKey ?? "live"}`, urlKey };
+  return {
+    storageKey: `adapttable-demo-views-${urlKey ?? "live"}`,
+    urlKey,
+    urlSync: demoUrlSync(urlKey),
+  };
+}
+
+/**
+ * Table query/layout hits the address bar only on the live demo
+ * (`urlKey="live"`, the `/` page) and Feature Lab (`"lab"`). Adapter
+ * feature pages stay off so sorting a column-groups table does not
+ * rewrite the URL. The live demo's look and feel stays as it is.
+ */
+export function demoUrlSync(urlKey?: string): boolean {
+  return urlKey === "live" || urlKey === "lab";
 }
 
 /**
@@ -419,6 +444,15 @@ export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 };
 
 /**
+ * Column-groups demo: Team stays visible so Assignment is Team + Status.
+ * Groups start open. Actions stays pinned at the end.
+ */
+export const GROUPS_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
+  hidden: [],
+  pinned: { actions: "end" },
+};
+
+/**
  * The editing page's default layout: every editable field stays visible.
  * Timeline is the only display-only column, so hiding it keeps the table
  * compact without making the page borrow the Columns menu from its showcase.
@@ -426,6 +460,101 @@ export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
   hidden: ["timeline"],
 };
+
+function takeColumnKeys(
+  byKey: Map<string, ColumnDef<Person>>,
+  keys: readonly string[]
+): ColumnDef<Person>[] {
+  const taken: ColumnDef<Person>[] = [];
+  for (const key of keys) {
+    const column = byKey.get(key);
+    if (!column) continue;
+    byKey.delete(key);
+    taken.push(column);
+  }
+  return taken;
+}
+
+/**
+ * Compact leaves for the column-groups table: Name + Role, then the four
+ * grouped children. Person, Email and Load stay off this page so the three
+ * groups plus Actions fit without sideways scroll. Sparkline / editors /
+ * formulas from the Feature Lab still pass through.
+ */
+function columnGroupsDemoLeaves(
+  leaves: ColumnDef<Person>[],
+  locale: Locale,
+  s: Strings
+): ColumnDef<Person>[] {
+  const byKey = new Map(leaves.map((column) => [column.key, column]));
+  const name: ColumnDef<Person> = {
+    key: "name",
+    header: s.name,
+    i18n: { ar: "nameAr" },
+    sortable: true,
+    sortValue: (row) => personName(row, locale),
+    width: 140,
+    mobileLabel: s.name,
+  };
+  const role: ColumnDef<Person> = {
+    key: "role",
+    header: s.role,
+    i18n: { ar: "roleAr" },
+    width: 110,
+    mobileLabel: s.role,
+  };
+  const core = takeColumnKeys(byKey, ["team", "status", "timeline", "budget"]);
+  byKey.delete("person");
+  byKey.delete("email");
+  byKey.delete("load");
+  return [name, role, ...core, ...byKey.values()];
+}
+
+/**
+ * Tree groups for the column-groups demo. Actions stays ungrouped at the
+ * end (full header height). Three parents, two children each, one collapse
+ * result apiece: Contact is the arrow stub, Assignment keeps Team,
+ * Delivery draws a money-for-days brief.
+ */
+function nestDemoColumnGroups(
+  leaves: ColumnDef<Person>[],
+  locale: Locale,
+  s: Strings
+): ColumnInput<Person>[] {
+  const byKey = new Map(leaves.map((column) => [column.key, column]));
+  const out: ColumnInput<Person>[] = [];
+  for (const leaf of leaves) {
+    if (!byKey.has(leaf.key)) continue;
+    if (leaf.key === "name" || leaf.key === "role") {
+      out.push({
+        header: s.groupContact,
+        children: takeColumnKeys(byKey, ["name", "role"]),
+      });
+      continue;
+    }
+    if (leaf.key === "team" || leaf.key === "status") {
+      out.push({
+        header: s.groupAssignment,
+        collapsedKey: "team",
+        children: takeColumnKeys(byKey, ["team", "status"]),
+      });
+      continue;
+    }
+    if (leaf.key === "timeline" || leaf.key === "budget") {
+      out.push({
+        header: s.groupDelivery,
+        align: "start",
+        collapsedRender: (row) =>
+          s.deliveryBrief(formatMoney(budget(row), locale), timelineDays(row)),
+        children: takeColumnKeys(byKey, ["timeline", "budget"]),
+      });
+      continue;
+    }
+    byKey.delete(leaf.key);
+    out.push(leaf);
+  }
+  return out;
+}
 
 export function makeColumns(
   locale: Locale,
@@ -441,7 +570,7 @@ export function makeColumns(
      */
     formulas?: readonly ColumnDef<Person>[];
   }
-): ColumnDef<Person>[] {
+): ColumnInput<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
   const grouped = options?.groups === true;
@@ -494,7 +623,7 @@ export function makeColumns(
   // Fixed pixel widths (not %) so revealing the hidden team column
   // pushes the total past the container and the table scrolls horizontally —
   // the only way a pinned column can be seen to stick.
-  return [
+  const leaves: ColumnDef<Person>[] = [
     {
       key: "person",
       header: s.person,
@@ -582,7 +711,6 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -609,7 +737,6 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -647,6 +774,9 @@ export function makeColumns(
     // rather than in the middle of the set they already know.
     ...(options?.formulas ?? []),
   ];
+  return grouped
+    ? nestDemoColumnGroups(columnGroupsDemoLeaves(leaves, locale, s), locale, s)
+    : leaves;
 }
 
 /**
@@ -657,13 +787,11 @@ export function makeColumns(
  */
 export function makeWideColumns(
   locale: Locale,
-  cells: DemoCells,
-  options: Readonly<{ groups?: boolean }> = {}
-): ColumnDef<Person>[] {
+  cells: DemoCells
+): ColumnInput<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
-  const grouped = options.groups === true;
-  return [
+  const leaves: ColumnDef<Person>[] = [
     {
       key: "person",
       header: s.person,
@@ -691,7 +819,6 @@ export function makeWideColumns(
     {
       key: "role",
       header: s.role,
-      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "roleAr" },
       editable: true,
       editor: "text",
@@ -700,7 +827,6 @@ export function makeWideColumns(
     {
       key: "team",
       header: s.team,
-      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "teamAr" },
       sortable: true,
       editable: true,
@@ -745,7 +871,6 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -766,7 +891,6 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -799,6 +923,7 @@ export function makeWideColumns(
       ),
     },
   ];
+  return leaves;
 }
 
 export function makeActions(locale: Locale): RowAction<Person>[] {
@@ -902,7 +1027,13 @@ export function startDate(row: Person): Date {
 
 export function dueDate(row: Person): Date {
   const date = startDate(row);
-  return new Date(date.getTime() + 1000 * 60 * 60 * 24 * 45);
+  return new Date(date.getTime() + 1000 * 60 * 60 * 24 * 35);
+}
+
+/** Inclusive timeline length in whole days (due minus start). */
+export function timelineDays(row: Person): number {
+  const ms = dueDate(row).getTime() - startDate(row).getTime();
+  return Math.max(1, Math.round(ms / 86_400_000));
 }
 
 export function personStatus(row: Person): DemoStatus {

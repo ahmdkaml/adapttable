@@ -33,11 +33,11 @@ const load = <TModule extends Record<string, unknown>>(
 
 /** Feature slug to the demo that page shows. */
 export const FEATURE_BODIES: Record<string, ComponentType<FeatureBodyProps>> = {
-  accessibility: load(
-    () => import("../AccessibilityDemo"),
-    "AccessibilityDemo"
-  ),
   columns: load(() => import("../ColumnsDemo"), "ColumnsDemo"),
+  "column-groups": load(
+    () => import("../ColumnGroupsDemo"),
+    "ColumnGroupsDemo"
+  ),
   editing: load(() => import("../EditingDemo"), "EditingDemo"),
   export: load(() => import("../ExportPdfDemo"), "ExportPdfDemo"),
   filtering: load(() => import("../FilteringDemo"), "FilteringDemo"),

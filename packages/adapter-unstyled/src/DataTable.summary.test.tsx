@@ -7,7 +7,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
-import type { ColumnDef } from "./index";
+import type { ColumnDef, ColumnInput } from "./index";
 
 interface Row {
   id: string;
@@ -31,7 +31,7 @@ let adapter: ReturnType<typeof createMemoryAdapter>;
 let lastSource: TableSource<Row>;
 
 function Harness(props: {
-  columns?: ColumnDef<Row>[];
+  columns?: ColumnInput<Row>[];
   isMobile?: boolean;
   override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
@@ -129,7 +129,7 @@ describe("group header row", () => {
     },
   ];
 
-  it("spans contiguous groups, leaves gaps unlabeled, and pads the edges", () => {
+  it("rowspans ungrouped leaves beside the group and pads the edges", () => {
     const { container } = renderHarness({
       columns: grouped,
       override: {
@@ -146,21 +146,25 @@ describe("group header row", () => {
       'thead tr[data-adapttable-part="header-group-row"]'
     );
     expect(groupRow).toHaveClass("my-group-row");
-    // The group row is the FIRST header row.
     expect(groupRow!.parentElement!.firstElementChild).toBe(groupRow);
-    const cells = groupRow!.querySelectorAll(
+    const cells = groupRow!.querySelectorAll("th");
+    // expand + selection + Name (rowspan) + Location + actions
+    expect(cells).toHaveLength(5);
+    expect(cells[2]).toHaveTextContent("Name");
+    expect(cells[2]).toHaveAttribute("rowspan", "2");
+    const location = groupRow!.querySelector(
       'th[data-adapttable-part="header-group-cell"]'
     );
-    // expand pad + selection pad + ungrouped gap + "Location" + actions pad.
-    expect(cells).toHaveLength(5);
-    for (const cell of cells) expect(cell).toHaveClass("my-group-cell");
-    expect(cells[2]).toHaveTextContent("");
-    expect(cells[2]).not.toHaveAttribute("colspan", "2");
-    expect(cells[3]).toHaveTextContent("Location");
-    expect(cells[3]).toHaveAttribute("colspan", "2");
+    expect(location).toHaveClass("my-group-cell");
+    expect(location).toHaveTextContent("Location");
+    expect(location).toHaveAttribute("colspan", "2");
+    const leafRow = container.querySelectorAll("thead tr")[1]!;
+    expect(
+      [...leafRow.querySelectorAll("th")].map((th) => th.textContent)
+    ).toEqual(expect.arrayContaining(["City", "Amount"]));
   });
 
-  it("collapses a group to its summary column when armed", () => {
+  it("collapses a group to an arrow stub when armed", () => {
     const { container } = renderHarness({
       columns: grouped,
       override: { collapsibleColumnGroups: true },
@@ -174,9 +178,73 @@ describe("group header row", () => {
       container.querySelector('[data-adapttable-part="column-group-toggle"]')
     ).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("columnheader", { name: "Amount" })).toBeNull();
-    expect(
-      screen.getByRole("columnheader", { name: "City" })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "City" })).toBeNull();
+    expect(container.querySelectorAll("thead tr")).toHaveLength(1);
+    const stubToggle = container.querySelector(
+      '[data-adapttable-part="column-group-toggle"]'
+    );
+    expect(stubToggle).not.toHaveAttribute("title");
+    expect(stubToggle?.closest("th")).toHaveStyle({
+      maxWidth: "36px",
+      minWidth: "36px",
+    });
+  });
+
+  it("keeps the child header when collapsedKey stays a real leaf", () => {
+    const tree: ColumnInput<Row>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      {
+        header: "Location",
+        collapsedKey: "city",
+        children: [
+          { key: "city", header: "City", accessor: (r) => r.city },
+          {
+            key: "amount",
+            header: "Amount",
+            accessor: (r) => String(r.amount),
+          },
+        ],
+      },
+    ];
+    const { container } = renderHarness({
+      columns: tree,
+      override: { collapsibleColumnGroups: true },
+    });
+    fireEvent.click(
+      container.querySelector('[data-adapttable-part="column-group-toggle"]')!
+    );
+    expect(screen.queryByRole("columnheader", { name: "Amount" })).toBeNull();
+    expect(screen.getByRole("columnheader", { name: "City" })).toBeVisible();
+    expect(container.querySelectorAll("thead tr")).toHaveLength(2);
+  });
+
+  it("drops the child header row for collapsedRender", () => {
+    const tree: ColumnInput<Row>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      {
+        header: "Location",
+        collapsedRender: (row) => `${row.city} · ${row.amount}`,
+        children: [
+          { key: "city", header: "City", accessor: (r) => r.city },
+          {
+            key: "amount",
+            header: "Amount",
+            accessor: (r) => String(r.amount),
+          },
+        ],
+      },
+    ];
+    const { container } = renderHarness({
+      columns: tree,
+      override: { collapsibleColumnGroups: true },
+    });
+    fireEvent.click(
+      container.querySelector('[data-adapttable-part="column-group-toggle"]')!
+    );
+    expect(screen.queryByRole("columnheader", { name: "City" })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: "Amount" })).toBeNull();
+    expect(screen.getByText("Location")).toBeVisible();
+    expect(container.querySelectorAll("thead tr")).toHaveLength(1);
   });
 
   it("renders no group row when no column declares a group", () => {

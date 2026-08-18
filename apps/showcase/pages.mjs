@@ -77,6 +77,14 @@ export const REPLACED_PAGES = [
   ["mobile", "mantine/mobile-cards"],
   ["rtl", "mantine/rtl"],
   ["scale", "mantine/scale"],
+  ["mantine/accessibility", "mantine/editing"],
+  ["mui/accessibility", "mui/editing"],
+  ["chakra/accessibility", "chakra/editing"],
+  ["antd/accessibility", "antd/editing"],
+  ["radix/accessibility", "radix/editing"],
+  ["base-ui/accessibility", "base-ui/editing"],
+  ["shadcn/accessibility", "shadcn/editing"],
+  ["tailwind/accessibility", "tailwind/editing"],
 ];
 
 /**

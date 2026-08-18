@@ -235,6 +235,7 @@ export const SHOWCASE_ADAPTERS = [
 const FEATURE_DEMAND_ORDER = [
   "filtering",
   "columns",
+  "column-groups",
   "selection",
   "editing",
   "grouping",
@@ -245,7 +246,6 @@ const FEATURE_DEMAND_ORDER = [
   "pivot",
   "saved-views",
   "formulas",
-  "accessibility",
   "rtl",
   "realtime",
 ];
@@ -255,9 +255,10 @@ const FEATURE_DEMAND_ORDER = [
  *
  * Curated rather than exhaustive: these are the ones people search for by name
  * and evaluate a table on. Pagination is not among them — every table pages,
- * and the docs already own that search. Accessibility, RTL and realtime used
+ * and the docs already own that search. Column groups, RTL and realtime used
  * to answer once for all eight kits; they are features of a kit page now, the
- * same as filtering or grouping.
+ * same as filtering or grouping. Accessibility is on by default and lives in
+ * the docs, not in this grid.
  *
  * @type {MatrixFeature[]}
  */
@@ -903,48 +904,74 @@ export function People({ rows, columns }) {
     docs: ["grouping"],
   },
   {
-    slug: "accessibility",
-    label: "Accessibility",
-    h1: "Accessible {kit} data table",
-    title: "{kit} accessible data table — AdaptTable",
+    slug: "column-groups",
+    label: "Column groups",
+    h1: "Column groups in {kit}",
+    title: "{kit} collapsible column groups — AdaptTable",
     description:
-      "Use a {kit} data table from the keyboard or a screen reader — arrow-key cell focus with a visible ring, live announcements, and a header checkbox that selects a column without a modifier key.",
+      "Span {kit} table headers over related columns and collapse each group on its own — to an arrow stub, a kept child, or a cell you draw.",
     intro: [
-      "Tab into the grid and the arrows move a visible focus, one cell at a time. Home and End jump to the row's edges.",
-      "Every move, sort, filter and edit is announced through a live region — the part of a table a sighted reader cannot check, so this page repeats those announcements as text as they happen.",
-      "`columnSelectionCheckbox` puts a named checkbox on each header so a column can be selected without a modifier key a touchscreen does not have. The grid and the checkboxes are {kit}.",
+      "A parent with `children` is a column group. This table has three, two children each, open by default. Collapse one to see its mode. Actions stays ungrouped at the end.",
+      'Contact is Name + Role with no collapse options: fold is the chevron. Assignment is Team + Status with `collapsedKey: "team"`. Delivery is Timeline + Budget with `collapsedRender` ($25,300 for 35 days) and `align: "start"`.',
+      "`collapsibleColumnGroups` arms the toggles. The headers and the chevrons are {kit}.",
     ],
-    card: "Arrow-key focus, a visible ring, and every announcement shown as text.",
-    snippet: `import { DataTable } from "{pkg}";
+    card: "Spanning headers that collapse to a stub, a kept child, or a custom cell.",
+    snippet: `import { DataTable, type ColumnInput } from "{pkg}";
 
-export function People({ rows, columns }) {
+const columns: ColumnInput<Person>[] = [
+  {
+    header: "Contact",
+    children: [
+      { key: "name", header: "Name" },
+      { key: "role", header: "Role" },
+    ],
+  },
+  {
+    header: "Assignment",
+    collapsedKey: "team",
+    children: [
+      { key: "team", header: "Team" },
+      { key: "status", header: "Status" },
+    ],
+  },
+  {
+    header: "Delivery",
+    align: "start",
+    collapsedRender: (row) => row.budget + " for 35 days",
+    children: [
+      { key: "timeline", header: "Timeline" },
+      { key: "budget", header: "Budget" },
+    ],
+  },
+];
+
+export function People({ rows }) {
   return (
     <DataTable
       data={rows}
       columns={columns}
       rowKey={(row) => row.id}
-      cellNavigation
-      columnSelectionCheckbox
+      collapsibleColumnGroups
     />
   );
 }`,
     notes: {
       mantine:
-        "The grid is a Mantine table with a visible focus ring on the active cell, and each header checkbox is Mantine's own Checkbox — named for the column it selects.",
-      mui: "The grid is MUI Table rows; the header checkbox is MUI's Checkbox, and the focus ring is the kit's outline on the active cell.",
+        "A group header is a centred Mantine Table.Th spanning its children, with the kit's ActionIcon chevron; a collapsed stub hides the visible caption and the button name still says the group.",
+      mui: "A group header is a centred TableCell spanning its children, with an IconButton chevron; a collapsed stub keeps the group name on aria-label rather than as visible text.",
       chakra:
-        "The grid is Chakra Table rows; the header checkbox is Chakra's Checkbox, and the focus ring is the kit's outline on the active cell.",
-      antd: "The grid is antd's Table; the header checkbox is antd's Checkbox, and the focus ring is the kit's outline on the active cell.",
+        "A group header is a centred Table.ColumnHeader spanning its children, with a Chakra IconButton chevron; a collapsed stub keeps the name on the control, not as a lonely caption.",
+      antd: "Grouped columns are antd's own parent columns with children, so the spanning header is antd's — the chevron is antd's Button, and a collapsed stub hides the caption while the accessible name still says Delivery.",
       radix:
-        "The grid is Radix Table rows; the header checkbox is a Radix Checkbox, and the focus ring is the kit's outline on the active cell.",
+        "A group header is a centred Radix ColumnHeaderCell spanning its children, with the kit Button around the chevron; a collapsed stub keeps the name on the accessible label.",
       "base-ui":
-        "The grid is Base UI Table rows; the header checkbox is a Base UI Checkbox, and the focus ring is the kit's outline on the active cell.",
+        "A group header is a centred Base UI ColumnHeaderCell spanning its children, with a Base UI Button chevron; a collapsed stub keeps the name on the control.",
       shadcn:
-        "The grid is semantic markup wearing the preset; the header checkbox is a native input with the preset's classes, and the focus ring is the same outline the rest of the table uses.",
+        "A group header sits on the thead with the preset's classes, spanning its children, and the toggle is a native button wearing the map; a collapsed stub hides the caption.",
       tailwind:
-        "The grid is semantic markup carrying the map's classes; the header checkbox is a native input, and the focus ring is yours to dress — nothing in the map singles the active cell out.",
+        "A group header is a spanning th carrying the map's classes; the toggle is a native button, and a collapsed stub hides the caption while the accessible name still names the group.",
     },
-    docs: ["accessibility", "cell-navigation"],
+    docs: ["column-groups", "columns"],
   },
   {
     slug: "rtl",

@@ -68,7 +68,7 @@ export function People({ data }: { data: Person[] }) {
 - **Pivot tables** — rows, columns and measures with subtotals, from the optional
   `@adapttable/core/pivot` entry.
 - **Tree data** (`getChildren` / `getParentId`) — hierarchical rows with expand/collapse, on desktop and on cards.
-- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, plus collapsible column groups.
 - **Sparkline columns** (`@adapttable/core/sparkline`) — bar, line and area as inline SVG. The base bundle never pays for it.
 - **PDF export and print layout** (`@adapttable/core/pdf`) — optional entry; `pdfWriter()` on `exportCsv`, `printTable` for the browser dialog.
 - **Formula engine** (`@adapttable/core/formula`) — spreadsheet formulas over rows and aggregates; circular refs report `#CYCLE!`.

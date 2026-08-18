@@ -89,12 +89,30 @@ export {
 export { pinnedColumnWidth } from "./columns/columnWidths";
 export {
   applyCollapsedColumnGroups,
+  type ColumnGroupDef,
+  type ColumnInput,
+  flattenColumnTree,
+} from "./columns/columnTree";
+export {
   COLUMN_GROUP_ID_SEP,
+  COLUMN_GROUP_RENDER_PREFIX,
+  COLUMN_GROUP_STUB_PREFIX,
+  COLUMN_GROUP_STUB_WIDTH,
+  columnGroupHeaderCaption,
   columnGroupId,
   columnGroupPath,
+  columnGroupStubStyle,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  groupedHeaderChildRule,
   type HeaderGroupCell,
   headerGroupRow,
   headerGroupRows,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
+  isColumnGroupRenderKey,
+  isColumnGroupStubKey,
+  isColumnGroupSummaryKey,
   toggleCollapsedColumnGroup,
 } from "./columns/headerGroups";
 export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";

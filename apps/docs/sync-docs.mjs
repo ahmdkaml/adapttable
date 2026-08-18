@@ -24,6 +24,8 @@ const TITLES = {
   "getting-started.md": "Get started — a React table for your UI kit",
   "concepts.md": "AdaptTable concepts — headless core & source",
   "columns.md": "React table columns — ColumnDef & custom cells",
+  "column-groups.md":
+    "React table column groups — spanning headers, collapsible",
   "sparkline.md": "React table sparkline columns — bar, line, area",
   "export-pdf.md": "React table PDF export and print layout",
   "sorting.md": "React table sorting — multi-column, URL-synced",
@@ -76,6 +78,8 @@ const DESCRIPTIONS = {
     "One headless core, a TableSource data contract, and adapters that mount real Mantine, MUI, Chakra, Ant, Radix and shadcn components.",
   "columns.md":
     "Define React table columns once with ColumnDef — accessors, sorting, per-column filters, alignment, pinning and custom cells — same API across every UI kit.",
+  "column-groups.md":
+    "Collapsible column groups for React tables — spanning headers that fold to an arrow stub, a kept child, or a cell you draw, on every UI kit adapter.",
   "sparkline.md":
     "Optional React table sparkline columns — bar, line and area as inline SVG from @adapttable/core/sparkline, so the base bundle never pays for charts.",
   "export-pdf.md":
