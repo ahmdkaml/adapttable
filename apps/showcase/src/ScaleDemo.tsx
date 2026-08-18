@@ -342,7 +342,7 @@ export function ScaleDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   if (server) {
     return (
       <div className="mx-demo">
-        <div className="mx-demo__body">
+        <div className="mx-demo__body" data-adapter={kit}>
           <ServerScaleTable
             total={total}
             columns={columns}
@@ -358,7 +358,7 @@ export function ScaleDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   }
   return (
     <div className="mx-demo">
-      <div className="mx-demo__body">
+      <div className="mx-demo__body" data-adapter={kit}>
         <FrontendScaleTable
           total={total}
           columns={columns}
