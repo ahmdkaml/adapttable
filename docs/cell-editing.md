@@ -136,7 +136,9 @@ default is to ask.
 
 `onEditConflict` may return `"keep"` or `"take"` to resolve it; returning
 nothing uses the policy. `"ask"` puts Keep mine / Take theirs on the editor
-(`data-conflict`, the same `aria-describedby` channel as a validation message).
+(`data-conflict`, the same `aria-describedby` channel as a validation message)
+and shows the incoming value (`labels.theirsValue`) so the reader can see
+what they would take.
 Without `rowVersion`, only the edited column's stored value counts as a change.
 
 ### The editor set

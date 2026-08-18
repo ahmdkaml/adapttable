@@ -1,4 +1,4 @@
-import type { GroupNode } from "@adapttable/core";
+import type { EditEventHandler, GroupNode } from "@adapttable/core";
 import {
   applyRowPatchesWithLog,
   applyRowReorder,
@@ -39,13 +39,19 @@ import {
   demoUrlSync,
   EDITING_DEFAULT_LAYOUT,
   GROUPS_DEFAULT_LAYOUT,
+  isRemote,
   LIVE_DEFAULT_LAYOUT,
   makeLargeDirectory,
   PEOPLE,
   type Person,
   personName,
+  personSkills,
   personStatus,
   reportsTo,
+  SKILLS,
+  startDate,
+  STATUSES,
+  TEAMS,
   utilization,
 } from "./data";
 import { fetchPeople, type PeoplePage, type PeopleParams } from "./mockApi";
@@ -188,10 +194,13 @@ const LARGE_ROW_ESTIMATE = 48;
 export interface DemoColumnProps {
   columnLayout: ColumnLayoutState;
   onColumnLayoutChange: (next: ColumnLayoutState) => void;
-  /** Table chrome follows {@link demoUrlSync}: live + Feature Lab only. */
+  /** Table chrome follows {@link demoUrlSync}: live demo only. */
   urlSync?: boolean;
   collapsibleColumnGroups?: boolean;
   onCellEdit?: (row: Person, key: string, nextValue: unknown) => void;
+  onEditStart?: EditEventHandler<Person>;
+  onEditCancel?: EditEventHandler<Person>;
+  onEditCommit?: EditEventHandler<Person>;
   onRowReorder?: (from: number, to: number, row: Person) => void;
   /** The flash on a changed row — a class, which every adapter honours. */
   rowClassName?: (row: Person, index: number) => string | undefined;
@@ -392,7 +401,7 @@ interface DataProps {
   pageMode?: PageMode;
   /** URL-param namespace, so each table on the page has isolated state. */
   urlKey?: string;
-  /** When `false`, keep query in memory. Live demo and Feature Lab stay on. */
+  /** When `false`, keep query in memory. Only the live demo writes. */
   urlSync?: boolean;
   /**
    * Load the generated directory instead of the thirty-row seed, and window
@@ -551,6 +560,51 @@ const EDIT_FIELD: Record<string, keyof Person> = {
   timeline: "start",
 };
 
+function pickOther<T>(choices: readonly T[], current: T): T {
+  const rest = choices.filter((item) => item !== current);
+  return rest[Math.floor(Math.random() * rest.length)] ?? choices[0]!;
+}
+
+/**
+ * A value that is not what the open cell currently holds, so Take theirs
+ * actually replaces the draft instead of writing the same string back.
+ */
+function incomingEditValue(row: Person, columnKey: string): unknown {
+  const field = EDIT_FIELD[columnKey] ?? (columnKey as keyof Person);
+  switch (field) {
+    case "email":
+      return `incoming.${Math.random().toString(36).slice(2, 8)}@example.com`;
+    case "name":
+      return `Incoming ${row.name}`;
+    case "team":
+      return pickOther(TEAMS, row.team);
+    case "status":
+      return pickOther(STATUSES, personStatus(row));
+    case "budget": {
+      const now = budget(row);
+      return now === 99_999 ? 12_345 : 99_999;
+    }
+    case "utilization": {
+      const now = utilization(row);
+      return now === 17 ? 83 : 17;
+    }
+    case "start": {
+      const current = startDate(row).toISOString().slice(0, 10);
+      return current === "2026-12-24" ? "2026-01-02" : "2026-12-24";
+    }
+    case "role":
+      return "Incoming role";
+    case "remote":
+      return !isRemote(row);
+    case "skills": {
+      const current = personSkills(row)[0] ?? "react";
+      return [pickOther([...SKILLS], current)];
+    }
+    default:
+      return `incoming-${Math.random().toString(36).slice(2, 8)}`;
+  }
+}
+
 /** Feature flags on the frontend demo, assembled away from the data hook. */
 function frontendColumnProps(
   columns: DemoColumnProps,
@@ -572,6 +626,9 @@ function frontendColumnProps(
     data: readonly Person[];
     flashClass: (row: Person) => string | undefined;
     onCellEdit: (row: Person, key: string, nextValue: unknown) => void;
+    onEditStart: EditEventHandler<Person>;
+    onEditCancel: EditEventHandler<Person>;
+    onEditCommit: EditEventHandler<Person>;
     onBatchEdit: (
       edits: readonly { row: Person; patch: Record<string, unknown> }[]
     ) => void;
@@ -599,6 +656,9 @@ function frontendColumnProps(
   if (flags.editing) {
     Object.assign(next, {
       onCellEdit: flags.onCellEdit,
+      onEditStart: flags.onEditStart,
+      onEditCancel: flags.onEditCancel,
+      onEditCommit: flags.onEditCommit,
       rowVersion: (row: Person) => row.revision ?? 0,
     });
   }
@@ -758,15 +818,34 @@ function Frontend({
   const onRowReorder = useCallback((from: number, to: number) => {
     setData((prev) => applyRowReorder(prev, from, to));
   }, []);
-  // A websocket revision can land on whichever row is being edited. Bump all
-  // demo revisions so the control remains truthful after sorting/filtering and
-  // whichever visible cell the reader chose; rowVersion identifies the one
-  // active row without changing any displayed value.
-  const simulateLiveUpdate = useCallback(() => {
-    setData((prev) =>
-      prev.map((row) => ({ ...row, revision: (row.revision ?? 0) + 1 }))
-    );
+  const [activeEdit, setActiveEdit] = useState<{
+    rowId: string;
+    columnKey: string;
+  } | null>(null);
+  const onEditStart = useCallback<EditEventHandler<Person>>((event) => {
+    setActiveEdit({
+      rowId: event.rowId,
+      columnKey: event.columnKey || "email",
+    });
   }, []);
+  const onEditEnd = useCallback(() => setActiveEdit(null), []);
+  // The incoming row has to disagree with the open cell, not only bump a
+  // revision: Take theirs reads that cell's stored value.
+  const simulateLiveUpdate = useCallback(() => {
+    if (!activeEdit) return;
+    const { rowId, columnKey } = activeEdit;
+    const field = EDIT_FIELD[columnKey] ?? (columnKey as keyof Person);
+    setData((prev) =>
+      prev.map((row) => {
+        if (row.id !== rowId) return row;
+        return {
+          ...row,
+          [field]: incomingEditValue(row, columnKey) as never,
+          revision: (row.revision ?? 0) + 1,
+        };
+      })
+    );
+  }, [activeEdit]);
   // Two classes, not one: the mark holds steady under reduced motion, so the
   // user still learns which row changed without anything moving.
   const flashClass = useCallback(
@@ -826,10 +905,11 @@ function Frontend({
     <>
       {editing ? (
         <div className="demo-live-update">
-          <span>With an editor open, test an incoming server change.</span>
+          <span>Edit a cell, then test an incoming server change.</span>
           <button
             type="button"
             data-adapttable-part="demo-live-update"
+            disabled={activeEdit === null}
             onMouseDown={(event) => {
               // A websocket does not steal focus. Prevent the editor from
               // blur-committing before the row actually changes.
@@ -862,6 +942,9 @@ function Frontend({
           data,
           flashClass,
           onCellEdit,
+          onEditStart,
+          onEditCancel: onEditEnd,
+          onEditCommit: onEditEnd,
           onBatchEdit,
           onAddRow,
           onDuplicateRow,
@@ -910,9 +993,8 @@ function Backend({
  * mounted at a time (remounted on `mode` change), so the headless source is
  * the single thing that differs — the adapter markup is identical. The column
  * layout is URL-persisted here (shared by both paths) so pin/hide/reorder
- * survive the re-mount — but only on the live demo (`urlKey="live"`) and
- * Feature Lab. Kit feature pages keep layout in memory so interacting does
- * not rewrite the address bar. The live demo at `/` is unchanged.
+ * survive the re-mount — but only on the live demo (`urlKey="live"`).
+ * Feature Lab and kit feature pages do not write the address bar.
  */
 export function DemoBody({
   mode,

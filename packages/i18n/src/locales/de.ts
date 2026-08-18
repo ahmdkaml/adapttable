@@ -138,6 +138,7 @@ export const de: Required<TableLabels> = {
   editConflict: "Diese Zeile hat sich während der Bearbeitung geändert",
   keepMine: "Meins behalten",
   takeTheirs: "Neues übernehmen",
+  theirsValue: (value) => `Neu: ${value}`,
   reorderRow: "Zeile neu anordnen",
   moveRowUp: "Zeile nach oben",
   moveRowDown: "Zeile nach unten",

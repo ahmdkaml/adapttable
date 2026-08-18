@@ -136,6 +136,7 @@ export const he: Required<TableLabels> = {
   editConflict: "השורה הזו השתנתה בזמן העריכה",
   keepMine: "להשאיר את שלי",
   takeTheirs: "לקחת את החדש",
+  theirsValue: (value) => `שלהם: ${value}`,
   reorderRow: "סדר מחדש את השורה",
   moveRowUp: "העבר שורה למעלה",
   moveRowDown: "העבר שורה למטה",

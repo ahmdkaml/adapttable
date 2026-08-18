@@ -727,13 +727,16 @@ export interface TableLabels {
   deleteRowConfirm?: string;
   /**
    * The message on an editor whose row changed under it. Keep mine / Take
-   * theirs sit beside it.
+   * theirs sit beside it, and {@link TableLabels.theirsValue} names the
+   * incoming value so the reader can see what they would take.
    */
   editConflict?: string;
   /** Keep the draft; accept the incoming row as the new snapshot. */
   keepMine?: string;
   /** Replace the draft with the incoming value. */
   takeTheirs?: string;
+  /** The incoming value on the conflict notice (`Theirs: ada@…`). */
+  theirsValue?: (value: string) => string;
   /** Accessible name of the row-reorder grip, and the Columns-menu row. */
   reorderRow?: string;
   /** Mobile: move this card one slot earlier. */

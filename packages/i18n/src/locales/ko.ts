@@ -136,6 +136,7 @@ export const ko: Required<TableLabels> = {
   editConflict: "편집하는 동안 이 행이 변경되었습니다",
   keepMine: "내 내용 유지",
   takeTheirs: "새 값 사용",
+  theirsValue: (value) => `상대 값: ${value}`,
   reorderRow: "행 순서 변경",
   moveRowUp: "행을 위로",
   moveRowDown: "행을 아래로",

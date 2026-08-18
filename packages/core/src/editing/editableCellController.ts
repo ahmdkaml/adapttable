@@ -74,6 +74,7 @@ export interface EditableCellEditing<TRow> {
     message: string;
     keepMine: string;
     takeTheirs: string;
+    theirsValue: (value: string) => string;
   };
 }
 
@@ -128,6 +129,7 @@ export interface EditableCellController<TRow = unknown> {
     message: string;
     keepMine: string;
     takeTheirs: string;
+    theirsValue: (value: string) => string;
   };
   /** Keep the draft. */
   keepConflict: () => void;

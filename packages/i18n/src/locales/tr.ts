@@ -137,6 +137,7 @@ export const tr: Required<TableLabels> = {
   editConflict: "Düzenlerken bu satır değişti",
   keepMine: "Benimkini tut",
   takeTheirs: "Yenisini al",
+  theirsValue: (value) => `Gelen: ${value}`,
   reorderRow: "Satırı yeniden sırala",
   moveRowUp: "Satırı yukarı taşı",
   moveRowDown: "Satırı aşağı taşı",

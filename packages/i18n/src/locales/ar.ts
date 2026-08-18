@@ -136,6 +136,7 @@ export const ar: Required<TableLabels> = {
   editConflict: "تغير هذا الصف أثناء التحرير",
   keepMine: "الاحتفاظ بما كتبته",
   takeTheirs: "أخذ القيمة الجديدة",
+  theirsValue: (value) => `القيمة الواردة: ${value}`,
   reorderRow: "إعادة ترتيب الصف",
   moveRowUp: "نقل الصف لأعلى",
   moveRowDown: "نقل الصف لأسفل",

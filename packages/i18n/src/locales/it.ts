@@ -136,6 +136,7 @@ export const it: Required<TableLabels> = {
   editConflict: "Questa riga è cambiata mentre la stavi modificando",
   keepMine: "Tieni il mio",
   takeTheirs: "Prendi il nuovo",
+  theirsValue: (value) => `Il loro: ${value}`,
   reorderRow: "Riordina riga",
   moveRowUp: "Sposta riga su",
   moveRowDown: "Sposta riga giù",

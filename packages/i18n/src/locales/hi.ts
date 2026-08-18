@@ -137,6 +137,7 @@ export const hi: Required<TableLabels> = {
   editConflict: "संपादन के दौरान यह पंक्ति बदल गई",
   keepMine: "मेरा रखें",
   takeTheirs: "नया लें",
+  theirsValue: (value) => `उनका: ${value}`,
   reorderRow: "पंक्ति का क्रम बदलें",
   moveRowUp: "पंक्ति ऊपर ले जाएँ",
   moveRowDown: "पंक्ति नीचे ले जाएँ",

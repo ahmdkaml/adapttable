@@ -135,6 +135,7 @@ export const fa: Required<TableLabels> = {
   editConflict: "این ردیف هنگام ویرایش تغییر کرد",
   keepMine: "مال من بماند",
   takeTheirs: "مقدار جدید را بگیر",
+  theirsValue: (value) => `مقدار آن‌ها: ${value}`,
   reorderRow: "مرتب‌سازی مجدد ردیف",
   moveRowUp: "بردن ردیف به بالا",
   moveRowDown: "بردن ردیف به پایین",

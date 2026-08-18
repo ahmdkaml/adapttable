@@ -833,6 +833,7 @@ export function useTableChrome<TRow>(
               message: table.labels.editConflict,
               keepMine: table.labels.keepMine,
               takeTheirs: table.labels.takeTheirs,
+              theirsValue: table.labels.theirsValue,
             },
           }
         : undefined,
@@ -852,6 +853,7 @@ export function useTableChrome<TRow>(
       table.labels.editConflict,
       table.labels.keepMine,
       table.labels.takeTheirs,
+      table.labels.theirsValue,
     ]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column

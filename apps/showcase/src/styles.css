@@ -950,8 +950,12 @@ a {
   font: inherit;
   font-weight: 650;
 }
-.demo-live-update button:hover {
+.demo-live-update button:hover:not(:disabled) {
   opacity: 0.88;
+}
+.demo-live-update button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
 }
 .demo-live-update--feed {
   align-items: baseline;

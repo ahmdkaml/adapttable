@@ -455,7 +455,9 @@ theirs on the same channel validation already owns (`aria-describedby`,
 `data-conflict`). `rowVersion` makes any version change a conflict, not only the
 edited column. `useEditConflict` (`EditConflictState` in, `ReconcileLiveEdit` the
 inspect input) is the headless state; `liveRowChanged` is the comparison.
-`labels.editConflict`, `labels.keepMine` and `labels.takeTheirs` name the notice.
+`labels.editConflict`, `labels.keepMine`, `labels.takeTheirs` and
+`labels.theirsValue` name the notice — `theirsValue` is the incoming cell
+so Take theirs is a choice, not a blind swap.
 The same notice appears on a mobile card.
 
 **Adding, duplicating and deleting rows.** `onAddRow` puts an Add control in the

@@ -229,6 +229,9 @@ function ConflictNotice(
       className={errorClassName}
     >
       {ctrl.conflictLabels.message}
+      <span data-adapttable-part="edit-cell-incoming">
+        {ctrl.conflictLabels.theirsValue(ctrl.conflict.incomingValue)}
+      </span>
       <Button
         label={ctrl.conflictLabels.keepMine}
         part="edit-cell-keep-mine"

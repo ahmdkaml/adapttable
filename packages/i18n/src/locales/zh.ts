@@ -134,6 +134,7 @@ export const zh: Required<TableLabels> = {
   editConflict: "编辑时此行已更改",
   keepMine: "保留我的",
   takeTheirs: "采用新值",
+  theirsValue: (value) => `对方的值：${value}`,
   reorderRow: "重新排序行",
   moveRowUp: "上移此行",
   moveRowDown: "下移此行",

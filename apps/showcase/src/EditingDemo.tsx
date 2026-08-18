@@ -26,8 +26,8 @@ export function EditingDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
           <Check size={12} /> Ctrl/Cmd+Z undoes · Ctrl/Cmd+F finds in place
         </span>
         <span className="hint">
-          <Bolt size={12} /> Simulate incoming update asks Keep mine / Take
-          theirs while any editor is open
+          <Bolt size={12} /> Simulate incoming update is off until a cell is
+          open, then asks Keep mine / Take theirs with a real incoming value
         </span>
       </div>
       <div className="mx-demo__body">

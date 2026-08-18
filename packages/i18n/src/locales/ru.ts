@@ -139,6 +139,7 @@ export const ru: Required<TableLabels> = {
   editConflict: "Эта строка изменилась, пока вы её редактировали",
   keepMine: "Оставить своё",
   takeTheirs: "Взять новое",
+  theirsValue: (value) => `Их значение: ${value}`,
   reorderRow: "Изменить порядок строки",
   moveRowUp: "Переместить строку вверх",
   moveRowDown: "Переместить строку вниз",

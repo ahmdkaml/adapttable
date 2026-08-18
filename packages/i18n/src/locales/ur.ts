@@ -136,6 +136,7 @@ export const ur: Required<TableLabels> = {
   editConflict: "ترمیم کے دوران یہ قطار بدل گئی",
   keepMine: "میرا رکھیں",
   takeTheirs: "نیا لے لیں",
+  theirsValue: (value) => `ان کی قدر: ${value}`,
   reorderRow: "قطار کی ترتیب بدلें",
   moveRowUp: "قطار اوپر لے جائیں",
   moveRowDown: "قطار نیچے لے جائیں",

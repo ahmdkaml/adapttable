@@ -1134,6 +1134,7 @@ export interface EditableCellController<TRow = unknown> {
         message: string;
         keepMine: string;
         takeTheirs: string;
+        theirsValue: (value: string) => string;
     };
     dismissFailure: () => void;
     // (undocumented)
@@ -1167,6 +1168,7 @@ export interface EditableCellEditing<TRow> {
         message: string;
         keepMine: string;
         takeTheirs: string;
+        theirsValue: (value: string) => string;
     };
     dirty?: DirtyCellState;
     lifecycle?: EditLifecycle<TRow>;
@@ -3599,6 +3601,7 @@ export interface TableLabels {
     sortDescending?: string;
     table?: string;
     takeTheirs?: string;
+    theirsValue?: (value: string) => string;
     to?: string;
     undoEdit?: string;
     // (undocumented)

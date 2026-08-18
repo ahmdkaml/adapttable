@@ -134,6 +134,7 @@ export const ja: Required<TableLabels> = {
   editConflict: "編集中にこの行が変わりました",
   keepMine: "自分の入力を残す",
   takeTheirs: "新しい値を使う",
+  theirsValue: (value) => `相手の値: ${value}`,
   reorderRow: "行を並び替え",
   moveRowUp: "行を上へ",
   moveRowDown: "行を下へ",

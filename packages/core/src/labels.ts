@@ -137,6 +137,7 @@ export const defaultLabels: Required<TableLabels> = {
   editConflict: "This row changed while you were editing",
   keepMine: "Keep mine",
   takeTheirs: "Take theirs",
+  theirsValue: (value) => `Theirs: ${value}`,
   reorderRow: "Reorder row",
   moveRowUp: "Move row up",
   moveRowDown: "Move row down",
