@@ -41,7 +41,7 @@ pass `accentColor` to tint the table's own accents. Swap `useFrontendData` for
 
 ## Features
 
-- **Automatic mobile cards** — below the mobile breakpoint every row renders as a Radix `Card` (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
+- **Automatic mobile cards** — below the mobile breakpoint every row renders as a Radix `Card` (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via sortable headers.

@@ -2,7 +2,7 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [scroll 50,000 rows in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/scale/) — a real table you can scroll, not a recording.
+▶ **See it working:** [scroll 50,000 rows in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/scale/) — a real table you can scroll, not a recording.
 
 Long lists can opt into row/card windowing with one prop: `virtualize`. Fifty
 thousand rows render as a handful of DOM nodes, on the page or inside a

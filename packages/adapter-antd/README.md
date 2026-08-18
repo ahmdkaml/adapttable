@@ -43,7 +43,7 @@ component doesn't change.
 
 ## Features
 
-- **Automatic mobile cards** — a horizontally-scrollable `<Table>` on desktop becomes a `Card` + `Descriptions` list below the mobile breakpoint (same filters, search, selection and URL state); tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
+- **Automatic mobile cards** — a horizontally-scrollable `<Table>` on desktop becomes a `Card` + `Descriptions` list below the mobile breakpoint (same filters, search, selection and URL state); tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via native antd `<Table>` header sort carets.

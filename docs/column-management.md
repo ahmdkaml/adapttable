@@ -2,7 +2,7 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`enableColumnMenu` + `resizableColumns`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [pin, resize and reorder columns in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/columns/) — a real table you can drag, not a recording.
+▶ **See it working:** [pin, resize and reorder columns in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/columns/) — a real table you can drag, not a recording.
 
 Let users show/hide, reorder, pin, and resize columns — one prop per capability, with the resulting layout persistable to the URL or localStorage. Every adapter shares the same engine from `@adapttable/core`.
 
