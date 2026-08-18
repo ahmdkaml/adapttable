@@ -6,7 +6,8 @@ Short, direct answers to the things people ask when choosing a React table.
 
 **Jump to a feature:** [URL state](./url-state.md) ·
 [Filtering](./filtering.md) · [Virtualization](./virtualization.md) ·
-[i18n & RTL](./i18n-rtl.md) · [Column management](./column-management.md) ·
+[i18n & RTL](./i18n-rtl.md) · [Accessibility](./accessibility.md) · [Realtime](./realtime.md) ·
+[Column management](./column-management.md) ·
 [Data tiers](./data-tiers.md) ·
 [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)
 
@@ -140,11 +141,20 @@ in the App Router) — you can still fetch in a server component and pass the
 data in. URL-synced state takes a router adapter for Next.js or react-router,
 and falls back to the browser History API.
 
+## Does it support realtime or websocket updates?
+
+Yes — you own the socket. When a row changes, patch the array you already
+pass as `data` with `applyRowPatches`. Sort, filters and selection survive.
+See [realtime React data table](./realtime.md). A websocket that hits a row
+someone is editing is a [conflict](./cell-editing.md#live-update-conflicts),
+not that page.
+
 ## Is it accessible?
 
 Yes — semantic table markup, `aria-sort` on sortable headers, labelled
 selection checkboxes and icon buttons, and a keyboard-friendly UX. Every
-adapter is audited with `axe` in CI, on both desktop and mobile layouts.
+adapter is audited with `axe` in CI, on both desktop and mobile layouts. See
+[accessible React data table](./accessibility.md).
 
 ## How big is it / is it tree-shakeable?
 

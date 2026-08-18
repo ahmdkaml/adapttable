@@ -5,9 +5,9 @@ A table with a hundred cells should not be a hundred tab stops. Set
 reachable by arrow keys, with correct ARIA grid semantics and a screen reader
 that says where you are.
 
-**Related:** [Cell editing](./cell-editing.md) ·
-[Virtualization](./virtualization.md) · [Columns](./columns.md) ·
-[Accessibility in the FAQ](./faq.md)
+**Related:** [Accessible React data table](./accessibility.md) ·
+[Cell editing](./cell-editing.md) · [Virtualization](./virtualization.md) ·
+[Columns](./columns.md)
 
 ## Copy and cut, the way a spreadsheet reads it
 

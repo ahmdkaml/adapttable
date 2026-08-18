@@ -116,6 +116,8 @@ is called.
 ### Live-update conflicts
 
 A refetch, a websocket, another user — the row under an open editor can change.
+(Live row updates that are not an open-editor fight are
+[realtime](./realtime.md).)
 The table does not merge. It can keep what you typed, take the incoming value,
 or ask. Silently discarding a draft is the one outcome nobody forgives, so the
 default is to ask.
@@ -525,7 +527,8 @@ A commit hands you a change; what you do with your data is yours. Refetching
 the page to reflect it costs a round trip and throws away the user's scroll
 position, open rows, and sometimes their selection.
 
-`applyRowPatches` applies changes to the rows you already hold:
+`applyRowPatches` applies changes to the rows you already hold. The same
+helper is how a [realtime feed](./realtime.md) lands:
 
 ```tsx
 import { applyRowPatches, updateRow, removeRow } from "@adapttable/core";

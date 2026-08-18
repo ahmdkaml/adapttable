@@ -48,6 +48,8 @@ const TITLES = {
   "url-state.md": "React table URL state — filters, sort, page",
   "ssr-rsc.md": "React table SSR & server components — Next.js",
   "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew",
+  "accessibility.md": "Accessible React data table — keyboard, screen readers",
+  "realtime.md": "Realtime React data table — live row updates",
   "api.md": "AdaptTable API reference — every export",
   "faq.md": "FAQ — the free MUI X & ag-Grid alternative",
   "comparison.md": "React table comparison — AG Grid, TanStack, MUI",
@@ -122,6 +124,10 @@ const DESCRIPTIONS = {
     "Render AdaptTable on the server: where the client boundary goes in the Next.js App Router, DOM-free SSR, hydration without mismatches, and Suspense.",
   "i18n-rtl.md":
     "React table with first-class RTL/Arabic: locale presets, per-locale column paths, logical pinning and mirrored layout — not just translated strings.",
+  "accessibility.md":
+    "Accessible React data table: semantic markup, labelled controls and screen-reader announcements — on by default, no prop to turn on. Try it from the keyboard in the live demo.",
+  "realtime.md":
+    "Realtime React data table: patch rows as a websocket or poll delivers them with applyRowPatches, so sort, filters and selection survive. No realtime prop — you own the socket.",
   "api.md":
     "Complete AdaptTable API reference — DataTable props, ColumnDef, filters, source builders, prop-getters and the headless useDataTable hook for React.",
   "faq.md":

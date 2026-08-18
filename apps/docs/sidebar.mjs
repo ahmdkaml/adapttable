@@ -51,6 +51,8 @@ export const sidebar = [
       { label: "SSR & RSC", slug: "ssr-rsc" },
       { label: "Customization", slug: "customization" },
       { label: "i18n & RTL", slug: "i18n-rtl" },
+      { label: "Accessibility", slug: "accessibility" },
+      { label: "Realtime", slug: "realtime" },
     ],
   },
   {

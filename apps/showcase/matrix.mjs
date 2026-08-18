@@ -919,7 +919,7 @@ export function People({ rows, columns }) {
       tailwind:
         "The grid is semantic markup carrying the map's classes; the header checkbox is a native input, and the focus ring is yours to dress — nothing in the map singles the active cell out.",
     },
-    docs: ["cell-navigation"],
+    docs: ["accessibility", "cell-navigation"],
   },
   {
     slug: "rtl",
@@ -1014,7 +1014,7 @@ export function People({ rows, columns, setRows }) {
       tailwind:
         "The feed is the host's chrome; a patched budget is an ordinary cell carrying the map's classes, with a new number inside it.",
     },
-    docs: ["cell-editing"],
+    docs: ["realtime", "cell-editing"],
   },
 ];
 

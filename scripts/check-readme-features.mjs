@@ -93,6 +93,9 @@ const IGNORED = new Set([
   // every adapter README claiming it would be a promise none of them keep.
   "server-queries",
   "url-state",
+  // Whole-table quality, not an opt-in feature — lives under Beyond the table.
+  "accessibility",
+  "realtime",
   "versioning",
 ]);
 for (const page of documented) {

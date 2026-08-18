@@ -49,6 +49,8 @@ const DOCS = [
   "server-queries.md",
   "customization.md",
   "i18n-rtl.md",
+  "accessibility.md",
+  "realtime.md",
   "api.md",
   "faq.md",
   "comparison.md",
