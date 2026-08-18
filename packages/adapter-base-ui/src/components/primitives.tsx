@@ -253,7 +253,7 @@ export function FormField({
   children,
 }: Readonly<{ label: ReactNode; children: ReactNode }>) {
   return (
-    <Flex direction="column" gap="1">
+    <Flex direction="column" gap="4">
       <Text as="span" size="2">
         {label}
       </Text>

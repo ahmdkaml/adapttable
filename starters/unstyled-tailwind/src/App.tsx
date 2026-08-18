@@ -25,7 +25,7 @@ const classNames: DataTableClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
   filtersBackdrop: "fixed inset-0 z-40 bg-gray-900/30 dark:bg-black/50",
   filtersPanel:
-    "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900",
+    "fixed inset-y-0 end-0 z-50 flex w-[420px] max-w-[88vw] flex-col border-s border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900",
   filtersPopover:
     "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
   filtersCount:

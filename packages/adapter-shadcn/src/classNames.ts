@@ -76,7 +76,7 @@ export const shadcnClassNames = {
     "size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",
   filtersPanel:
-    "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",
+    "fixed inset-y-0 end-0 z-50 flex w-[420px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",
   filtersPopover:
     "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
   filtersCount:
@@ -86,8 +86,8 @@ export const shadcnClassNames = {
   filtersTitle: "text-base font-semibold",
   filtersClose:
     "flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-muted-foreground hover:bg-accent",
-  filtersBody: "flex flex-1 flex-col gap-4 overflow-auto p-4",
-  filtersForm: "flex flex-col gap-4",
+  filtersBody: "flex flex-1 flex-col gap-6 overflow-auto p-4",
+  filtersForm: "flex flex-col gap-6",
   filterTree: "flex flex-col gap-3",
   filterTreeGroup: "m-0 flex flex-col gap-2 border-0 p-0",
   filterTreeCondition: "flex flex-wrap items-end gap-2",
@@ -97,7 +97,7 @@ export const shadcnClassNames = {
   filterTreeSummary:
     "flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold",
   // ── Auto-built filter form (declarative `filters` definitions) ──
-  filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
+  filterField: "m-0 flex min-w-0 flex-col gap-4 border-0 p-0",
   filterLabel: "p-0 text-xs font-medium text-muted-foreground",
   filterInput:
     "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
@@ -110,7 +110,7 @@ export const shadcnClassNames = {
   filterChecklistList:
     "flex max-h-60 flex-wrap items-center gap-2 overflow-auto",
   filterChecklistCount: "text-xs text-muted-foreground",
-  filterCheckboxGroup: "flex flex-wrap items-center gap-2",
+  filterCheckboxGroup: "flex flex-wrap items-center gap-2.5",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:

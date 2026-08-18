@@ -61,6 +61,59 @@ test("non-default kits load on demand (code-split)", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("Mantine Arabic filter drawer sits on the left edge", async ({ page }) => {
+  await openDemo(page, "mantine");
+  await page
+    .getByRole("group", { name: "locale" })
+    .getByRole("button", { name: "العربية", exact: true })
+    .click();
+  await setFiltersMode(page, "Drawer");
+  await demo(page)
+    .getByRole("button", { name: "عوامل التصفية" })
+    .first()
+    .click();
+  const panel = page.getByRole("dialog", { name: "عوامل التصفية" });
+  await expect(panel).toBeVisible();
+  // Wait out Mantine's slide. Off-screen start is x=-width; settled left is ~0.
+  await expect
+    .poll(async () => {
+      const box = await panel.boundingBox();
+      return box ? Math.round(box.x) : 9999;
+    })
+    .toBeGreaterThanOrEqual(-1);
+  const box = await panel.boundingBox();
+  expect(box).not.toBeNull();
+  expect(Math.round(box!.x)).toBeLessThan(8);
+});
+
+test("shadcn and Tailwind drawer labels are not flush on the control", async ({
+  page,
+}) => {
+  for (const adapter of ["shadcn", "tailwind"] as const) {
+    await openDemo(page, adapter);
+    await setFiltersMode(page, "Drawer");
+    await filtersTrigger(page).click();
+    const gaps = await page.evaluate(() =>
+      [
+        ...document.querySelectorAll("[data-adapttable-part='filter-field']"),
+      ].map((el) => {
+        const label = el.querySelector("[data-adapttable-part='filter-label']");
+        const next = label?.nextElementSibling;
+        if (!label || !next) return null;
+        return (
+          next.getBoundingClientRect().top -
+          label.getBoundingClientRect().bottom
+        );
+      })
+    );
+    expect(gaps.length).toBeGreaterThan(0);
+    for (const gap of gaps) {
+      expect(gap).toBeGreaterThanOrEqual(12);
+    }
+    await page.keyboard.press("Escape");
+  }
+});
+
 test("default live demo keeps the seven pre-353 controls", async ({ page }) => {
   await page.goto("/");
   await expect(

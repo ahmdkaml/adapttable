@@ -41,7 +41,7 @@ export function FilterDrawer({
         />
         <Drawer.Viewport>
           <Drawer.Popup className="adapttable-drawer" dir={dir}>
-            <Drawer.Content>
+            <Drawer.Content className="adapttable-drawer-content">
               <Drawer.Title className="adapttable-drawer-title">
                 {labels.filters}
               </Drawer.Title>
@@ -53,7 +53,14 @@ export function FilterDrawer({
               >
                 {filters}
               </Flex>
-              <Flex justify="between" mt="4">
+              <Flex
+                justify="between"
+                pt="4"
+                style={{
+                  flexShrink: 0,
+                  borderTop: "1px solid var(--adapttable-border)",
+                }}
+              >
                 <Button
                   variant="ghost"
                   color="gray"

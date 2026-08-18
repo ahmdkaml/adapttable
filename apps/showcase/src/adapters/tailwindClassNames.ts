@@ -29,7 +29,7 @@ export const tailwindClassNames: DataTableClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
   filtersBackdrop: "fixed inset-0 z-40 bg-gray-900/30 dark:bg-black/50",
   filtersPanel:
-    "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900",
+    "fixed inset-y-0 end-0 z-50 flex w-[420px] max-w-[88vw] flex-col border-s border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900",
   filtersPopover:
     "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900",
   filtersCount:
@@ -39,15 +39,16 @@ export const tailwindClassNames: DataTableClassNames = {
   filtersTitle: "text-base font-semibold text-gray-900 dark:text-zinc-100",
   filtersClose:
     "flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-gray-500 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
-  filtersBody: "flex flex-1 flex-col gap-4 overflow-auto p-4",
+  filtersBody: "flex flex-1 flex-col gap-6 overflow-auto p-4",
+  filtersForm: "flex flex-col gap-6",
   // ── Auto-built filter form (declarative `filters` definitions) ──
-  filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
+  filterField: "m-0 flex min-w-0 flex-col gap-4 border-0 p-0",
   filterLabel: "p-0 text-xs font-medium text-gray-500 dark:text-zinc-400",
   filterInput:
     "h-9 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-900/40",
   filterSelect:
     "h-9 w-full rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-900/40",
-  filterCheckboxGroup: "flex flex-wrap gap-1.5",
+  filterCheckboxGroup: "flex flex-wrap gap-2.5",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-gray-300 bg-white px-3 py-1 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-50 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-600 has-[:checked]:text-white dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:has-[:checked]:border-indigo-500 dark:has-[:checked]:bg-indigo-500 [&>input]:sr-only",
   filtersFooter:

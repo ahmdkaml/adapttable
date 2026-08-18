@@ -80,5 +80,17 @@ for (const kit of KITS) {
     expect(card).not.toBeNull();
     expect(card!.x).toBeGreaterThanOrEqual(-1);
     expect(card!.x + card!.width).toBeLessThanOrEqual(width + 1);
+
+    // The card portals out of the table, so it must carry dir itself —
+    // otherwise the title stays on the left and Clear all on the right.
+    const rtlRoot = popover.locator("xpath=ancestor::*[@dir='rtl'][1]");
+    await expect(rtlRoot).toBeAttached();
+    const title = rtlRoot.getByText("عوامل التصفية").first();
+    const clear = rtlRoot.getByRole("button", { name: "مسح الكل" });
+    const titleBox = await title.boundingBox();
+    const clearBox = await clear.boundingBox();
+    expect(titleBox).not.toBeNull();
+    expect(clearBox).not.toBeNull();
+    expect(titleBox!.x).toBeGreaterThan(clearBox!.x);
   });
 }

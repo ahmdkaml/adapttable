@@ -45,7 +45,7 @@ function GroupField({
   children,
 }: Readonly<{ label: ReactNode; id: string; children: ReactNode }>) {
   return (
-    <Flex direction="column" gap="1">
+    <Flex direction="column" gap="4">
       <Text id={id} as="span" size="2">
         {label}
       </Text>
@@ -366,7 +366,7 @@ function AutoFilterField<TRow>({
               {options.map((option) => {
                 const checked = selected.includes(option.value);
                 return (
-                  <span
+                  <label
                     key={option.value}
                     className="adapttable-filter-chip"
                     data-checked={checked ? "true" : "false"}
@@ -376,11 +376,11 @@ function AutoFilterField<TRow>({
                       checked={checked}
                       color={accentColor}
                       value={option.value}
+                      className="adapttable-visually-hidden"
                       onToggle={() => toggle(option.value)}
-                    >
-                      {option.label}
-                    </Checkbox>
-                  </span>
+                    />
+                    {option.label}
+                  </label>
                 );
               })}
             </Flex>
@@ -413,7 +413,7 @@ export function AutoFilterForm<TRow>({
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
-    <Flex direction="column" gap="3">
+    <Flex direction="column" gap="5">
       {defs.map((def) => (
         <AutoFilterField
           key={def.key}

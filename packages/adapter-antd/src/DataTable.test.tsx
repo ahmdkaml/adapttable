@@ -513,6 +513,9 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("filter body")).toBeInTheDocument();
     // No drawer is mounted in popover mode.
     expect(document.querySelector(".ant-drawer")).toBeNull();
+    expect(
+      screen.getByText("filter body").closest("[dir='rtl']")
+    ).not.toBeNull();
   });
 
   it("renders the filters in a drawer when filtersMode is drawer", () => {

@@ -251,6 +251,9 @@ describe("<DataTable> (Mantine)", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /filters/i }));
     expect(await screen.findByText("rtl body")).toBeInTheDocument();
+    // The card portals to body, so it must carry dir itself or the header
+    // and the form stay left-to-right (title on the left, Clear all on the right).
+    expect(screen.getByText("rtl body").closest("[dir='rtl']")).not.toBeNull();
   });
 
   it("activates onRowClick from a row, but never from row actions", () => {

@@ -47,7 +47,7 @@ function GroupField({
   children,
 }: Readonly<{ label: ReactNode; id: string; children: ReactNode }>) {
   return (
-    <Stack gap={1}>
+    <Stack gap={4}>
       <Text id={id} as="span" fontSize="sm">
         {label}
       </Text>
@@ -423,7 +423,7 @@ export function AutoFilterForm<TRow>({
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
-    <Stack gap={3}>
+    <Stack gap={6}>
       {defs.map((def) => (
         <AutoFilterField
           key={def.key}

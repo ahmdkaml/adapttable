@@ -35,12 +35,17 @@ export function FilterDrawer({
       <Portal>
         <Drawer.Backdrop />
         <Drawer.Positioner>
-          <Drawer.Content>
+          <Drawer.Content
+            dir={dir}
+            h="100dvh"
+            display="flex"
+            flexDirection="column"
+          >
             <Drawer.CloseTrigger asChild>
               <CloseButton aria-label={labels.cancel} />
             </Drawer.CloseTrigger>
             <Drawer.Header>{labels.filters}</Drawer.Header>
-            <Drawer.Body>
+            <Drawer.Body flex="1" overflowY="auto">
               <Stack gap={4}>{filters}</Stack>
             </Drawer.Body>
             <Drawer.Footer justifyContent="space-between">

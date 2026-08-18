@@ -62,7 +62,15 @@ export function FilterDrawer({
         >
           {filters}
         </Flex>
-        <Flex justify="between" mt="4">
+        <Flex
+          justify="between"
+          pt="4"
+          mt="4"
+          style={{
+            flexShrink: 0,
+            borderTop: "1px solid var(--gray-a5)",
+          }}
+        >
           <Button
             variant="ghost"
             color="gray"

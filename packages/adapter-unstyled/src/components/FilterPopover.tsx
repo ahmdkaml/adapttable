@@ -127,6 +127,7 @@ export function FilterPopover({
         <div
           ref={cardRef}
           data-adapttable-part="filters-popover"
+          dir={dir}
           data-dir={dir}
           className={cx(
             "adapttable-filters-popover",

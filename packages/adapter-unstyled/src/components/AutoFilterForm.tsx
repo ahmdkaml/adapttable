@@ -20,7 +20,12 @@ import {
   useRangeFilterWidget,
   useTextFilterWidget,
 } from "@adapttable/core";
-import { type ReactElement, type ReactNode } from "react";
+import {
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+  useId,
+} from "react";
 
 import type { DataTableClassNames } from "../types";
 import { ChecklistFilter } from "./ChecklistFilter";
@@ -28,6 +33,17 @@ import { ChecklistFilter } from "./ChecklistFilter";
 /* Part names shared by more than one field shape. */
 const FIELD_PART = "filter-field";
 const LABEL_PART = "filter-label";
+
+/** Column stack so the caption is a flex item (legend ignored gap). */
+const FIELD_STACK: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+  minWidth: 0,
+  margin: 0,
+  padding: 0,
+  border: 0,
+};
 
 /** A filter-bag value as input text (`undefined` renders empty). */
 function asText(value: FilterValue): string {
@@ -60,29 +76,24 @@ function GroupField({
   classNames,
   children,
 }: Readonly<GroupFieldProps>) {
+  const id = useId();
   return (
-    <fieldset
+    <div
+      role="group"
+      aria-labelledby={id}
       data-adapttable-part={FIELD_PART}
       className={classNames.filterField}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        minWidth: 0,
-        margin: 0,
-        padding: 0,
-        border: 0,
-      }}
+      style={FIELD_STACK}
     >
-      <legend
+      <div
+        id={id}
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
-        style={{ padding: 0 }}
       >
         {caption}
-      </legend>
+      </div>
       {children}
-    </fieldset>
+    </div>
   );
 }
 
@@ -96,7 +107,7 @@ function TextField<TRow>({
     useTextFilterWidget(def, source);
   return (
     <GroupField caption={label} classNames={classNames}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
         <select
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
           aria-label={labels.operator}
@@ -138,13 +149,17 @@ function BooleanField<TRow>({
 }: Readonly<DefFieldProps<TRow> & { labels: Required<TableLabels> }>) {
   const { label, choice, write } = useBooleanFilterWidget(def, source);
   return (
-    <label data-adapttable-part={FIELD_PART} className={classNames.filterField}>
+    <label
+      data-adapttable-part={FIELD_PART}
+      className={classNames.filterField}
+      style={FIELD_STACK}
+    >
       <span
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
       >
         {label}
-      </span>{" "}
+      </span>
       <select
         aria-label={label}
         data-adapttable-part="filter-select"
@@ -172,13 +187,17 @@ function SelectField<TRow>({
   // "auto" — never map it directly; the hook resolves all three shapes.
   const { options, loading } = useFilterOptions(def);
   return (
-    <label data-adapttable-part={FIELD_PART} className={classNames.filterField}>
+    <label
+      data-adapttable-part={FIELD_PART}
+      className={classNames.filterField}
+      style={FIELD_STACK}
+    >
       <span
         data-adapttable-part={LABEL_PART}
         className={classNames.filterLabel}
       >
         {filterLabel(def)}
-      </span>{" "}
+      </span>
       <select
         data-adapttable-part="filter-select"
         className={classNames.filterSelect}
@@ -220,7 +239,7 @@ function MultiSelectField<TRow>({
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 8,
+          gap: 10,
           maxHeight: CHECKLIST_LIST_HEIGHT,
           overflow: "auto",
         }}
@@ -369,7 +388,7 @@ function RangeField<TRow>({
       {/* Structural layout only (like the toolbar): the operator keeps a
           constant width; values fill the rest and wrap when they don't fit
           (date inputs have a wide native minimum). */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
         <select
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
           aria-label={labels.operator}

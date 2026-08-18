@@ -200,7 +200,7 @@ export function FormField({
 }: Readonly<{ label: ReactNode; children: ReactNode }>) {
   return (
     <ChakraField.Root>
-      <ChakraField.Label fontSize="sm" mb={1}>
+      <ChakraField.Label fontSize="sm" mb={4}>
         {label}
       </ChakraField.Label>
       {children}

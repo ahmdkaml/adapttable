@@ -45,7 +45,7 @@ function GroupField({
   children,
 }: Readonly<{ label: ReactNode; id: string; children: ReactNode }>) {
   return (
-    <Flex direction="column" gap="1">
+    <Flex direction="column" gap="4">
       <Text id={id} as="span" size="2">
         {label}
       </Text>
@@ -411,7 +411,7 @@ export function AutoFilterForm<TRow>({
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
-    <Flex direction="column" gap="3">
+    <Flex direction="column" gap="5">
       {defs.map((def) => (
         <AutoFilterField
           key={def.key}
