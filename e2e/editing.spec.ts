@@ -9,7 +9,7 @@ import { builtAdapters } from "../apps/showcase/matrix.mjs";
  */
 const KIT = builtAdapters()[0]!.key;
 
-import { gotoFromNav } from "./nav";
+import { gotoFromFeatureGrid } from "./nav";
 
 /**
  * The /editing/ demo is the inline cell-editing page: editing is always on
@@ -40,9 +40,8 @@ async function openEditor(page: Page, column: string) {
 }
 
 test.describe("editing demo page", () => {
-  test("is reachable from the demo nav", async ({ page }) => {
-    await page.goto("/");
-    await gotoFromNav(page, "Features", "Editing");
+  test("is reachable from the kit's feature grid", async ({ page }) => {
+    await gotoFromFeatureGrid(page, "mantine", "Editing");
     await expect(page).toHaveURL(/\/editing\/$/);
     await expect(page.getByRole("grid").first()).toBeVisible();
   });

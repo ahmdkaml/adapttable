@@ -19,7 +19,7 @@ const ADAPTER = adapterByKey(KIT)!;
 const FEATURE = featureBySlug("tree")!;
 const copy = (text: string) => fillTemplate(text, ADAPTER);
 
-import { gotoFromNav } from "./nav";
+import { gotoFromFeatureGrid } from "./nav";
 
 /**
  * The /tree/ page: hierarchy in a table, in every kit.
@@ -41,9 +41,8 @@ const KITS = builtAdapters().map((adapter) => adapter.key);
 /** The box below the seam — everything inside it is the kit's. */
 const demo = (page: Page) => page.locator(".mx-demo");
 
-test("is reachable from the demo nav", async ({ page }) => {
-  await page.goto("/");
-  await gotoFromNav(page, "Features", "Tree data");
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "Tree data");
   await expect(page).toHaveURL(/\/tree\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

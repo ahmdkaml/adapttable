@@ -2,7 +2,7 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { builtAdapters } from "../apps/showcase/matrix.mjs";
 
-import { gotoFromNav } from "./nav";
+import { gotoFromFeatureGrid } from "./nav";
 
 /**
  * The /formulas/ page.
@@ -42,9 +42,8 @@ async function columnText(root: Locator, key: string): Promise<string[]> {
   return root.locator(`tbody [data-column-key="${key}"]`).allTextContents();
 }
 
-test("is reachable from the demo nav", async ({ page }) => {
-  await page.goto("/");
-  await gotoFromNav(page, "Features", "Formulas");
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "Formulas");
   await expect(page).toHaveURL(/\/formulas\/$/);
 });
 

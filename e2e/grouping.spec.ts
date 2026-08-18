@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { builtAdapters } from "../apps/showcase/matrix.mjs";
 
-import { gotoFromNav } from "./nav";
+import { gotoFromFeatureGrid } from "./nav";
 
 /**
  * The grouping page across every kit.
@@ -19,9 +19,8 @@ import { gotoFromNav } from "./nav";
  */
 const KITS = builtAdapters().map((adapter) => adapter.key);
 
-test("is reachable from the demo nav", async ({ page }) => {
-  await page.goto("/");
-  await gotoFromNav(page, "Features", "Grouping");
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "Grouping");
   await expect(page).toHaveURL(/\/grouping\/$/);
 });
 

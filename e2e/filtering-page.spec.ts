@@ -19,7 +19,7 @@ const ADAPTER = adapterByKey(KIT)!;
 const FEATURE = featureBySlug("filtering")!;
 const copy = (text: string) => fillTemplate(text, ADAPTER);
 
-import { gotoFromNav } from "./nav";
+import { gotoFromFeatureGrid } from "./nav";
 
 /**
  * The /filtering/ page: one subject, every kit.
@@ -40,9 +40,8 @@ const KITS = builtAdapters().map((adapter) => adapter.key);
 /** The box below the seam — everything inside it is the kit's. */
 const demo = (page: Page) => page.locator(".mx-demo");
 
-test("is reachable from the demo nav", async ({ page }) => {
-  await page.goto("/");
-  await gotoFromNav(page, "Features", "Filtering");
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "Filtering");
   await expect(page).toHaveURL(/\/filtering\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

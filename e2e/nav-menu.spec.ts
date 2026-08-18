@@ -1,7 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import {
-  builtAdapters,
   MATRIX_FEATURES,
   SHOWCASE_ADAPTERS,
 } from "../apps/showcase/matrix.mjs";
@@ -31,51 +30,48 @@ const items = (page: Page, key: string) =>
 
 test("the trigger opens its menu on click and says so", async ({ page }) => {
   await page.goto("/");
-  const features = trigger(page, "Features");
-  await expect(features).toHaveAttribute("aria-haspopup", "menu");
-  await expect(features).toHaveAttribute("aria-controls", "nav-menu-features");
-  await expect(features).toHaveAttribute("aria-expanded", "false");
-  await expect(menu(page, "features")).toBeHidden();
+  const adapters = trigger(page, "Adapters");
+  await expect(adapters).toHaveAttribute("aria-haspopup", "menu");
+  await expect(adapters).toHaveAttribute("aria-controls", "nav-menu-adapters");
+  await expect(adapters).toHaveAttribute("aria-expanded", "false");
+  await expect(menu(page, "adapters")).toBeHidden();
 
-  await features.click();
-  await expect(features).toHaveAttribute("aria-expanded", "true");
-  await expect(menu(page, "features")).toBeVisible();
-  await expect(items(page, "features")).toHaveCount(MATRIX_FEATURES.length);
+  await adapters.click();
+  await expect(adapters).toHaveAttribute("aria-expanded", "true");
+  await expect(menu(page, "adapters")).toBeVisible();
+  await expect(items(page, "adapters")).toHaveCount(SHOWCASE_ADAPTERS.length);
 
   // A second click on the trigger puts it away again — the pointer-down
   // dismissal must not fight the toggle and reopen it.
-  await features.click();
-  await expect(features).toHaveAttribute("aria-expanded", "false");
-  await expect(menu(page, "features")).toBeHidden();
+  await adapters.click();
+  await expect(adapters).toHaveAttribute("aria-expanded", "false");
+  await expect(menu(page, "adapters")).toBeHidden();
 });
 
 test("only one menu is open at a time", async ({ page }) => {
   await page.goto("/");
-  await openNavGroup(page, "Features");
+  await openNavGroup(page, "More");
   await trigger(page, "Adapters").click();
   await expect(trigger(page, "Adapters")).toHaveAttribute(
     "aria-expanded",
     "true"
   );
-  await expect(trigger(page, "Features")).toHaveAttribute(
-    "aria-expanded",
-    "false"
-  );
+  await expect(trigger(page, "More")).toHaveAttribute("aria-expanded", "false");
 });
 
 test("Escape closes the menu and hands focus back to the trigger", async ({
   page,
 }) => {
   await page.goto("/");
-  await openNavGroup(page, "Features");
+  await openNavGroup(page, "Adapters");
   await page.keyboard.press("Escape");
-  await expect(trigger(page, "Features")).toHaveAttribute(
+  await expect(trigger(page, "Adapters")).toHaveAttribute(
     "aria-expanded",
     "false"
   );
   // A closed-but-focus-lost menu strands a keyboard user at the top of the
   // document, which is the same defect the filter popover is held to.
-  await expect(trigger(page, "Features")).toBeFocused();
+  await expect(trigger(page, "Adapters")).toBeFocused();
 });
 
 test("a click outside closes the menu", async ({ page }) => {
@@ -149,20 +145,20 @@ test("a menu item navigates, and the page it lands on marks itself", async ({
   page,
 }) => {
   await page.goto("/");
-  await openNavGroup(page, "Features");
-  await items(page, "features").filter({ hasText: "Saved views" }).click();
-  await expect(page).toHaveURL(/\/mantine\/saved-views\/$/);
+  await openNavGroup(page, "Adapters");
+  await items(page, "adapters").filter({ hasText: "Mantine" }).click();
+  await expect(page).toHaveURL(/\/mantine\/$/);
 
   // The parent tells the reader where they are while the panel is shut…
-  await expect(trigger(page, "Features")).toHaveClass(/is-on/);
+  await expect(trigger(page, "Adapters")).toHaveClass(/is-on/);
   await expect(trigger(page, "More")).not.toHaveClass(/is-on/);
   // …and the item itself is the one marked as the current page.
-  await openNavGroup(page, "Features");
+  await openNavGroup(page, "Adapters");
   await expect(
-    menu(page, "features").locator('[aria-current="page"]')
-  ).toHaveText("Saved views");
+    menu(page, "adapters").locator('[aria-current="page"]')
+  ).toContainText("Mantine");
   await expect(
-    menu(page, "features").locator('[aria-current="page"]')
+    menu(page, "adapters").locator('[aria-current="page"]')
   ).toHaveCount(1);
 });
 
@@ -185,16 +181,18 @@ test("the Adapters menu leads to every kit, and marks the one being read", async
   ).toHaveCount(0);
 });
 
-test("the Features menu answers for the kit the reader is in", async ({
+test("a kit's feature rail answers for the kit the reader is in", async ({
   page,
 }) => {
   await page.goto("/mantine/pivot/");
-  await openNavGroup(page, "Features");
-  const hrefs = await items(page, "features").evaluateAll((links) =>
-    links.map((link) => link.getAttribute("href") ?? "")
-  );
+  const hrefs = await page
+    .locator(".mx-rail a")
+    .evaluateAll((links) =>
+      links.map((link) => link.getAttribute("href") ?? "")
+    );
   // Two levels down, so the prefix climbs twice — and every destination stays
-  // inside the kit whose page this is.
+  // inside the kit whose page this is. The rail is the path that made a
+  // Features menu redundant, so this is the contract that menu used to hold.
   expect(hrefs).toEqual(
     MATRIX_FEATURES.map((feature) => `../../mantine/${feature.slug}/`)
   );
@@ -205,14 +203,14 @@ test("the direct links keep their own active styling", async ({ page }) => {
   const lab = page.locator(".nav").getByRole("link", { name: "Feature Lab" });
   await expect(lab).toHaveClass(/is-on/);
   await expect(lab).toHaveAttribute("aria-current", "page");
-  for (const group of ["Adapters", "Features", "More"]) {
+  for (const group of ["Adapters", "More"]) {
     await expect(trigger(page, group)).not.toHaveClass(/is-on/);
   }
 });
 
 /**
  * The menu links are rendered whether the panel is open or not — hidden with
- * `visibility`, never unmounted. A crawler reading the DOM finds all sixteen
+ * `visibility`, never unmounted. A crawler reading the DOM finds all twelve
  * destinations from any page, and a middle click on one opens it in a new tab.
  *
  * Note what this does NOT claim: the showcase nav is client-rendered, so the
@@ -223,7 +221,7 @@ test("every menu link is in the DOM with the menus closed", async ({
   page,
 }) => {
   await page.goto("/");
-  for (const group of ["Adapters", "Features", "More"]) {
+  for (const group of ["Adapters", "More"]) {
     await expect(trigger(page, group)).toHaveAttribute(
       "aria-expanded",
       "false"
@@ -234,12 +232,12 @@ test("every menu link is in the DOM with the menus closed", async ({
     .evaluateAll((links) =>
       links.map((link) => link.getAttribute("href") ?? "")
     );
-  // Adapters first, then the twelve pages of the kit this page belongs to,
-  // then the four that belong to every kit. Every adapter's own pages are
-  // built, so every kit in the menu goes to its own landing — spelled out
-  // rather than mapped from the matrix, because a list generated from the
-  // same source it checks agrees with itself however wrong it is.
-  const kit = builtAdapters()[0]!.key;
+  // Adapters first, then the four pages that belong to every kit. A kit's
+  // own feature pages are not a third menu — they live on the landing grid
+  // and the rail. Every adapter's own pages are built, so every kit in the
+  // menu goes to its own landing — spelled out rather than mapped from the
+  // matrix, because a list generated from the same source it checks agrees
+  // with itself however wrong it is.
   expect(hrefs).toEqual([
     "./mantine/",
     "./mui/",
@@ -249,7 +247,6 @@ test("every menu link is in the DOM with the menus closed", async ({
     "./base-ui/",
     "./shadcn/",
     "./tailwind/",
-    ...MATRIX_FEATURES.map((feature) => `./${kit}/${feature.slug}/`),
     "./pagination/",
     "./realtime/",
     "./accessibility/",
@@ -257,7 +254,9 @@ test("every menu link is in the DOM with the menus closed", async ({
   ]);
   // Hidden is not absent: the closed panel is out of the accessibility tree
   // and out of the tab order, which is what `visibility` buys over `opacity`.
-  await expect(page.locator("#nav-menu-features")).toBeHidden();
+  await expect(page.locator("#nav-menu-adapters")).toBeHidden();
+  await expect(page.locator("#nav-menu-more")).toBeHidden();
+  await expect(trigger(page, "Features")).toHaveCount(0);
 });
 
 test("an open menu paints over the table's sticky header", async ({ page }) => {
@@ -271,9 +270,9 @@ test("an open menu paints over the table's sticky header", async ({ page }) => {
     .toBeGreaterThan(3000);
   await page.evaluate(() => window.scrollTo(0, 1200));
 
-  await openNavGroup(page, "Features");
+  await openNavGroup(page, "Adapters");
   const covered = await page.evaluate(() => {
-    const panel = document.querySelector("#nav-menu-features");
+    const panel = document.querySelector("#nav-menu-adapters");
     if (!panel) return "no panel";
     const box = panel.getBoundingClientRect();
     const hit = document.elementFromPoint(
@@ -343,10 +342,10 @@ for (const width of [1024, 1280, 1440, 1728, 1920]) {
 
 test("the menu surface follows the theme tokens", async ({ page }) => {
   await page.goto("/mantine/columns/");
-  await openNavGroup(page, "Features");
+  await openNavGroup(page, "Adapters");
   const read = () =>
     page.evaluate(() => {
-      const panel = document.querySelector("#nav-menu-features");
+      const panel = document.querySelector("#nav-menu-adapters");
       if (!panel) return null;
       const style = getComputedStyle(panel);
       const root = getComputedStyle(document.documentElement);
@@ -365,7 +364,7 @@ test("the menu surface follows the theme tokens", async ({ page }) => {
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Toggle dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await openNavGroup(page, "Features");
+  await openNavGroup(page, "Adapters");
 
   const dark = await read();
   expect(dark?.background).toBe(dark?.surface);
@@ -381,6 +380,11 @@ test("the phone keeps the select instead of the menus", async ({ page }) => {
   await expect(page.locator(".nav__links")).toBeHidden();
   const pageSelect = page.getByRole("combobox", { name: "Demo page" });
   await expect(pageSelect).toBeVisible();
+  // The compact select is the phone's entire nav, so the current kit's
+  // feature pages stay here even though they left the desktop bar.
+  await expect(
+    pageSelect.locator("optgroup[label='Mantine features']")
+  ).toHaveCount(1);
   await pageSelect.selectOption("mantine/saved-views");
   await expect(page).toHaveURL(/\/mantine\/saved-views\/$/);
 });

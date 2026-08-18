@@ -9,11 +9,12 @@ import { expect, type Page } from "@playwright/test";
  * page moving between groups is then one edit.
  *
  * The demo is adapter-first, so the split is by what a reader is asking for:
- * **Adapters** is the eight kits, **Features** the twelve pages of the kit they
- * are currently in, and **More** the four pages that belong to every kit rather
- * than to one.
+ * **Adapters** is the eight kits, and **More** the four pages that belong to
+ * every kit rather than to one. A kit's own feature pages are not in the bar —
+ * they are its landing grid and the rail on every feature page, which
+ * `gotoFromFeatureGrid` drives.
  */
-export type NavGroup = "Adapters" | "Features" | "More";
+export type NavGroup = "Adapters" | "More";
 
 /** Open one of the nav's menus, and wait for the trigger to say it is open. */
 export async function openNavGroup(page: Page, group: NavGroup): Promise<void> {
@@ -32,4 +33,29 @@ export async function gotoFromNav(
 ): Promise<void> {
   await openNavGroup(page, group);
   await page.getByRole("menuitem", { name: label, exact: true }).click();
+}
+
+/**
+ * Reach one of a kit's feature pages the way a reader does now that the bar has
+ * no Features menu: from the kit's landing page, through the feature grid.
+ *
+ * This is the path that made the menu redundant, so it is the one worth
+ * exercising — the same links appear again in the rail under every feature page.
+ *
+ * @param page - The Playwright page.
+ * @param kit - The adapter key, e.g. `mantine`.
+ * @param label - The feature's label as the grid prints it.
+ */
+export async function gotoFromFeatureGrid(
+  page: Page,
+  kit: string,
+  label: string
+): Promise<void> {
+  await page.goto(`/${kit}/`);
+  const card = page
+    .locator(".mx-grid")
+    .getByRole("link", { name: new RegExp(`^${label}\\b`) })
+    .first();
+  await expect(card).toBeVisible();
+  await card.click();
 }

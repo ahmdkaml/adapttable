@@ -132,6 +132,9 @@ type NavPage = Readonly<{
   accent?: string;
 }>;
 
+/** One `optgroup` in the phone picker: its label and the pages under it. */
+type PickerGroup = readonly [string, readonly NavPage[]];
+
 /** One nav dropdown: a labelled trigger and the pages it holds. */
 type NavGroupSpec = Readonly<{
   key: string;
@@ -142,22 +145,23 @@ type NavGroupSpec = Readonly<{
 }>;
 
 /**
- * The nav's whole shape: five things across the bar, and every page two moves
+ * The nav's whole shape: four things across the bar, and every page two moves
  * away.
  *
  * It is adapter-first because the demo is. **Adapters** is the primary menu —
- * eight kits, each going to its own landing page. **Features** holds the twelve
- * pages of whichever kit the reader is currently in, so the menu answers
- * "saved views, in this kit" rather than "saved views, pick a kit". **More**
- * holds the four pages that are properties of every kit rather than features of
- * one, so they answer once instead of eight times.
+ * eight kits, each going to its own landing page. **More** holds the four pages
+ * that are properties of every kit rather than features of one, so they answer
+ * once instead of eight times.
  *
- * Five items is also what keeps the strip one line at 1024px, which
- * `e2e/nav-menu.spec.ts` measures at every desktop width.
+ * A kit's own twelve feature pages are not a menu. They are the landing page's
+ * grid and the rail under every feature page, both of which are in reach
+ * wherever a reader would want them; a third path in the bar said the same thing
+ * a third time, and being top-level implied it listed the whole demo rather than
+ * one kit's slice of it. The phone picker still carries them — see `AppNav`,
+ * where the bar's page furniture is out of reach.
  */
 const buildGroups = (
   href: (path: string) => string,
-  current: ShowcaseAdapter,
   dark: boolean
 ): readonly NavGroupSpec[] => [
   {
@@ -170,15 +174,6 @@ const buildGroups = (
       hint: kit.blurb,
       accent: dark ? kit.accentDark : kit.accentLight,
       href: kit.built ? href(kit.key) : `${href("")}?kit=${kit.key}`,
-    })),
-  },
-  {
-    key: "features",
-    label: "Features",
-    pages: MATRIX_FEATURES.map((feature) => ({
-      key: `${current.key}/${feature.slug}`,
-      label: feature.label,
-      href: href(`${current.key}/${feature.slug}`),
     })),
   },
   {
@@ -213,7 +208,8 @@ const inScope = (key: string, active: string): boolean =>
   active === key || active.startsWith(`${key}/`);
 
 /**
- * The kit the Features menu is showing, read from the page the reader is on.
+ * The kit whose feature pages the phone picker offers, read from the page the
+ * reader is on.
  *
  * A shared page belongs to no kit, so it falls back to the first built adapter
  * — which is also the kit every page's switcher opens on.
@@ -494,7 +490,7 @@ function NavGroup({
 
 /**
  * App-style toolbar: the landing owns the marketing, so the demo's nav is
- * two direct links, three menus, and Docs/GitHub. `root` is the relative prefix
+ * two direct links, two menus, and Docs/GitHub. `root` is the relative prefix
  * back to the demo home ("." on the home page, ".." on subpages) — plain static
  * links, no router.
  *
@@ -516,23 +512,37 @@ export function AppNav({
   const href = (path: string) =>
     path === "" ? `${root}/` : `${root}/${path}/`;
 
-  // The kit the Features menu answers for, and the menus built around it.
   const kit = currentAdapter(active);
-  const groups = buildGroups(href, kit, dark);
+  const groups = buildGroups(href, dark);
   const topPages: readonly NavPage[] = [
     { key: "demo", label: "Live demo", href: href("") },
     { key: "all-options", label: "Feature Lab", href: href("all-options") },
   ];
-  // The phone picker, from the same lists: one flat option set with the menus
-  // as `optgroup`s, so a page reachable in the bar is reachable on a phone.
-  const pickerGroups: readonly (readonly [string, readonly NavPage[]])[] = [
+  /** The current kit's twelve feature pages — the phone picker's only home for
+   * them, since a phone has neither the landing grid nor the feature rail in
+   * reach of the bar. */
+  const kitFeaturePages: readonly NavPage[] = MATRIX_FEATURES.map(
+    (feature) => ({
+      key: `${kit.key}/${feature.slug}`,
+      label: feature.label,
+      href: href(`${kit.key}/${feature.slug}`),
+    })
+  );
+  /**
+   * The phone picker, from the same lists the bar is built from: one flat option
+   * set with `optgroup`s. It is the phone's ENTIRE nav rather than a duplicate of
+   * a menu, so it carries the current kit's feature pages too — grouped under
+   * the kit's own name, directly after the kit list they belong to.
+   */
+  const pickerGroups: readonly PickerGroup[] = [
     ["Demo", topPages],
-    ...groups.map(
-      (group) =>
-        [
-          group.key === "features" ? `${kit.label} features` : group.label,
-          group.pages,
-        ] as const
+    ...groups.flatMap((group): readonly PickerGroup[] =>
+      group.key === "adapters"
+        ? [
+            [group.label, group.pages],
+            [`${kit.label} features`, kitFeaturePages],
+          ]
+        : [[group.label, group.pages]]
     ),
   ];
 
