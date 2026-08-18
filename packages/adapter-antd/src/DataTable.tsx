@@ -1088,6 +1088,11 @@ function DesktopTableBody<TRow>({
   // every focus move, and rebuilding `components` would remount antd's table and
   // throw away the focus this just placed.
   const pinArmed = rowPinning !== undefined;
+  // antd's own virtualizer replaces the body grid with divs — the rows it
+  // draws are `<div>`s, not `<tr>`s — so the body wrapper has to be a `<div>`
+  // there. A `<tbody>` in that position is invalid twice over: inside antd's
+  // holder div, and around the row divs it receives.
+  const virtualBody = virtualize && !grouping;
   const components = useMemo(
     () => ({
       table: tableComponent(
@@ -1103,9 +1108,9 @@ function DesktopTableBody<TRow>({
         // conditional; the name does not.
         wrapper: theadComponent(pinArmed ? theadRef : undefined),
       },
-      body: { wrapper: TbodyWrapper },
+      body: { wrapper: virtualBody ? VirtualTbodyWrapper : TbodyWrapper },
     }),
-    [gridEnabled, getGridProps, pinArmed, theadRef]
+    [gridEnabled, getGridProps, pinArmed, theadRef, virtualBody]
   );
 
   return (
@@ -1177,6 +1182,18 @@ function TbodyWrapper(
   props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
 ) {
   return <tbody data-adapttable-part="tbody" {...props} />;
+}
+
+/**
+ * The body wrapper antd's virtual table asks for.
+ *
+ * Virtualized, antd draws the body as a div grid — its rows are `<div>`s
+ * carrying the row part, and the holder it wraps them in is a `<div>` too. The
+ * part name still marks the table's body, on the element antd actually renders
+ * there, which is the same convention the virtual rows already follow.
+ */
+function VirtualTbodyWrapper(props: Readonly<HTMLAttributes<HTMLDivElement>>) {
+  return <div data-adapttable-part="tbody" {...props} />;
 }
 
 function theadComponent(
