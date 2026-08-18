@@ -1,13 +1,15 @@
-import { type TableSource } from "@adapttable/core";
+import { showSimpleFilterFields, type TableSource } from "@adapttable/core";
 import {
   ExportAnnouncer,
   fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
+  resolveStickyToolbar,
   useCommandPalette,
   useDataTableShell,
   useMountStagger,
+  useStickyToolbarLayout,
   useTableContextMenu,
 } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
@@ -146,6 +148,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // only semantic markup with class hooks over it.
   const headerFiltersOn =
     props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
     <div
       data-adapttable-part="filters-form"
@@ -158,8 +164,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         labels={props.labels}
         classNames={classNames}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-      {headerFiltersOn ? null : (
+      {simpleFiltersOn ? (
         <AutoFilterForm
           defs={defs}
           source={source}
@@ -167,7 +174,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           labels={props.labels}
           registry={registry}
         />
-      )}
+      ) : null}
     </div>
   ));
   const {
@@ -180,8 +187,20 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     filtersTrigger,
     rootRef,
     canLoadMore,
-    tableProps,
+    tableProps: shellTableProps,
   } = shell;
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(
+      props.stickyHeader,
+      props.stickyToolbar,
+      props.maxHeight != null
+    ),
+    props.stickyTop ?? 0
+  );
+  const tableProps = {
+    ...shellTableProps,
+    stickyTop: stickyBar.headerOffset,
+  };
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
@@ -319,12 +338,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <FindBar find={shell.find} labels={labels} />
       <div
         data-adapttable-part="toolbar"
+        ref={stickyBar.toolbarRef}
         className={classNames.toolbar}
         style={{
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           rowGap: 8,
+          ...stickyBar.toolbarStyle,
         }}
       >
         {toolbarSlots?.start}

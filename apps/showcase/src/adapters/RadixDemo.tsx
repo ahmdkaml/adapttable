@@ -110,6 +110,7 @@ export function RadixDemo({
   cellNavigation,
   columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -162,6 +163,7 @@ export function RadixDemo({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -291,6 +293,7 @@ export function RadixDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
+            filterFields={filterFields}
             filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}
           />

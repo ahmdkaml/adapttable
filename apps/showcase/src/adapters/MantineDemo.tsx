@@ -107,6 +107,7 @@ export function MantineDemo({
   forceMobile,
   exportCsv,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -157,6 +158,7 @@ export function MantineDemo({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -280,6 +282,7 @@ export function MantineDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
+            filterFields={filterFields}
             stickyTop={8}
             filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}

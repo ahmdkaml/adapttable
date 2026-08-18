@@ -28,3 +28,15 @@ export function toolbarShowsFilters(
   if (!hasForm) return false;
   return mode !== "header" || hasFilterTree;
 }
+
+/**
+ * Whether the per-field form mounts inside Filters. Header icons own those
+ * fields; `filterFields={false}` keeps only the AND/OR tree.
+ */
+export function showSimpleFilterFields(
+  headerFiltersOn: boolean,
+  filterFields?: boolean
+): boolean {
+  if (headerFiltersOn) return false;
+  return filterFields !== false;
+}

@@ -103,6 +103,7 @@ import {
   useTableVirtualization,
   windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
+import { useMeasuredWindowScrollMargin } from "./virtual/windowScrollMargin";
 
 /**
  * The shared prop surface every adapter's toolbar sub-component needs.
@@ -1323,10 +1324,21 @@ export function useChromeBodyData<TRow>(
     }
   }, [source]);
   const scrollBoxRef = useRef<HTMLElement | null>(null);
-  const virtualScrollRef = useCallback((node: HTMLElement | null) => {
-    scrollBoxRef.current = node;
-  }, []);
   const inScrollBox = props.maxHeight != null;
+  // Window mode needs the list's document Y as TanStack `scrollMargin`.
+  // Without it, page chrome above the table is treated as already-scrolled
+  // rows and the body opens with a blank gap. An explicit prop wins.
+  const measureWindowOffset =
+    virtualize && !inScrollBox && props.virtualScrollMargin == null;
+  const { scrollMargin: measuredScrollMargin, observe: observeWindowList } =
+    useMeasuredWindowScrollMargin(measureWindowOffset, chrome.rootRef);
+  const virtualScrollRef = useCallback(
+    (node: HTMLElement | null) => {
+      scrollBoxRef.current = node;
+      observeWindowList(node);
+    },
+    [observeWindowList]
+  );
   const bodyEligible = isBodyEligible(chrome);
   const groupingArmed = Boolean(chrome.grouping);
   const groupKeys = entryKeys(chrome.grouping?.entries);
@@ -1346,7 +1358,7 @@ export function useChromeBodyData<TRow>(
   const estimateSize = estimateBodyItemSize(chrome, props, partitioned.scroll);
   const scrollOpts = {
     overscan: props.virtualOverscan,
-    scrollMargin: props.virtualScrollMargin,
+    scrollMargin: props.virtualScrollMargin ?? measuredScrollMargin,
     getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
     estimateSize,

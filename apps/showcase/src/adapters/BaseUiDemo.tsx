@@ -142,6 +142,7 @@ export function BaseUiDemo({
   cellNavigation,
   columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -194,6 +195,7 @@ export function BaseUiDemo({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -313,6 +315,7 @@ export function BaseUiDemo({
           resizableColumns
           stickyHeader
           headerFilters={headerFilters}
+          filterFields={filterFields}
           filters={(filterControls ?? !focused) ? filters : undefined}
           filterTypes={demoFilterTypes()}
           accentColor="blue"

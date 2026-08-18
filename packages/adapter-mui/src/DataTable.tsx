@@ -1,12 +1,14 @@
-import { resolveLabels } from "@adapttable/core";
+import { resolveLabels, showSimpleFilterFields } from "@adapttable/core";
 import {
   fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
+  resolveStickyToolbar,
   useCommandPalette,
   useDataTableShell,
   useMountStagger,
+  useStickyToolbarLayout,
   useTableContextMenu,
 } from "@adapttable/core/adapter";
 import {
@@ -74,6 +76,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // kit's row `size` over the returned bundles.
   const headerFiltersOn =
     props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
     <Stack spacing={3} data-adapttable-part="filters-form">
       <FilterTreeBuilder
@@ -81,15 +87,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         source={source}
         labels={props.labels}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-      {headerFiltersOn ? null : (
+      {simpleFiltersOn ? (
         <AutoFilterForm
           defs={defs}
           source={source}
           labels={resolveLabels(props.labels)}
           registry={registry}
         />
-      )}
+      ) : null}
     </Stack>
   ));
   const {
@@ -107,6 +114,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasRowReorder,
     toolbarProps,
   } = shell;
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(
+      props.stickyHeader,
+      props.stickyToolbar,
+      props.maxHeight != null
+    ),
+    props.stickyTop ?? 0
+  );
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
@@ -147,7 +162,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasFilters: c.activeFilterCount > 0,
   });
   const { confirm } = c;
-  const tableProps = { ...shell.tableProps, size };
+  const tableProps = {
+    ...shell.tableProps,
+    size,
+    stickyTop: stickyBar.headerOffset,
+  };
   useMountStagger(rootRef, [viewSource.rows.length, c.isMobile], {
     enabled: animate,
   });
@@ -233,7 +252,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : null}
       <FindBar find={shell.find} labels={labels} />
       <Stack spacing={1.5}>
-        <Box data-adapttable-part="toolbar" className={classNames?.toolbar}>
+        <Box
+          data-adapttable-part="toolbar"
+          ref={stickyBar.toolbarRef}
+          className={classNames?.toolbar}
+          sx={
+            stickyBar.toolbarStyle
+              ? {
+                  position: "sticky",
+                  top: stickyBar.toolbarStyle.top,
+                  zIndex: 3,
+                  bgcolor: "background.paper",
+                  pb: 1.5,
+                }
+              : undefined
+          }
+        >
           <Toolbar
             {...toolbarProps}
             savedViewsMenu={savedViewsMenu}
@@ -329,6 +363,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               pagination={table.pagination}
               total={viewSource.total}
               limit={viewSource.limit}
+              defaultLimit={viewSource.defaultLimit}
               setPage={viewSource.setPage}
               setLimit={viewSource.setLimit}
               labels={labels}

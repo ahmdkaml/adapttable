@@ -125,6 +125,7 @@ export function AntdDemo({
   wide,
   exportCsv,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -183,6 +184,7 @@ export function AntdDemo({
    */
   exportCsv?: DataTableProps<Person>["exportCsv"];
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -307,6 +309,7 @@ export function AntdDemo({
             filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}
             headerFilters={headerFilters}
+            filterFields={filterFields}
           />
         )}
       />

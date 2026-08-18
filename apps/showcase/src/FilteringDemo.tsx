@@ -85,6 +85,7 @@ export function FilteringDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
                 filterControls
                 filtersUi={layout === "header" ? "popover" : layout}
                 headerFilters={layout === "header" && form !== "advanced"}
+                filterFields={form !== "advanced"}
                 focused
               />
             </AdvancedFiltersProvider>

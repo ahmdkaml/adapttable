@@ -132,6 +132,7 @@ export function MuiDemo({
   cellNavigation,
   columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -184,6 +185,7 @@ export function MuiDemo({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -305,6 +307,7 @@ export function MuiDemo({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
+            filterFields={filterFields}
             filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}
           />

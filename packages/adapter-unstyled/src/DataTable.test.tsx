@@ -104,6 +104,32 @@ describe("<DataTable> (unstyled)", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps an off-list default page size after switching to 10", () => {
+    adapter = createMemoryAdapter("");
+    function ScaleHarness() {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "infinite",
+        defaults: { limit: 500 },
+      });
+      return (
+        <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
+      );
+    }
+    render(<ScaleHarness />);
+    const select = screen.getByLabelText("Rows per page");
+    expect(
+      within(select).getByRole("option", { name: "500" })
+    ).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: "10" } });
+    expect(select).toHaveValue("10");
+    expect(
+      within(select).getByRole("option", { name: "500" })
+    ).toBeInTheDocument();
+  });
+
   it("activates onRowClick from a row, but never from row actions", () => {
     const onRowClick = vi.fn();
     const onAction = vi.fn();

@@ -663,7 +663,13 @@ export interface BaseDataTableProps<TRow> {
   estimateCardSize?: number;
   /** Extra rows/cards rendered before and after the virtual window. */
   virtualOverscan?: number;
-  /** Scroll margin for window virtualization, usually sticky chrome height. */
+  /**
+   * Override for window-mode virtualization's scroll offset.
+   *
+   * When omitted, the list's document offset is measured so a table below
+   * page chrome does not open with a blank gap. Pass a value only when you
+   * already know that offset (tests, or a table whose position is fixed).
+   */
   virtualScrollMargin?: number;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
@@ -716,6 +722,11 @@ export interface BaseDataTableProps<TRow> {
    * nothing extra renders.
    */
   headerFilters?: boolean;
+  /**
+   * Mount the per-field Filters form. Default on. Pass `false` to keep only
+   * the AND/OR tree in that chrome — the field list is gone, not hidden.
+   */
+  filterFields?: boolean;
 
   /* ── Bulk actions ────────────────────────────────────────────────── */
   /** Bulk actions — enabling these turns on row selection. */
@@ -923,13 +934,20 @@ export interface BaseDataTableProps<TRow> {
   skeletonRows?: number;
   /**
    * Top inset in px for the sticky header (`stickyHeader`) — e.g. the
-   * height of an app bar it must clear. Identical meaning in every
-   * adapter; Mantine's optional sticky toolbar (`stickyToolbar`) also
-   * parks at this inset. Defaults to 0.
+   * height of an app bar it must clear. When the toolbar pins with the
+   * header it parks at this inset too. Defaults to 0.
    */
   stickyTop?: number;
   /** Keep the desktop table header sticky while scrolling. Defaults to false (opt-in). */
   stickyHeader?: boolean;
+  /**
+   * Keep the toolbar (search, page size) sticky with the header.
+   * Defaults to `stickyHeader` on page-scroll tables; pass `false` to
+   * let the toolbar scroll away. Has no effect when the table already
+   * scrolls in a box (`maxHeight`, or antd's native virtual scroller) —
+   * the toolbar already sits outside that scroller.
+   */
+  stickyToolbar?: boolean;
   /** Scroll back to the table when search/filter/page changes. Defaults to true. */
   scrollToTopOnChange?: boolean;
   /** Extra gap below sticky chrome when scrolling back. Defaults to 8. */

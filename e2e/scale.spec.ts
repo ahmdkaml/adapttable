@@ -36,6 +36,50 @@ test.describe("scale — virtualization", () => {
       .toBeLessThan(120);
     expect(await rows.count()).toBeGreaterThan(0);
   });
+
+  // Radix is listed explicitly: its Table.Root ScrollArea used to trap the
+  // sticky header inside the table, so this only failing on the first kit
+  // (usually Mantine) would miss the regression.
+  for (const kit of [...new Set([KIT, "radix"])]) {
+    test(`${kit}: does not leave a blank gap between the header and the first rows`, async ({
+      page,
+    }) => {
+      await page.goto(`/${kit}/scale/`);
+      const firstRow = page.locator('[data-adapttable-part="row"]').first();
+      await expect(firstRow).toBeVisible();
+      // Window mode used to treat the page chrome as already-scrolled rows,
+      // so the first painted row was ~id 7 with a hundreds-of-pixels spacer
+      // under the header. The list must start at the top of the dataset.
+      await expect(firstRow).toHaveAttribute("data-index", "0");
+
+      const header = page
+        .locator('[data-adapttable-part="header-cell"]')
+        .first();
+      await expect(header).toBeVisible();
+      const headerBox = await header.boundingBox();
+      const rowBox = await firstRow.boundingBox();
+      expect(headerBox && rowBox).toBeTruthy();
+      expect(rowBox!.y - (headerBox!.y + headerBox!.height)).toBeLessThan(8);
+
+      await page.mouse.wheel(0, 800);
+      await expect(header).toBeVisible();
+      await expect
+        .poll(async () => {
+          const stuck = await header.boundingBox();
+          const visible = page.locator('[data-adapttable-part="row"]');
+          const count = await visible.count();
+          let minGap = Number.POSITIVE_INFINITY;
+          for (let i = 0; i < count; i++) {
+            const box = await visible.nth(i).boundingBox();
+            if (!stuck || !box) continue;
+            const gap = box.y - (stuck.y + stuck.height);
+            if (gap >= -2 && gap < minGap) minGap = gap;
+          }
+          return minGap;
+        })
+        .toBeLessThan(16);
+    });
+  }
 });
 
 /**

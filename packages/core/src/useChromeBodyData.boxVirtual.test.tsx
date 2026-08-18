@@ -7,6 +7,7 @@
  */
 import { useVirtualizer, useWindowVirtualizer } from "@tanstack/react-virtual";
 import { renderHook } from "@testing-library/react";
+import { act } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useFrontendData } from "./source/useFrontendData";
@@ -90,6 +91,37 @@ describe("box-virtual suppresses the page-level load-more affordances", () => {
     const { result } = renderBody(undefined);
     expect(result.current.virtualization.enabled).toBe(true);
     expect(result.current.canLoadMore).toBe(true);
+  });
+
+  it("window mode feeds TanStack the measured list offset as scrollMargin", () => {
+    vi.mocked(useWindowVirtualizer).mockReturnValue(
+      ACTIVE_WINDOW as unknown as ReturnType<typeof useWindowVirtualizer>
+    );
+    const { result } = renderBody(undefined);
+    const box = document.createElement("div");
+    const body = document.createElement("div");
+    body.setAttribute("data-adapttable-part", "tbody");
+    box.appendChild(body);
+    vi.spyOn(body, "getBoundingClientRect").mockReturnValue({
+      top: 280,
+      left: 0,
+      right: 0,
+      bottom: 280,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 280,
+      toJSON: () => ({}),
+    });
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(20);
+
+    act(() => {
+      result.current.virtualScrollRef(box);
+    });
+
+    expect(useWindowVirtualizer).toHaveBeenCalledWith(
+      expect.objectContaining({ scrollMargin: 300 })
+    );
   });
 });
 

@@ -78,6 +78,12 @@ export interface TableSource<TRow> extends TableStateMutators {
   readonly page: number;
   /** Current page size. */
   readonly limit: number;
+  /**
+   * Page size applied when the URL has no `limit` param (`defaults.limit`,
+   * or 25). The rows-per-page list keeps this value after the user picks
+   * another size, so a table that starts at 500 can return to 500.
+   */
+  readonly defaultLimit: number;
   /** Current committed search term. */
   readonly search: string;
   /** Active sort column key, if any. */

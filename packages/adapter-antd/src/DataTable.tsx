@@ -22,6 +22,7 @@ import {
   resolveColumnFooter,
   resolveExportCsv,
   resolveFilterMode,
+  showSimpleFilterFields,
   toolbarShowsFilters,
   resolveLabels,
   type RowExpansionState,
@@ -70,6 +71,7 @@ import {
   SidePanelLayout,
   tableRenderModel,
   undoRedoToolbar,
+  resolveStickyToolbar,
   useCommandPalette,
   useExportHandler,
   useFullscreen,
@@ -77,6 +79,7 @@ import {
   useMountStagger,
   useOffsetHeight,
   useResolvedAdapter,
+  useStickyToolbarLayout,
   useTableContextMenu,
   viewControlsToolbar,
 } from "@adapttable/core/adapter";
@@ -773,10 +776,12 @@ function PagedFooter<TRow>({
               aria-label={labels.rowsPerPage}
               value={source.limit}
               onChange={(value: number) => source.setLimit(value)}
-              options={pageSizeOptions(source.limit).map((n) => ({
-                value: n,
-                label: n,
-              }))}
+              options={pageSizeOptions([source.limit, source.defaultLimit]).map(
+                (n) => ({
+                  value: n,
+                  label: n,
+                })
+              )}
             />
           </>
         )}
@@ -829,9 +834,11 @@ function autoFilterForm<TRow>(
   runtime: FilterRuntime<TRow>,
   source: TableSource<TRow>,
   labels: Required<TableLabels>,
-  header: boolean
+  header: boolean,
+  filterFields?: boolean
 ) {
   if (runtime.defs.length === 0) return undefined;
+  const simpleFiltersOn = showSimpleFilterFields(header, filterFields);
   return (
     <div
       data-adapttable-part="filters-form"
@@ -842,15 +849,16 @@ function autoFilterForm<TRow>(
         source={source}
         labels={labels}
         registry={runtime.registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-      {header ? null : (
+      {simpleFiltersOn ? (
         <AutoFilterForm
           defs={runtime.defs}
           source={source}
           labels={labels}
           registry={runtime.registry}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -1499,7 +1507,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           runtime,
           resolvedSource,
           formLabels,
-          resolveFilterMode(props.filtersMode, props.headerFilters) === "header"
+          resolveFilterMode(props.filtersMode, props.headerFilters) ===
+            "header",
+          props.filterFields
         )
       : props.filters;
   const filterLabels = useMemo(
@@ -1808,8 +1818,19 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     summaryLeadingCells(rowSelection, expandable, Boolean(c.rowReorder)),
     hasRowActions
   );
+  // antd's native virtual table (and any maxHeight box) already scrolls
+  // inside a fixed-height scroller. The toolbar sits outside that box, so
+  // page-sticky search would detach from the card while rows scroll in the
+  // box — pin the toolbar only when the page itself is the scroller.
+  const inScrollBox =
+    props.maxHeight != null ||
+    (virtualize && !grouping && c.body === "desktop");
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(props.stickyHeader, props.stickyToolbar, inScrollBox),
+    props.stickyTop ?? 0
+  );
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
-    ? { offsetHeader: props.stickyTop ?? 0 }
+    ? { offsetHeader: inScrollBox ? 0 : stickyBar.headerOffset }
     : undefined;
   // The filtered empty-state may carry its own slot: `noResults` wins there,
   // and falls through to `empty` so passing only `empty` still covers both.
@@ -1893,7 +1914,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <AntdRowReorderAnnouncer rowReorder={c.rowReorder} />
       <FindBar find={find} labels={c.table.labels} />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
-        <div data-adapttable-part="toolbar" className={classNames?.toolbar}>
+        <div
+          data-adapttable-part="toolbar"
+          ref={stickyBar.toolbarRef}
+          className={classNames?.toolbar}
+          style={stickyBar.toolbarStyle}
+        >
           <Toolbar
             table={table}
             searchable={props.searchable !== false}

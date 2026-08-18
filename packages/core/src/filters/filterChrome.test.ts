@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveFilterMode, toolbarShowsFilters } from "./filterChrome";
+import {
+  resolveFilterMode,
+  showSimpleFilterFields,
+  toolbarShowsFilters,
+} from "./filterChrome";
 
 describe("resolveFilterMode", () => {
   it("defaults to the popover", () => {
@@ -31,5 +35,14 @@ describe("toolbarShowsFilters", () => {
   it("keeps Filters in header mode only when the AND/OR tree is on", () => {
     expect(toolbarShowsFilters("header", true, false)).toBe(false);
     expect(toolbarShowsFilters("header", true, true)).toBe(true);
+  });
+});
+
+describe("showSimpleFilterFields", () => {
+  it("mounts the field list unless header mode or the host turned it off", () => {
+    expect(showSimpleFilterFields(false)).toBe(true);
+    expect(showSimpleFilterFields(false, true)).toBe(true);
+    expect(showSimpleFilterFields(false, false)).toBe(false);
+    expect(showSimpleFilterFields(true, true)).toBe(false);
   });
 });

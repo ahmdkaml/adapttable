@@ -156,6 +156,7 @@ export function UnstyledLike({
   cellNavigation,
   columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -209,6 +210,7 @@ export function UnstyledLike({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -333,6 +335,7 @@ export function UnstyledLike({
             resizableColumns
             stickyHeader
             headerFilters={headerFilters}
+            filterFields={filterFields}
             classNames={styled}
             filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}

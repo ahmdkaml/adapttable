@@ -137,9 +137,10 @@ test("Advanced alone still uses the same Filters chrome", async ({ page }) => {
   await expect(
     form.locator("[data-adapttable-part='filter-tree']")
   ).toBeVisible();
+  await expect(form.getByText("Person", { exact: true })).toHaveCount(0);
   await expect(
-    form.locator("[data-adapttable-part='filter-operator']")
-  ).toHaveCount(0);
+    form.getByRole("button", { name: "Add condition" })
+  ).toBeVisible();
 });
 
 for (const kit of KITS) {

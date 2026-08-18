@@ -53,7 +53,7 @@ const classNames: DataTableClassNames = {
     "h-9 rounded-md bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600",
   table: "w-full border-collapse text-sm",
   headerCell:
-    "border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 text-start font-semibold text-gray-500 [&[data-pinned]]:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 dark:[&[data-pinned]]:bg-zinc-800",
+    "border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-start font-semibold text-gray-500 [&[data-sticky]]:bg-gray-50 [&[data-pinned]]:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:[&[data-sticky]]:bg-zinc-800 dark:[&[data-pinned]]:bg-zinc-800",
   sortButton:
     "inline-flex items-center gap-1 font-semibold text-gray-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400",
   row: "border-b border-gray-100 last:border-0 hover:bg-gray-50 data-[selected]:bg-indigo-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60 dark:data-[selected]:bg-indigo-500/15",

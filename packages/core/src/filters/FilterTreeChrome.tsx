@@ -65,6 +65,8 @@ export interface FilterTreeBuilderProps<TRow> {
   readonly labels?: TableLabels;
   readonly classNames?: FilterTreeClassNames;
   readonly registry?: FilterTypeRegistry;
+  /** Open Advanced on first paint. Default: open only when a tree already exists. */
+  readonly defaultExpanded?: boolean;
 }
 
 /** One option in a tree Select. */
@@ -601,12 +603,15 @@ export function FilterTreeChrome<TRow>({
   classNames = {},
   registry = defaultFilterRegistry,
   slots,
+  defaultExpanded,
 }: Readonly<FilterTreeChromeProps<TRow>>) {
   const labels = resolveLabels(labelOverrides);
   const tree = source.filterTree;
   const commit = source.setFilterTree;
   const first = defs[0];
-  const [expanded, setExpanded] = useState(Boolean(tree));
+  const [expanded, setExpanded] = useState(
+    () => defaultExpanded === true || Boolean(tree)
+  );
   if (!commit || !first || defs.length === 0) return null;
   const Disclosure = slots.Disclosure;
 

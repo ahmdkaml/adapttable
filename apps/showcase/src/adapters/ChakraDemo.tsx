@@ -122,6 +122,7 @@ export function ChakraDemo({
   cellNavigation,
   columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -175,6 +176,7 @@ export function ChakraDemo({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -299,6 +301,7 @@ export function ChakraDemo({
               resizableColumns
               stickyHeader
               headerFilters={headerFilters}
+              filterFields={filterFields}
               filters={(filterControls ?? !focused) ? filters : undefined}
               filterTypes={demoFilterTypes()}
             />

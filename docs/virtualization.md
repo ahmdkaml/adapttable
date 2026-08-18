@@ -49,8 +49,9 @@ real measured sizes (like the `140` above) when your cells differ.
 - `virtualize` is opt-in (default `false`) and applies in **infinite (non-paged)
   mode** — paged tables already cap the row count, so they never virtualize.
 - **Window mode** (no `maxHeight`): the virtual window tracks the page scroll.
-  Use `virtualScrollMargin` to offset it under sticky chrome (e.g. a sticky
-  header above the table).
+  The list's offset from the top of the document is measured automatically,
+  so a table below page chrome does not open with a blank gap. Pass
+  `virtualScrollMargin` only to override that measurement.
 - **Element mode** (any `maxHeight` box): the same prop virtualizes inside the
   scroll box instead — the box is the scroller and the window tracks it.
 - `rowHeight` overrides the estimate when set — a function is per row, so
@@ -74,7 +75,7 @@ real measured sizes (like the `140` above) when your cells differ.
 | `estimateRowSize`     | `number`  | `56`    | Desktop row-height estimate in px.                                |
 | `estimateCardSize`    | `number`  | —       | Mobile card-height estimate in px.                                |
 | `virtualOverscan`     | `number`  | `8`     | Extra rows/cards rendered before and after the visible window.    |
-| `virtualScrollMargin` | `number`  | `0`     | Window-mode scroll offset, usually sticky chrome height.          |
+| `virtualScrollMargin` | `number`  | —       | Override for the measured window-mode list offset.                |
 
 ## Benchmark
 

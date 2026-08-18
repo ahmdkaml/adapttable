@@ -126,6 +126,14 @@ describe("desktop wrapper horizontal overflow (no maxHeight, no pins)", () => {
     expect(getComputedStyle(wrapper.querySelector("th")!).position).toBe(
       "sticky"
     );
+    // Radix Table.Root's ScrollArea would otherwise trap sticky inside the
+    // table; the page-stick class restores overflow so thead pins to the window.
+    expect(wrapper.classList.contains("adapttable-radix-page-stick")).toBe(
+      true
+    );
+    expect(wrapper.querySelector("style")!.textContent ?? "").toContain(
+      ".rt-ScrollAreaViewport{overflow:visible!important"
+    );
   });
 
   it("re-binds the sticky header to the box top once the table overflows", () => {
@@ -141,8 +149,12 @@ describe("desktop wrapper horizontal overflow (no maxHeight, no pins)", () => {
       ro.fireFor(wrapper);
     });
     // The wrapper is now the scroll container: pin to ITS top, or the
-    // header floats down into the rows.
+    // header floats down into the rows. Page-stick must drop so we do not
+    // fight the box with a viewport overflow override.
     expect(getComputedStyle(wrapper.querySelector("th")!).top).toBe("0px");
+    expect(wrapper.classList.contains("adapttable-radix-page-stick")).toBe(
+      false
+    );
   });
 
   it("gains overflow-x auto once the table measures wider than the wrapper", () => {

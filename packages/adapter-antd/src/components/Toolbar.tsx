@@ -224,10 +224,12 @@ export function Toolbar<TRow>({
             style={{ minWidth: 110 }}
             aria-label={labels.rowsPerPage}
             value={source.limit}
-            options={pageSizeOptions(source.limit).map((n) => ({
-              value: n,
-              label: String(n),
-            }))}
+            options={pageSizeOptions([source.limit, source.defaultLimit]).map(
+              (n) => ({
+                value: n,
+                label: String(n),
+              })
+            )}
             onChange={(value: number) => source.setLimit(value)}
           />
         )}

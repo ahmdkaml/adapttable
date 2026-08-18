@@ -1182,7 +1182,8 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 Declare a filter once and AdaptTable derives everything from it: the
 kit-native widget, the `f_<key>` URL param, the removable chip, and (on
-frontend data) the row predicate — no wiring.
+frontend data) the row predicate — no wiring. Nested AND/OR groups are
+the [advanced filter tree](./filter-tree.md).
 
 ## Example
 
@@ -1378,16 +1379,16 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` / `parseFilterTree` /
   `serializeFilterTree` / `isActiveFilterTree` / `evaluateFilterTree` /
   `conditionToExtra` over a `QueryFilterGroup` of `QueryCondition`s
-  (`isFilterGroup` narrows a child). The builder UI is a later issue;
-  the engine stores `ft=1.{…}` and evaluates the tree on the frontend
-  tier (ANDed with the flat extra bag). `useTableData` wires
-  `evaluateFilterTree` itself; a host that calls `useFrontendData`
+  (`isFilterGroup` narrows a child). Each adapter's `FilterTreeBuilder`
+  sits at the top of the Filters form when `source.setFilterTree` is
+  set; `toolbarShowsFilters` keeps the toolbar button in header mode
+  for that tree. The engine stores `ft=1.{…}` and evaluates the tree
+  on the frontend tier (ANDed with the flat extra bag). `useTableData`
+  wires `evaluateFilterTree` itself; a host that calls `useFrontendData`
   directly passes `filterTreeFn` over the same defs as `filterFn`. A
   server that declares `supports.filterTree` receives the same tree on
-  `query.filterTree`. The filter panel mounts each adapter's
-  `FilterTreeBuilder` — add condition, add group, AND/OR — over that
-  same model, with that kit's controls. Tree
-  leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
+  `query.filterTree`. Tree leaves become chips via `useFilterTreeChips`;
+  Clear all drops `ft`. See [filter-tree](./filter-tree.md).
 - **Facet counts**: `computeFilterFacets` / `rowsExcludingFilter` /
   `FacetMap` / `FacetCounts` count what selecting a value _would_ keep —
   the filtered set with that facet's own filter removed. Frontend
@@ -4932,8 +4933,9 @@ real measured sizes (like the `140` above) when your cells differ.
 - `virtualize` is opt-in (default `false`) and applies in **infinite (non-paged)
   mode** — paged tables already cap the row count, so they never virtualize.
 - **Window mode** (no `maxHeight`): the virtual window tracks the page scroll.
-  Use `virtualScrollMargin` to offset it under sticky chrome (e.g. a sticky
-  header above the table).
+  The list's offset from the top of the document is measured automatically,
+  so a table below page chrome does not open with a blank gap. Pass
+  `virtualScrollMargin` only to override that measurement.
 - **Element mode** (any `maxHeight` box): the same prop virtualizes inside the
   scroll box instead — the box is the scroller and the window tracks it.
 - `rowHeight` overrides the estimate when set — a function is per row, so
@@ -4957,7 +4959,7 @@ real measured sizes (like the `140` above) when your cells differ.
 | `estimateRowSize`     | `number`  | `56`    | Desktop row-height estimate in px.                                |
 | `estimateCardSize`    | `number`  | —       | Mobile card-height estimate in px.                                |
 | `virtualOverscan`     | `number`  | `8`     | Extra rows/cards rendered before and after the visible window.    |
-| `virtualScrollMargin` | `number`  | `0`     | Window-mode scroll offset, usually sticky chrome height.          |
+| `virtualScrollMargin` | `number`  | —       | Override for the measured window-mode list offset.                |
 
 ## Benchmark
 
@@ -6955,9 +6957,7 @@ export function People({ rows, columns, setRows }) {
 
   // Your socket / poll calls this when a row changes.
   const onMessage = (id, budget) =>
-    setRows(
-      applyRowPatches(rows, [updateRow(id, { budget })], byId)
-    );
+    setRows(applyRowPatches(rows, [updateRow(id, { budget })], byId));
 
   return <DataTable data={rows} columns={columns} rowKey={byId} />;
 }
@@ -7018,17 +7018,17 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Filters & search
 
-| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                              |
-| ------------------- | ----------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                              |
-| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button. `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                           |
-| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                      |
-| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                  |
-| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                        |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                  |
-| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                 |
-| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                        |
+| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                                                                             |
+| ------------------- | ----------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                                                                             |
+| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: per-column icons; hides the Filters button unless the AND/OR tree is on (`toolbarShowsFilters`). `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
+| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                                                                          |
+| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                                                                     |
+| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                                                                 |
+| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                                                                       |
+| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                                                                 |
+| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                                                                |
+| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                                                                       |
 
 ### Selection & actions
 
@@ -7058,7 +7058,8 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `error`                     | `Error \| null`                                                 | `null`          | Forwarded error to display in the table's error state (retry via the source's `refetch`).                                                                                                                                                                                                                                                                                        |
 | `skeletonRows`              | `number`                                                        | page size       | Number of skeleton rows while loading.                                                                                                                                                                                                                                                                                                                                           |
 | `stickyHeader`              | `boolean`                                                       | `false`         | Keep the desktop table header sticky while scrolling.                                                                                                                                                                                                                                                                                                                            |
-| `stickyTop`                 | `number`                                                        | `0`             | Sticky toolbar top offset in px (for app headers above the table).                                                                                                                                                                                                                                                                                                               |
+| `stickyToolbar`             | `boolean`                                                       | `stickyHeader`  | Keep search and page-size pinned with the header on page-scroll tables. Pass `false` to let the toolbar scroll away.                                                                                                                                                                                                                                                              |
+| `stickyTop`                 | `number`                                                        | `0`             | Inset in px for the sticky header (and the sticky toolbar) so they clear an app bar.                                                                                                                                                                                                                                                                                             |
 | `scrollToTopOnChange`       | `boolean`                                                       | `true`          | Scroll back to the table when search/filter/page changes.                                                                                                                                                                                                                                                                                                                        |
 | `scrollTopGap`              | `number`                                                        | `8`             | Extra gap below sticky chrome when scrolling back.                                                                                                                                                                                                                                                                                                                               |
 | `rowClassName`              | `(row: TRow, index: number) => string \| undefined`             | —               | Conditional per-row class, appended on desktop rows and mobile cards alike.                                                                                                                                                                                                                                                                                                      |
@@ -7089,13 +7090,13 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Virtualization
 
-| Prop                  | Type      | Default | Description                                                            |
-| --------------------- | --------- | ------- | ---------------------------------------------------------------------- |
-| `virtualize`          | `boolean` | `false` | Virtualize long infinite lists.                                        |
-| `estimateRowSize`     | `number`  | `56`    | Desktop row-size estimate in px.                                       |
-| `estimateCardSize`    | `number`  | `132`   | Mobile card-size estimate in px.                                       |
-| `virtualOverscan`     | `number`  | `8`     | Extra rows/cards rendered before and after the virtual window.         |
-| `virtualScrollMargin` | `number`  | `0`     | Scroll margin for window virtualization, usually sticky chrome height. |
+| Prop                  | Type      | Default | Description                                                    |
+| --------------------- | --------- | ------- | -------------------------------------------------------------- |
+| `virtualize`          | `boolean` | `false` | Virtualize long infinite lists.                                |
+| `estimateRowSize`     | `number`  | `56`    | Desktop row-size estimate in px.                               |
+| `estimateCardSize`    | `number`  | `132`   | Mobile card-size estimate in px.                               |
+| `virtualOverscan`     | `number`  | `8`     | Extra rows/cards rendered before and after the virtual window. |
+| `virtualScrollMargin` | `number`  | —       | Override for the measured window-mode list offset.             |
 
 ### URL & persistence
 
@@ -7193,10 +7194,10 @@ server that sets `supports.facets` receives `query.facets` and returns
 the same map on the page (`PaginatedResponse.facets`,
 `PageSelector.facets`). Without either surface the widget stays hidden.
 `headerFilters` is an alias for `filtersMode="header"` (`resolveFilterMode` /
-`FilterChromeMode`): each adapter mounts `FilterHeaderRow` /
-`FilterHeaderControl` (`FilterHeaderRowProps` / `FilterHeaderControlProps`)
-as a second header row of compact kit inputs on the same extra bag and
-hides the toolbar Filters button. The shared layout is `FilterHeaderChrome`
+`FilterChromeMode` / `toolbarShowsFilters`): each adapter mounts a
+per-column filter icon (`FilterHeaderTrigger`) on the same extra bag and
+hides the toolbar Filters button unless `source.setFilterTree` is set, so
+the AND/OR tree still has a chrome. The shared layout is `FilterHeaderChrome`
 / `FilterHeaderControlChrome` / `FilterHeaderChromeProps` /
 `FilterHeaderControlChromeProps` / `FilterHeaderClassNames` /
 `FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
@@ -7613,7 +7614,7 @@ Layout (on `@adapttable/core/adapter`): `FilterHeaderChrome` /
 `FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
 / `FilterHeaderRangeProps` / `FilterHeaderMultiProps` / `FilterHeaderOption`.
 Helpers: `filterDefForColumn` / `headerFilterStickTop` /
-`resolveFilterMode` / `FilterChromeMode`. Facets: `computeFilterFacets` /
+`resolveFilterMode` / `toolbarShowsFilters` / `FilterChromeMode`. Facets: `computeFilterFacets` /
 `rowsExcludingFilter` / `FacetMap` / `FacetCounts`. The tree is a `QueryFilterGroup` of
 `QueryCondition`s (`isFilterGroup` narrows a child). See
 [filtering](./filtering.md).
@@ -8248,7 +8249,9 @@ layout state, `PaginationInfo` from `computePagination`, the
 **Orchestration.** `useDataTableShell(props, renderAutoForm)` is the whole
 shared engine behind a batteries-included `<DataTable>` — it resolves the
 data tier, builds the declarative-filter runtime, wires the chrome, and
-returns the `tableProps` / `toolbarProps` bundles. `DataTableShellProps`
+returns the `tableProps` / `toolbarProps` bundles. `useStickyToolbarLayout`
+and `resolveStickyToolbar` park search and page-size with a sticky header.
+`DataTableShellProps`
 is its kit-agnostic prop surface and `DataModeProps` the discriminated
 `mode` union inside it (`mode="server"` requires `onQueryChange` at
 compile time). `tableRenderModel(props)` / `TableRenderModel` derive the
@@ -10005,7 +10008,8 @@ through the rename table below.
   `classNames`; Chakra/Radix/Base UI export their `DataTableClassNames`.
 - **`density` has a visual effect in every adapter** and kit `size`
   overrides it; `stickyTop` means the sticky-header inset everywhere
-  (Mantine's toolbar stickiness became an explicit `stickyToolbar` prop);
+  (`stickyToolbar` follows `stickyHeader` on page-scroll tables; pass
+  `false` to let the toolbar scroll away);
   Mantine's `SavedViewsMenu` takes the same `options` shape as the other
   kits.
 - **Accessibility**: editable cells expose the VALUE as their accessible

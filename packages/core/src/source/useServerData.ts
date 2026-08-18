@@ -351,6 +351,7 @@ export function useServerData<TRow>(
     total,
     page,
     limit,
+    defaultLimit: state.defaultLimit,
     search,
     sortBy,
     sortDir,

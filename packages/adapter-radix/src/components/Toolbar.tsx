@@ -13,8 +13,11 @@ import type { RadixAccentColor } from "../types";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect, type SelectOption } from "./primitives";
 
-export function pageSizeSelectOptions(limit: number): SelectOption[] {
-  return pageSizeOptions(limit).map((n) => ({
+export function pageSizeSelectOptions(
+  limit: number,
+  defaultLimit: number = limit
+): SelectOption[] {
+  return pageSizeOptions([limit, defaultLimit]).map((n) => ({
     value: String(n),
     label: String(n),
   }));
@@ -270,7 +273,7 @@ export function Toolbar<TRow>({
             width="90px"
             aria-label={labels.rowsPerPage}
             value={String(source.limit)}
-            options={pageSizeSelectOptions(source.limit)}
+            options={pageSizeSelectOptions(source.limit, source.defaultLimit)}
             onValueChange={(value) => source.setLimit(Number(value))}
           />
         )}

@@ -101,6 +101,17 @@ describe("<DataTable> (Radix)", () => {
     expect(container.querySelector(".my-footer")).toBeInTheDocument();
   });
 
+  it("does not wrap the table in a card border", () => {
+    const { container } = renderHarness({
+      override: { classNames: { root: "my-root" } },
+    });
+    const root = container.querySelector(".my-root") as HTMLElement;
+    expect(root.style.border).toBe("");
+    expect(container.querySelector(".rt-TableRoot")?.className).not.toContain(
+      "rt-variant-surface"
+    );
+  });
+
   it("applies the card className on mobile", () => {
     const { container } = renderHarness({
       override: { forceMobile: true, classNames: { card: "my-card" } },

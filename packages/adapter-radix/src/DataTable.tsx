@@ -1,12 +1,15 @@
+import { showSimpleFilterFields } from "@adapttable/core";
 import {
   fillSlot,
   GridFocusAnnouncer,
   RowReorderAnnouncer,
   SidePanelLayout,
   type TableBodyRegion,
+  resolveStickyToolbar,
   useCommandPalette,
   useDataTableShell,
   useMountStagger,
+  useStickyToolbarLayout,
   useTableContextMenu,
 } from "@adapttable/core/adapter";
 import { Box, Button, Flex, Progress, Text } from "@radix-ui/themes";
@@ -54,6 +57,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
 
   const headerFiltersOn =
     props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
     <div
       data-adapttable-part="filters-form"
@@ -64,8 +71,9 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         source={source}
         labels={props.labels}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-      {headerFiltersOn ? null : (
+      {simpleFiltersOn ? (
         <AutoFilterForm
           defs={defs}
           source={source}
@@ -74,7 +82,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           labels={props.labels}
           registry={registry}
         />
-      )}
+      ) : null}
     </div>
   ));
   const {
@@ -93,6 +101,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasRowReorder,
     toolbarProps,
   } = shell;
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(
+      props.stickyHeader,
+      props.stickyToolbar,
+      props.maxHeight != null
+    ),
+    props.stickyTop ?? 0
+  );
   // One binding covers headers, rows and cells: the target is resolved from
   // wherever the event started, so there is no third handler to forget.
   const contextMenu = useTableContextMenu<TRow>({
@@ -171,6 +187,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     desktop: (
       <DesktopTable
         {...tableProps}
+        stickyTop={stickyBar.headerOffset}
         prefetch={props.prefetch}
         className={props.classNames?.table}
       />
@@ -185,10 +202,6 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       className={props.classNames?.root}
       aria-busy={chrome.isRefreshing || undefined}
       p="3"
-      style={{
-        border: "1px solid var(--gray-a5)",
-        borderRadius: "var(--radius-4)",
-      }}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
       {shell.tableProps.rowReorder ? (
@@ -198,48 +211,50 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : null}
       <FindBar find={shell.find} labels={labels} />
       <Flex direction="column" gap="3">
-        <Toolbar
-          {...toolbarProps}
-          className={props.classNames?.toolbar}
-          filtersMode={filtersMode}
-          filtersOpen={filtersOpen}
-          onToggleFilters={filtersTrigger.onClick}
-          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
-          onCloseFilters={() => setFiltersOpen(false)}
-          savedViewsMenu={
-            props.savedViews ? (
-              <SavedViewsMenu
-                options={{
-                  // The table's RESOLVED backend — shared so views follow urlSync.
-                  urlAdapter: shell.urlAdapter,
-                  urlKey: props.urlKey,
-                  ...props.savedViews,
-                }}
-                labels={labels}
-                accentColor={accentColor}
-              />
-            ) : undefined
-          }
-          columnMenu={
-            props.enableColumnMenu && !chrome.isMobile ? (
-              <ColumnMenu
-                allColumns={chrome.allColumns}
-                onAutoSize={shell.autoSizeColumns}
-                onAutoSizeColumn={shell.autoSizeColumn}
-                onSortColumn={(key, dir) => source.setSort(key, dir)}
-                onFilterColumn={() => setFiltersOpen(true)}
-                sortBy={source.sortBy}
-                sortDir={source.sortDir}
-                layout={chrome.columnLayout}
-                labels={table.labels}
-                hasRowActions={hasRowActions}
-                hasRowReorder={hasRowReorder}
-                dir={props.dir}
-              />
-            ) : undefined
-          }
-          accentColor={accentColor}
-        />
+        <Box ref={stickyBar.toolbarRef} style={stickyBar.toolbarStyle}>
+          <Toolbar
+            {...toolbarProps}
+            className={props.classNames?.toolbar}
+            filtersMode={filtersMode}
+            filtersOpen={filtersOpen}
+            onToggleFilters={filtersTrigger.onClick}
+            onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
+            onCloseFilters={() => setFiltersOpen(false)}
+            savedViewsMenu={
+              props.savedViews ? (
+                <SavedViewsMenu
+                  options={{
+                    // The table's RESOLVED backend — shared so views follow urlSync.
+                    urlAdapter: shell.urlAdapter,
+                    urlKey: props.urlKey,
+                    ...props.savedViews,
+                  }}
+                  labels={labels}
+                  accentColor={accentColor}
+                />
+              ) : undefined
+            }
+            columnMenu={
+              props.enableColumnMenu && !chrome.isMobile ? (
+                <ColumnMenu
+                  allColumns={chrome.allColumns}
+                  onAutoSize={shell.autoSizeColumns}
+                  onAutoSizeColumn={shell.autoSizeColumn}
+                  onSortColumn={(key, dir) => source.setSort(key, dir)}
+                  onFilterColumn={() => setFiltersOpen(true)}
+                  sortBy={source.sortBy}
+                  sortDir={source.sortDir}
+                  layout={chrome.columnLayout}
+                  labels={table.labels}
+                  hasRowActions={hasRowActions}
+                  hasRowReorder={hasRowReorder}
+                  dir={props.dir}
+                />
+              ) : undefined
+            }
+            accentColor={accentColor}
+          />
+        </Box>
         {chrome.isRefreshing && (
           <Progress size="1" duration="1.5s" aria-label={labels.loading} />
         )}
@@ -326,6 +341,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             pagination={table.pagination}
             total={source.total}
             limit={source.limit}
+            defaultLimit={source.defaultLimit}
             setPage={source.setPage}
             setLimit={source.setLimit}
             labels={labels}

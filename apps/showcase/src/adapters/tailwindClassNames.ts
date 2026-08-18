@@ -58,9 +58,9 @@ export const tailwindClassNames: DataTableClassNames = {
   filtersDone:
     "h-9 rounded-md bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600",
   table: "w-full border-collapse text-sm",
-  // Pinned cells must be opaque so scrolled content never shows through.
+  // Sticky (and pinned) cells must be opaque so scrolled rows never show through.
   headerCell:
-    "border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 text-start font-semibold text-gray-500 [&[data-pinned]]:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400 dark:[&[data-pinned]]:bg-zinc-800",
+    "border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-start font-semibold text-gray-500 [&[data-sticky]]:bg-gray-50 [&[data-pinned]]:bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:[&[data-sticky]]:bg-zinc-800 dark:[&[data-pinned]]:bg-zinc-800",
   sortButton:
     "inline-flex items-center gap-1 font-semibold text-gray-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400",
   row: "border-b border-gray-100 last:border-0 hover:bg-gray-50 data-[selected]:bg-indigo-50 data-[dragging]:opacity-60 data-[drop=before]:shadow-[inset_0_2px_0_0_theme(colors.indigo.500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_theme(colors.indigo.500)] dark:border-zinc-800 dark:hover:bg-zinc-800/60 dark:data-[selected]:bg-indigo-500/15",
@@ -152,15 +152,15 @@ export const tailwindClassNames: DataTableClassNames = {
   // ── Selection, actions & expansion ──────────────────────────────
   checkbox: "h-4 w-4 accent-indigo-600",
   selectionHeader:
-    "w-11 border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800/60",
+    "w-11 border-b border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800",
   selectionCell:
     "w-11 px-3 py-2.5 [&[data-pinned]]:bg-white dark:[&[data-pinned]]:bg-zinc-900",
   actionsHeader:
-    "w-[120px] border-b border-gray-200 bg-gray-50/60 px-3 py-2.5 text-end font-semibold text-gray-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400",
+    "w-[120px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-end font-semibold text-gray-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
   actionsCell:
     "px-3 py-2.5 text-end [&[data-pinned]]:bg-white dark:[&[data-pinned]]:bg-zinc-900",
   expandHeader:
-    "w-8 border-b border-gray-200 bg-gray-50/60 dark:border-zinc-700 dark:bg-zinc-800/60",
+    "w-8 border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800",
   expandCell: "w-8 px-2 py-2.5",
   expandButton:
     "inline-grid h-6 w-6 place-items-center rounded-md text-gray-400 transition-transform hover:bg-gray-100 data-[expanded]:rotate-90 dark:hover:bg-zinc-800",
@@ -182,7 +182,7 @@ export const tailwindClassNames: DataTableClassNames = {
     "ms-1 inline-grid h-4 min-w-4 place-items-center rounded-full bg-indigo-100 px-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300",
   headerGroupRow: "border-b border-gray-200 dark:border-zinc-700",
   headerGroupCell:
-    "border-b border-gray-200 bg-gray-50/60 px-3 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400",
+    "border-b border-gray-200 bg-gray-50 px-3 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
   columnGroupToggle: "align-middle text-gray-400 dark:text-zinc-500",
   groupRow:
     "border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800/50",

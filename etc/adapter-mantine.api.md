@@ -340,6 +340,8 @@ export function PaginationFooter(input: Readonly<PaginationFooterProps>): JSX.El
 // @public
 export interface PaginationFooterProps {
     // (undocumented)
+    defaultLimit?: number;
+    // (undocumented)
     fromIndex: number;
     // (undocumented)
     labels: Required<TableLabels>;

@@ -265,6 +265,10 @@ export {
 } from "./layout/SidePanelChrome";
 export { type FullscreenState, useFullscreen } from "./layout/useFullscreen";
 export {
+  resolveStickyToolbar,
+  useStickyToolbarLayout,
+} from "./layout/useStickyToolbarLayout";
+export {
   type PaginationItem,
   paginationItems,
   type PaginationSlot,

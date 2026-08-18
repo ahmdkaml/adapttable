@@ -245,10 +245,12 @@ export function Toolbar<TRow>({
             </Text>
             <Select
               aria-label={labels.rowsPerPage}
-              data={pageSizeOptions(source.limit).map((n) => ({
-                value: String(n),
-                label: String(n),
-              }))}
+              data={pageSizeOptions([source.limit, source.defaultLimit]).map(
+                (n) => ({
+                  value: String(n),
+                  label: String(n),
+                })
+              )}
               value={String(source.limit)}
               // `allowDeselect={false}` keeps the value non-null.
               onChange={(v) => source.setLimit(Number(v!))}

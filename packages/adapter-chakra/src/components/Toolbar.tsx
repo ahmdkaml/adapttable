@@ -267,7 +267,7 @@ export function Toolbar<TRow>({
             value={source.limit}
             onChange={(e) => source.setLimit(Number(e.target.value))}
           >
-            {pageSizeOptions(source.limit).map((n) => (
+            {pageSizeOptions([source.limit, source.defaultLimit]).map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>

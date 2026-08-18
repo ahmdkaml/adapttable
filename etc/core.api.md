@@ -2441,7 +2441,7 @@ export type PageSelector<TRow, TPage> = (page: TPage) => {
 };
 
 // @public
-export function pageSizeOptions(limit: number, sizes?: readonly number[]): readonly number[];
+export function pageSizeOptions(limit: number | readonly number[], sizes?: readonly number[]): readonly number[];
 
 // @public
 export interface PaginatedResponse<TRow> {
@@ -3661,6 +3661,7 @@ export interface TableQueryParams {
 export interface TableSource<TRow> extends TableStateMutators {
     readonly allFilteredRows?: readonly TRow[];
     readonly allSearchedRows?: readonly TRow[];
+    readonly defaultLimit: number;
     readonly error: Error | null;
     readonly extra: ExtraFilters;
     readonly facets?: FacetMap;
@@ -4446,6 +4447,7 @@ export interface UseTableUrlStateOptions {
 
 // @public
 export interface UseTableUrlStateResult extends TableStateMutators {
+    defaultLimit: number;
     extra: ExtraFilters;
     filterTree: QueryFilterGroup | undefined;
     groupBy: string | undefined;

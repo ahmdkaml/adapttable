@@ -98,6 +98,7 @@ export {
 export {
   type FilterChromeMode,
   resolveFilterMode,
+  showSimpleFilterFields,
   toolbarShowsFilters,
 } from "./filters/filterChrome";
 export {

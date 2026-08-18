@@ -210,6 +210,18 @@ const PIN_BG = "var(--color-background)";
 const STICKY_FIX_CLASS = "adapttable-radix-scroll";
 
 /**
+ * Fifth Radix quirk: `Table.Root`'s ScrollArea is ALWAYS a sticky containing
+ * block. The viewport writes `overflowX/Y: hidden|scroll` as *inline* styles,
+ * and `.rt-ScrollAreaRoot` is `overflow: hidden`. A page-level `stickyTop`
+ * (nav, plus the toolbar we pin with the header) is then an offset *inside*
+ * that box — the header drops into the first rows, and scrolling the page
+ * carries it away. When we are not ourselves a scroll box, restore overflow
+ * so thead sticks against the window like every other adapter. `!important`
+ * is required here: the viewport overflow is inline, not a class.
+ */
+const PAGE_STICK_CLASS = "adapttable-radix-page-stick";
+
+/**
  * Second Radix quirk, this one about direction: the ScrollArea that
  * `Table.Root` wraps the table in writes its OWN `dir="ltr"` attribute, which
  * outranks any inherited RTL. Under an Arabic locale the labels translated
@@ -226,6 +238,8 @@ const FIT_CLASS = "adapttable-radix-fit";
 const STICKY_FIX_CSS =
   `.${STICKY_FIX_CLASS} .rt-TableRootTable{overflow:visible;min-width:var(--adapttable-min-width,0)}` +
   `.${FIT_CLASS} .rt-TableRootTable{table-layout:fixed;width:100%}` +
+  `.${PAGE_STICK_CLASS} .rt-ScrollAreaRoot{overflow:visible;height:auto}` +
+  `.${PAGE_STICK_CLASS} .rt-ScrollAreaViewport{overflow:visible!important;height:auto}` +
   `.rt-TableRoot[dir="rtl"] .rt-ScrollAreaRoot,.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport{direction:rtl}` +
   // Third Radix quirk: `justify` is compiled to PHYSICAL alignment classes
   // (`rt-r-ta-left` / `rt-r-ta-right`), not the logical `start` / `end` every
@@ -751,8 +765,11 @@ export function DesktopTable<TRow>({
     useHorizontalOverflow<HTMLDivElement>();
   // ANY scroll container (maxHeight, pins, measured overflow) becomes the
   // sticky context: the header must pin to ITS top — a viewport offset would
-  // shove it down into the rows.
+  // shove it down into the rows. Radix's own ScrollArea is neutralized
+  // separately (PAGE_STICK_CLASS) so page-scroll sticky can still use the
+  // viewport offset.
   const inScrollBox = maxHeight != null || hasPinned || overflowing;
+  const pageStick = Boolean(stickyHeader) && !inScrollBox;
 
   const headerPinTop = inScrollBox ? 0 : stickyTop;
   const rowPinOffset = stickyHeader ? headerPinTop + headerHeight : 0;
@@ -936,7 +953,9 @@ export function DesktopTable<TRow>({
           minWidth > 0 ? `${minWidth}px` : "0"
         );
       }}
-      className={STICKY_FIX_CLASS}
+      className={[STICKY_FIX_CLASS, pageStick ? PAGE_STICK_CLASS : ""]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         maxHeight: maxHeight == null ? undefined : `${maxHeight}px`,
         overflowX:
@@ -954,7 +973,7 @@ export function DesktopTable<TRow>({
       <Table.Root
         ref={nameTableElement}
         size={size}
-        variant="surface"
+        variant="ghost"
         dir={dir}
         data-size={size}
         className={[className, fitColumns === true ? FIT_CLASS : ""]

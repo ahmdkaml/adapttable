@@ -50,6 +50,8 @@ export type KitDemoProps = Readonly<{
   realtime?: boolean;
   editing?: boolean;
   headerFilters?: boolean;
+  /** Mount the per-field Filters form. Default on. */
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /**

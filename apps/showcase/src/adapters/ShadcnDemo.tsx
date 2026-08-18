@@ -46,6 +46,7 @@ export function ShadcnDemo({
   cellNavigation,
   columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
   sparkline,
   formulaColumns,
@@ -97,6 +98,7 @@ export function ShadcnDemo({
   cellNavigation?: boolean;
   columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
   sparkline?: boolean;
   /** Columns built from user-typed formulas, appended after the declared set. */
@@ -163,6 +165,7 @@ export function ShadcnDemo({
       undoRedoButtons={undoRedoButtons}
       sidePanel={sidePanel}
       headerFilters={headerFilters}
+      filterFields={filterFields}
       columnGroups={columnGroups}
       sparkline={sparkline}
       formulaColumns={formulaColumns}

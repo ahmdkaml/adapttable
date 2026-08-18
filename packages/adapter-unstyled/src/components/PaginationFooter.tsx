@@ -15,7 +15,7 @@ export function RowsPerPageSelect({
   labels,
   classNames,
 }: Readonly<{
-  source: Pick<TableSource<unknown>, "limit" | "setLimit">;
+  source: Pick<TableSource<unknown>, "limit" | "defaultLimit" | "setLimit">;
   labels: Required<TableLabels>;
   classNames: DataTableClassNames;
 }>) {
@@ -29,7 +29,7 @@ export function RowsPerPageSelect({
         value={source.limit}
         onChange={(e) => source.setLimit(Number(e.currentTarget.value))}
       >
-        {pageSizeOptions(source.limit).map((n) => (
+        {pageSizeOptions([source.limit, source.defaultLimit]).map((n) => (
           <option key={n} value={n}>
             {n}
           </option>
@@ -50,6 +50,7 @@ export function Footer({
   pagination: PaginationInfo;
   source: {
     limit: number;
+    defaultLimit: number;
     total: number;
     setPage: (n: number) => void;
     setLimit: (n: number) => void;

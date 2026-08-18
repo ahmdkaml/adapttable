@@ -1,19 +1,21 @@
 import {
   resolveLabels,
+  showSimpleFilterFields,
   type TableLabels,
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
   fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
   SidePanelLayout,
   useCommandPalette,
   useDataTableShell,
+  useStickyToolbarLayout,
   useTableContextMenu,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
-import { useElementSize } from "@mantine/hooks";
 import { useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
@@ -38,28 +40,6 @@ import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import { SURFACE } from "./surface";
 import type { DataTableProps } from "./types";
-
-const stickyToolbarStyle = (top: number) => ({
-  position: "sticky" as const,
-  top,
-  zIndex: 3,
-  background: SURFACE,
-  paddingBottom: "var(--mantine-spacing-xs)",
-});
-
-/** The toolbar's style: parked sticky at `stickyTop` only when asked to. */
-const toolbarStyle = (stickyToolbar: boolean, stickyTop: number) =>
-  stickyToolbar ? stickyToolbarStyle(stickyTop) : undefined;
-
-/**
- * The sticky header's inset: below the sticky toolbar when it sticks,
- * otherwise the caller's inset alone — the cross-adapter meaning.
- */
-const stickyHeaderInset = (
-  stickyToolbar: boolean,
-  stickyTop: number,
-  toolbarHeight: number
-) => (stickyToolbar ? stickyTop + toolbarHeight : stickyTop);
 
 /** The Columns menu, rendered inline in the toolbar — or nothing when off. */
 function ColumnMenuSlot<TRow>({
@@ -100,7 +80,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     classNames,
     skeletonRows,
     stickyTop = 0,
-    stickyToolbar = false,
+    stickyToolbar,
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
@@ -113,6 +93,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // kit needs: a measured sticky toolbar, per-body stagger refs, and density.
   const headerFiltersOn =
     props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
     <Stack gap="lg" data-adapttable-part="filters-form">
       <FilterTreeBuilder
@@ -120,15 +104,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         source={source}
         labels={props.labels}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-      {headerFiltersOn ? null : (
+      {simpleFiltersOn ? (
         <AutoFilterForm
           defs={defs}
           source={source}
           labels={resolveLabels(props.labels)}
           registry={registry}
         />
-      )}
+      ) : null}
     </Stack>
   ));
   const {
@@ -185,7 +170,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasFilters: chrome.activeFilterCount > 0,
   });
   const { isMobile, confirm } = chrome;
-  const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(stickyHeader, stickyToolbar, props.maxHeight != null),
+    stickyTop
+  );
 
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
@@ -242,11 +230,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         bodyRef={desktopBodyRef}
         className={classNames?.table}
         stickyHeader={stickyHeader}
-        stickyHeaderOffset={stickyHeaderInset(
-          stickyToolbar,
-          stickyTop,
-          toolbarHeight
-        )}
+        stickyHeaderOffset={stickyBar.headerOffset}
       />
     );
   }
@@ -272,8 +256,16 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <Stack gap="xs">
         <Box
           data-adapttable-part="toolbar"
-          ref={toolbarRef}
-          style={toolbarStyle(stickyToolbar, stickyTop)}
+          ref={stickyBar.toolbarRef}
+          style={{
+            ...stickyBar.toolbarStyle,
+            ...(stickyBar.toolbarStyle
+              ? {
+                  background: SURFACE,
+                  paddingBottom: "var(--mantine-spacing-xs)",
+                }
+              : {}),
+          }}
           className={classNames?.toolbar}
         >
           <Stack gap="xs">
@@ -420,6 +412,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               page={table.pagination.safePage}
               totalPages={table.pagination.totalPages}
               limit={viewSource.limit}
+              defaultLimit={viewSource.defaultLimit}
               total={viewSource.total}
               fromIndex={table.pagination.fromIndex}
               toIndex={table.pagination.toIndex}
