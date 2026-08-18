@@ -226,6 +226,31 @@ export const SHOWCASE_ADAPTERS = [
  */
 
 /**
+ * Landing-grid, rail and nav order: what people search for and need first,
+ * then the specialist pages. Definition order below is not this list —
+ * {@link MATRIX_FEATURES} is this ranking applied to the objects.
+ *
+ * @type {readonly string[]}
+ */
+const FEATURE_DEMAND_ORDER = [
+  "filtering",
+  "columns",
+  "selection",
+  "editing",
+  "grouping",
+  "export",
+  "scale",
+  "tree",
+  "mobile-cards",
+  "pivot",
+  "saved-views",
+  "formulas",
+  "accessibility",
+  "rtl",
+  "realtime",
+];
+
+/**
  * The fifteen features that get a page per adapter.
  *
  * Curated rather than exhaustive: these are the ones people search for by name
@@ -236,7 +261,7 @@ export const SHOWCASE_ADAPTERS = [
  *
  * @type {MatrixFeature[]}
  */
-export const MATRIX_FEATURES = [
+const MATRIX_FEATURES_DEFINED = [
   {
     slug: "saved-views",
     label: "Saved views",
@@ -1017,6 +1042,29 @@ export function People({ rows, columns, setRows }) {
     docs: ["realtime", "cell-editing"],
   },
 ];
+
+/**
+ * @param {MatrixFeature[]} features
+ * @returns {MatrixFeature[]}
+ */
+function inDemandOrder(features) {
+  const bySlug = Object.fromEntries(
+    features.map((feature) => [feature.slug, feature])
+  );
+  const missing = FEATURE_DEMAND_ORDER.filter((slug) => !bySlug[slug]);
+  const extra = features
+    .map((feature) => feature.slug)
+    .filter((slug) => !FEATURE_DEMAND_ORDER.includes(slug));
+  if (missing.length > 0 || extra.length > 0) {
+    throw new Error(
+      `FEATURE_DEMAND_ORDER is stale (missing ${missing.join(", ") || "—"}, extra ${extra.join(", ") || "—"})`
+    );
+  }
+  return FEATURE_DEMAND_ORDER.map((slug) => bySlug[slug]);
+}
+
+/** The fifteen features, in the order the landing grid and rails show them. */
+export const MATRIX_FEATURES = inDemandOrder(MATRIX_FEATURES_DEFINED);
 
 /**
  * The adapter landing page's own copy.
