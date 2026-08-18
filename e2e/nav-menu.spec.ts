@@ -48,15 +48,11 @@ test("the trigger opens its menu on click and says so", async ({ page }) => {
   await expect(menu(page, "adapters")).toBeHidden();
 });
 
-test("only one menu is open at a time", async ({ page }) => {
+test("the bar has one menu", async ({ page }) => {
   await page.goto("/");
-  await openNavGroup(page, "More");
-  await trigger(page, "Adapters").click();
-  await expect(trigger(page, "Adapters")).toHaveAttribute(
-    "aria-expanded",
-    "true"
-  );
-  await expect(trigger(page, "More")).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger(page, "Adapters")).toBeVisible();
+  await expect(trigger(page, "Features")).toHaveCount(0);
+  await expect(trigger(page, "More")).toHaveCount(0);
 });
 
 test("Escape closes the menu and hands focus back to the trigger", async ({
@@ -76,61 +72,73 @@ test("Escape closes the menu and hands focus back to the trigger", async ({
 
 test("a click outside closes the menu", async ({ page }) => {
   await page.goto("/");
-  await openNavGroup(page, "More");
+  await openNavGroup(page, "Adapters");
   await page.mouse.click(6, 500);
-  await expect(trigger(page, "More")).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger(page, "Adapters")).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
 });
 
 test("hover opens the menu and survives the trip into it", async ({ page }) => {
   await page.goto("/");
-  await trigger(page, "More").hover();
-  await expect(trigger(page, "More")).toHaveAttribute("aria-expanded", "true");
+  await trigger(page, "Adapters").hover();
+  await expect(trigger(page, "Adapters")).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
 
   // The pointer leaves the trigger's box before it enters the panel's — the
   // close delay is what keeps the menu from shutting in the gap.
-  const target = await items(page, "more").last().boundingBox();
+  const target = await items(page, "adapters").last().boundingBox();
   await page.mouse.move(
     (target?.x ?? 0) + (target?.width ?? 0) / 2,
     (target?.y ?? 0) + (target?.height ?? 0) / 2,
     { steps: 10 }
   );
-  await expect(trigger(page, "More")).toHaveAttribute("aria-expanded", "true");
+  await expect(trigger(page, "Adapters")).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
 
   // Leaving for good does close it.
   await page.mouse.move(700, 600, { steps: 10 });
-  await expect(trigger(page, "More")).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger(page, "Adapters")).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
 });
 
 test("the keyboard opens the menu, walks it, and leaves on Tab", async ({
   page,
 }) => {
   await page.goto("/");
-  const more = trigger(page, "More");
-  await more.focus();
+  const adapters = trigger(page, "Adapters");
+  await adapters.focus();
 
   // Enter opens without moving focus; ArrowDown is the move into the panel.
   await page.keyboard.press("Enter");
-  await expect(more).toHaveAttribute("aria-expanded", "true");
-  await expect(more).toBeFocused();
+  await expect(adapters).toHaveAttribute("aria-expanded", "true");
+  await expect(adapters).toBeFocused();
 
   await page.keyboard.press("ArrowDown");
-  await expect(items(page, "more").nth(0)).toBeFocused();
+  await expect(items(page, "adapters").nth(0)).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(items(page, "more").nth(1)).toBeFocused();
+  await expect(items(page, "adapters").nth(1)).toBeFocused();
   await page.keyboard.press("ArrowUp");
-  await expect(items(page, "more").nth(0)).toBeFocused();
+  await expect(items(page, "adapters").nth(0)).toBeFocused();
   await page.keyboard.press("End");
-  await expect(items(page, "more").nth(3)).toBeFocused();
+  await expect(items(page, "adapters").nth(7)).toBeFocused();
   await page.keyboard.press("Home");
-  await expect(items(page, "more").nth(0)).toBeFocused();
+  await expect(items(page, "adapters").nth(0)).toBeFocused();
   // Down from the last item comes back round to the first.
   await page.keyboard.press("End");
   await page.keyboard.press("ArrowDown");
-  await expect(items(page, "more").nth(0)).toBeFocused();
+  await expect(items(page, "adapters").nth(0)).toBeFocused();
 
   // Tab leaves rather than being trapped: this is navigation, not a dialog.
   await page.keyboard.press("Tab");
-  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(adapters).toHaveAttribute("aria-expanded", "false");
 });
 
 test("Space opens the menu too", async ({ page }) => {
@@ -151,7 +159,7 @@ test("a menu item navigates, and the page it lands on marks itself", async ({
 
   // The parent tells the reader where they are while the panel is shut…
   await expect(trigger(page, "Adapters")).toHaveClass(/is-on/);
-  await expect(trigger(page, "More")).not.toHaveClass(/is-on/);
+  await expect(trigger(page, "More")).toHaveCount(0);
   // …and the item itself is the one marked as the current page.
   await openNavGroup(page, "Adapters");
   await expect(
@@ -203,9 +211,8 @@ test("the direct links keep their own active styling", async ({ page }) => {
   const lab = page.locator(".nav").getByRole("link", { name: "Feature Lab" });
   await expect(lab).toHaveClass(/is-on/);
   await expect(lab).toHaveAttribute("aria-current", "page");
-  for (const group of ["Adapters", "More"]) {
-    await expect(trigger(page, group)).not.toHaveClass(/is-on/);
-  }
+  await expect(trigger(page, "Adapters")).not.toHaveClass(/is-on/);
+  await expect(trigger(page, "More")).toHaveCount(0);
 });
 
 /**
@@ -221,23 +228,20 @@ test("every menu link is in the DOM with the menus closed", async ({
   page,
 }) => {
   await page.goto("/");
-  for (const group of ["Adapters", "More"]) {
-    await expect(trigger(page, group)).toHaveAttribute(
-      "aria-expanded",
-      "false"
-    );
-  }
+  await expect(trigger(page, "Adapters")).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
   const hrefs = await page
     .locator(".nav__menu a[href]")
     .evaluateAll((links) =>
       links.map((link) => link.getAttribute("href") ?? "")
     );
-  // Adapters first, then the four pages that belong to every kit. A kit's
-  // own feature pages are not a third menu — they live on the landing grid
-  // and the rail. Every adapter's own pages are built, so every kit in the
-  // menu goes to its own landing — spelled out rather than mapped from the
-  // matrix, because a list generated from the same source it checks agrees
-  // with itself however wrong it is.
+  // The only menu is Adapters. A kit's own feature pages live on the landing
+  // grid and the rail. Every adapter's own pages are built, so every kit in
+  // the menu goes to its own landing — spelled out rather than mapped from
+  // the matrix, because a list generated from the same source it checks
+  // agrees with itself however wrong it is.
   expect(hrefs).toEqual([
     "./mantine/",
     "./mui/",
@@ -247,16 +251,13 @@ test("every menu link is in the DOM with the menus closed", async ({
     "./base-ui/",
     "./shadcn/",
     "./tailwind/",
-    "./pagination/",
-    "./realtime/",
-    "./accessibility/",
-    "./rtl/",
   ]);
   // Hidden is not absent: the closed panel is out of the accessibility tree
   // and out of the tab order, which is what `visibility` buys over `opacity`.
   await expect(page.locator("#nav-menu-adapters")).toBeHidden();
-  await expect(page.locator("#nav-menu-more")).toBeHidden();
+  await expect(page.locator("#nav-menu-more")).toHaveCount(0);
   await expect(trigger(page, "Features")).toHaveCount(0);
+  await expect(trigger(page, "More")).toHaveCount(0);
 });
 
 test("an open menu paints over the table's sticky header", async ({ page }) => {
@@ -314,12 +315,12 @@ for (const width of [1024, 1280, 1440, 1728, 1920]) {
     expect(closed.strip).toBeLessThan(34);
     expect(closed.overflow).toBeLessThanOrEqual(1);
 
-    // The rightmost menu is the one that can reach the window edge — an open
+    // The only menu is the one that can reach the window edge — an open
     // panel that widens the document turns every page into a sideways scroller.
-    await openNavGroup(page, "More");
+    await openNavGroup(page, "Adapters");
     const open = await page.evaluate(() => {
       const panel = document
-        .querySelector("#nav-menu-more")
+        .querySelector("#nav-menu-adapters")
         ?.getBoundingClientRect();
       return {
         right: panel?.right ?? 0,
@@ -385,6 +386,7 @@ test("the phone keeps the select instead of the menus", async ({ page }) => {
   await expect(
     pageSelect.locator("optgroup[label='Mantine features']")
   ).toHaveCount(1);
+  await expect(pageSelect.locator("optgroup[label='More']")).toHaveCount(0);
   await pageSelect.selectOption("mantine/saved-views");
   await expect(page).toHaveURL(/\/mantine\/saved-views\/$/);
 });

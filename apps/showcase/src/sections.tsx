@@ -111,11 +111,11 @@ function Wordmark({ href }: Readonly<{ href: string }>) {
  * Which page the nav marks as current: a page id.
  *
  * Two forms, because the demo has two kinds of page — a shared page's own key
- * (`demo`, `all-options`, `pagination`, `realtime`, `accessibility`, `rtl`), or
- * a matrix page's id, which is `mantine` for an adapter's landing and
- * `mantine/saved-views` for one of its features. Both are plain strings and the
- * nav compares them as such: the matrix half is generated, so a union spelling
- * out ninety-six literals would be a second list to keep in step.
+ * (`demo`, `all-options`), or a matrix page's id, which is `mantine` for an
+ * adapter's landing and `mantine/saved-views` for one of its features. Both are
+ * plain strings and the nav compares them as such: the matrix half is
+ * generated, so a union spelling out a hundred and twenty-eight literals would
+ * be a second list to keep in step.
  *
  * @see resolveMatrixRoute — where a matrix id is turned back into its page.
  */
@@ -145,20 +145,15 @@ type NavGroupSpec = Readonly<{
 }>;
 
 /**
- * The nav's whole shape: four things across the bar, and every page two moves
- * away.
+ * The nav's whole shape: three things across the bar — Live demo, Feature Lab,
+ * Adapters — and every kit two moves away.
  *
- * It is adapter-first because the demo is. **Adapters** is the primary menu —
- * eight kits, each going to its own landing page. **More** holds the four pages
- * that are properties of every kit rather than features of one, so they answer
- * once instead of eight times.
- *
- * A kit's own twelve feature pages are not a menu. They are the landing page's
- * grid and the rail under every feature page, both of which are in reach
- * wherever a reader would want them; a third path in the bar said the same thing
- * a third time, and being top-level implied it listed the whole demo rather than
- * one kit's slice of it. The phone picker still carries them — see `AppNav`,
- * where the bar's page furniture is out of reach.
+ * It is adapter-first because the demo is. **Adapters** is the only menu —
+ * eight kits, each going to its own landing page. A kit's own feature pages
+ * are not a menu. They are the landing page's grid and the rail under every
+ * feature page, both of which are in reach wherever a reader would want them.
+ * The phone picker still carries them — see `AppNav`, where the bar's page
+ * furniture is out of reach.
  */
 const buildGroups = (
   href: (path: string) => string,
@@ -175,20 +170,6 @@ const buildGroups = (
       accent: dark ? kit.accentDark : kit.accentLight,
       href: kit.built ? href(kit.key) : `${href("")}?kit=${kit.key}`,
     })),
-  },
-  {
-    key: "more",
-    label: "More",
-    pages: [
-      { key: "pagination", label: "Pagination", href: href("pagination") },
-      { key: "realtime", label: "Realtime", href: href("realtime") },
-      {
-        key: "accessibility",
-        label: "Accessibility",
-        href: href("accessibility"),
-      },
-      { key: "rtl", label: "RTL", href: href("rtl") },
-    ],
   },
 ];
 
@@ -490,13 +471,9 @@ function NavGroup({
 
 /**
  * App-style toolbar: the landing owns the marketing, so the demo's nav is
- * two direct links, two menus, and Docs/GitHub. `root` is the relative prefix
+ * two direct links, one menu, and Docs/GitHub. `root` is the relative prefix
  * back to the demo home ("." on the home page, ".." on subpages) — plain static
  * links, no router.
- *
- * One menu is open at a time, so the open group lives here rather than in each
- * dropdown: sliding along the bar with the mouse hands the panel from one group
- * to the next instead of stacking two open panels.
  */
 export function AppNav({
   active,
@@ -518,7 +495,7 @@ export function AppNav({
     { key: "demo", label: "Live demo", href: href("") },
     { key: "all-options", label: "Feature Lab", href: href("all-options") },
   ];
-  /** The current kit's twelve feature pages — the phone picker's only home for
+  /** The current kit's fifteen feature pages — the phone picker's only home for
    * them, since a phone has neither the landing grid nor the feature rail in
    * reach of the bar. */
   const kitFeaturePages: readonly NavPage[] = MATRIX_FEATURES.map(
@@ -536,14 +513,8 @@ export function AppNav({
    */
   const pickerGroups: readonly PickerGroup[] = [
     ["Demo", topPages],
-    ...groups.flatMap((group): readonly PickerGroup[] =>
-      group.key === "adapters"
-        ? [
-            [group.label, group.pages],
-            [`${kit.label} features`, kitFeaturePages],
-          ]
-        : [[group.label, group.pages]]
-    ),
+    ...groups.map((group): PickerGroup => [group.label, group.pages]),
+    [`${kit.label} features`, kitFeaturePages],
   ];
 
   const [openMenu, setOpenMenu] = useState<OpenMenu | null>(null);

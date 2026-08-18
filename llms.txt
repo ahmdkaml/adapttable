@@ -104,8 +104,8 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 The demo is adapter-first: each kit has a landing page, and twelve feature pages
 under it at `/demo/<kit>/<feature>/` — e.g. `/demo/antd/pivot/`,
 `/demo/shadcn/filtering/`. The features are saved-views, pivot, formulas,
-editing, tree, mobile-cards, scale, columns, filtering, export, selection and
-grouping.
+editing, tree, mobile-cards, scale, columns, filtering, export, selection,
+grouping, accessibility, rtl and realtime.
 
 - [AdaptTable for Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/): a data table that renders as Mantine, because it is built from Mantine
 - [AdaptTable for MUI](https://orwa-mahmoud.github.io/adapttable/demo/mui/): a Material data table, drawn by MUI's own components
@@ -118,9 +118,8 @@ grouping.
 - [Filtering demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/filtering/): operators, checklist, AND/OR builder, chips, URL state — in every kit
 - [Tree table demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/tree/): nested parent/child rows, chevrons, keyboard walk, URL-carried expansion
 - [Selection demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/selection/): id-based row selection that survives paging, plus bulk actions over it
-- [Pagination demo](https://orwa-mahmoud.github.io/adapttable/demo/pagination/): a pager and infinite scroll as one prop apart, both URL-carried
-- [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/accessibility/): grid keyboard navigation, visible focus, and every announcement shown as text
-- [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
+- [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/): grid keyboard navigation, visible focus, and every announcement shown as text
+- [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
 - [Formula column demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/formulas/): type `=ROUND(budget * 0.15, 0)` and get a computed column — parsed never evaluated, errors as cell values, the whole set in the URL
 - [Export & print demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/export/): a grouped sheet leaves as a real PDF and prints from the same view — column widths, nested groups, page breaks, and an embedded font subset for Arabic
 - [Pivot table demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/pivot/): put fields on rows and columns, choose measures and aggregations, fold subtotals, and share the pivot as a link
@@ -129,7 +128,7 @@ grouping.
 - [Inline editing demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/): double-click a cell to edit it — text, number and select editors, validation, keyboard commit and cancel
 - [Column management demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/columns/): show/hide, drag-reorder, pin and resize columns, with the layout persisted to the URL
 - [Mobile cards demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/): the same table becomes a card list on phones — identical columns, search and query state, with infinite scroll
-- [RTL demo](https://orwa-mahmoud.github.io/adapttable/demo/rtl/): an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis
+- [RTL demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rtl/): an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis
 - [Virtualization demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/scale/): fifty thousand rows under a sticky header with a handful of DOM nodes
 - [Feature Lab](https://orwa-mahmoud.github.io/adapttable/demo/all-options/): every option on one page — start from a valid recipe, switch kits, and toggle filtering, structure, editing and row features
 

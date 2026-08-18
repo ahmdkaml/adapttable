@@ -226,12 +226,13 @@ export const SHOWCASE_ADAPTERS = [
  */
 
 /**
- * The twelve features that get a page per adapter.
+ * The fifteen features that get a page per adapter.
  *
  * Curated rather than exhaustive: these are the ones people search for by name
- * and evaluate a table on. Pagination, realtime, accessibility and RTL are
- * properties of every one of these pages rather than destinations of their own,
- * so they stay single shared pages.
+ * and evaluate a table on. Pagination is not among them — every table pages,
+ * and the docs already own that search. Accessibility, RTL and realtime used
+ * to answer once for all eight kits; they are features of a kit page now, the
+ * same as filtering or grouping.
  *
  * @type {MatrixFeature[]}
  */
@@ -876,6 +877,145 @@ export function People({ rows, columns }) {
     },
     docs: ["grouping"],
   },
+  {
+    slug: "accessibility",
+    label: "Accessibility",
+    h1: "Accessible {kit} data table",
+    title: "{kit} accessible data table — AdaptTable",
+    description:
+      "Use a {kit} data table from the keyboard or a screen reader — arrow-key cell focus with a visible ring, live announcements, and a header checkbox that selects a column without a modifier key.",
+    intro: [
+      "Tab into the grid and the arrows move a visible focus, one cell at a time. Home and End jump to the row's edges.",
+      "Every move, sort, filter and edit is announced through a live region — the part of a table a sighted reader cannot check, so this page repeats those announcements as text as they happen.",
+      "`columnSelectionCheckbox` puts a named checkbox on each header so a column can be selected without a modifier key a touchscreen does not have. The grid and the checkboxes are {kit}.",
+    ],
+    card: "Arrow-key focus, a visible ring, and every announcement shown as text.",
+    snippet: `import { DataTable } from "{pkg}";
+
+export function People({ rows, columns }) {
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+      cellNavigation
+      columnSelectionCheckbox
+    />
+  );
+}`,
+    notes: {
+      mantine:
+        "The grid is a Mantine table with a visible focus ring on the active cell, and each header checkbox is Mantine's own Checkbox — named for the column it selects.",
+      mui: "The grid is MUI Table rows; the header checkbox is MUI's Checkbox, and the focus ring is the kit's outline on the active cell.",
+      chakra:
+        "The grid is Chakra Table rows; the header checkbox is Chakra's Checkbox, and the focus ring is the kit's outline on the active cell.",
+      antd: "The grid is antd's Table; the header checkbox is antd's Checkbox, and the focus ring is the kit's outline on the active cell.",
+      radix:
+        "The grid is Radix Table rows; the header checkbox is a Radix Checkbox, and the focus ring is the kit's outline on the active cell.",
+      "base-ui":
+        "The grid is Base UI Table rows; the header checkbox is a Base UI Checkbox, and the focus ring is the kit's outline on the active cell.",
+      shadcn:
+        "The grid is semantic markup wearing the preset; the header checkbox is a native input with the preset's classes, and the focus ring is the same outline the rest of the table uses.",
+      tailwind:
+        "The grid is semantic markup carrying the map's classes; the header checkbox is a native input, and the focus ring is yours to dress — nothing in the map singles the active cell out.",
+    },
+    docs: ["cell-navigation"],
+  },
+  {
+    slug: "rtl",
+    label: "RTL",
+    h1: "Right-to-left {kit} data table",
+    title: "{kit} RTL data table — AdaptTable",
+    description:
+      "A {kit} data table in Arabic that mirrors the whole layout — search, sort arrows, pinned columns, the pager and the filters popover, which anchors and flips from the correct edge.",
+    intro: [
+      "An Arabic table mirrors the entire layout — search, sort arrows, pinned columns and the pager. Not just translated strings: a genuinely flipped axis.",
+      "The filters popover anchors and flips from the correct edge; that is the part only a real RTL page can show.",
+      '`locale="ar"` sets the strings and the direction. The table and the popover are {kit}.',
+    ],
+    card: "Arabic strings, a flipped axis, and a popover that opens from the right edge.",
+    snippet: `import { DataTable } from "{pkg}";
+
+export function People({ rows, columns }) {
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+      locale="ar"
+      filtersMode="popover"
+    />
+  );
+}`,
+    notes: {
+      mantine:
+        '`locale="ar"` flips the Mantine table and its Popover — the Filters trigger is Arabic, and the popover anchors from the inline-end edge.',
+      mui: '`locale="ar"` flips the MUI table; the filters card is the same Popper-over-Paper the English page uses, now opening from the inline-end edge.',
+      chakra:
+        '`locale="ar"` flips the Chakra table and its Popover, which anchors from the inline-end edge the way the rest of a Chakra RTL app does.',
+      antd: '`locale="ar"` flips the antd table; the filters popover still lets antd portal its pickers, and it opens from the inline-end edge rather than hanging off the left.',
+      radix:
+        '`locale="ar"` flips the Radix table; the popover holds its ground by clamping height rather than flipping, and it hangs from the inline-end edge.',
+      "base-ui":
+        '`locale="ar"` flips the Base UI table; the popover still shifts rather than flips, and its swipe direction on the drawer is already mirrored for right-to-left.',
+      shadcn:
+        '`locale="ar"` flips the semantic table; the popover clamps itself to the viewport in script and hangs from the inline-end edge, same as the English page, only mirrored.',
+      tailwind:
+        '`locale="ar"` flips the native table; the popover, backdrop and inputs carry the map\'s classes, and they open from the inline-end edge.',
+    },
+    docs: ["i18n-rtl"],
+  },
+  {
+    slug: "realtime",
+    label: "Realtime",
+    h1: "Live updates in {kit}",
+    title: "{kit} live-updating data table — AdaptTable",
+    description:
+      "Patch rows into a {kit} data table as they arrive — websocket-style updates through the row-patch API, so sort, filters and selection survive, with a feed of every applied change.",
+    intro: [
+      "Rows patch in as they arrive, the way a websocket would. This page applies one budget change at a time so the movement is followable.",
+      "Patches go through the row-patch API rather than replacing the array, so search, filters and sort re-run for the touched rows only — your scroll and selection survive.",
+      "The feed lists every patch as it lands. The table is {kit}.",
+    ],
+    card: "Rows change while you read them. Sort and selection hold.",
+    snippet: `import { DataTable } from "{pkg}";
+import { applyRowPatches, updateRow } from "@adapttable/core";
+
+export function People({ rows, columns, setRows }) {
+  const patchBudget = (id, budget) =>
+    setRows(
+      applyRowPatches(
+        rows,
+        [updateRow(id, { budget })],
+        (row) => row.id
+      )
+    );
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+    />
+  );
+}`,
+    notes: {
+      mantine:
+        "The feed beside the table is the host's chrome; the rows themselves are Mantine table rows, and a patched budget is the same cell with a new value.",
+      mui: "The feed is the host's chrome; a patched budget is a MUI TableCell that re-renders with the new number, inside the same TableRow that was already there.",
+      chakra:
+        "The feed is the host's chrome; a patched budget is a Chakra Table.Cell that re-renders with the new number, inside the same Table.Row.",
+      antd: "The feed is the host's chrome; a patched budget re-renders through antd's own Table cell, so the row stays an antd record rather than being swapped for a new one.",
+      radix:
+        "The feed is the host's chrome; a patched budget is a Radix Table.Cell that re-renders with the new number.",
+      "base-ui":
+        "The feed is the host's chrome; a patched budget is a Base UI table cell that re-renders with the new number.",
+      shadcn:
+        "The feed is the host's chrome; a patched budget is an ordinary cell wearing the preset, with a new number inside it.",
+      tailwind:
+        "The feed is the host's chrome; a patched budget is an ordinary cell carrying the map's classes, with a new number inside it.",
+    },
+    docs: ["cell-editing"],
+  },
 ];
 
 /**
@@ -897,8 +1037,8 @@ export const LANDING = {
     "The engine is headless and shared — sorting, filtering, grouping, the pivot, URL state, saved views and export live in @adapttable/core. Every control you can see and click is {surface}.",
     "That is the whole trade: one model to learn, and a table that belongs in a {kit} app rather than sitting inside one.",
   ],
-  /** The heading over the twelve feature pages. */
-  gridTitle: "Twelve features, each on its own {kit} page",
+  /** The heading over the fifteen feature pages. */
+  gridTitle: "Fifteen features, each on its own {kit} page",
   gridLead:
     "Every one is the same engine and {kit}'s own components. Each page carries the code for that feature and a table you can drive.",
   /** The heading over the other seven kits. */

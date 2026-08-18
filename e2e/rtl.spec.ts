@@ -1,5 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+import { gotoFromFeatureGrid } from "./nav";
+
 /**
  * The RTL page has to show the filters popover, not just a mirrored table.
  *
@@ -9,10 +12,17 @@ import { expect, type Page, test } from "@playwright/test";
  * which made that impossible to see.
  */
 
-const demo = (page: Page) => page.locator("#rtl");
+const KIT = builtAdapters()[0]!.key;
+const demo = (page: Page) => page.locator(".mx-demo");
+
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "RTL");
+  await expect(page).toHaveURL(/\/rtl\/$/);
+  await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
+});
 
 test("mirrors the table and still offers its filters", async ({ page }) => {
-  await page.goto("/rtl/");
+  await page.goto(`/${KIT}/rtl/`);
   await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
   await expect(
     demo(page).getByRole("button", { name: "عوامل التصفية" })
@@ -22,7 +32,7 @@ test("mirrors the table and still offers its filters", async ({ page }) => {
 test("the filters popover opens on screen, anchored to its trigger", async ({
   page,
 }) => {
-  await page.goto("/rtl/");
+  await page.goto(`/${KIT}/rtl/`);
   const trigger = demo(page).getByRole("button", { name: "عوامل التصفية" });
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -47,27 +57,13 @@ test("the filters popover opens on screen, anchored to its trigger", async ({
  * RTL is a per-kit claim: each adapter positions its own popover, so a kit
  * that anchors from the wrong edge is only visible in that kit.
  */
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 for (const kit of KITS) {
   test(`${kit}: mirrors the table and keeps its popover on screen`, async ({
     page,
   }) => {
-    await page.goto("/rtl/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/rtl/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await expect(root.locator('[dir="rtl"]').first()).toBeVisible();

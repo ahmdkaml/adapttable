@@ -134,10 +134,10 @@ test("install + StackBlitz CTAs sit under the kit switcher", async ({
 });
 
 for (const focused of [
-  { name: "grouping", path: "/grouping/", exportName: /Export XLSX/ },
-  { name: "export", path: "/export/", exportName: /Export PDF/ },
-  { name: "mobile", path: "/mobile/", exportName: null },
-  { name: "RTL", path: "/rtl/", exportName: null },
+  { name: "grouping", path: "/mantine/grouping/", exportName: /Export XLSX/ },
+  { name: "export", path: "/mantine/export/", exportName: /Export PDF/ },
+  { name: "mobile", path: "/mantine/mobile-cards/", exportName: null },
+  { name: "RTL", path: "/mantine/rtl/", exportName: null },
 ] as const) {
   test(`${focused.name} page keeps only its relevant table chrome`, async ({
     page,

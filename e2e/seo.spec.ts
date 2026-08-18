@@ -19,10 +19,6 @@ import { matrixPages } from "../apps/showcase/matrix.mjs";
 const PAGES = [
   { path: "/", name: "live demo" },
   { path: "/all-options/", name: "Feature Lab" },
-  { path: "/accessibility/", name: "accessibility" },
-  { path: "/pagination/", name: "pagination" },
-  { path: "/realtime/", name: "realtime" },
-  { path: "/rtl/", name: "RTL" },
   ...matrixPages().map((page) => ({
     path: `/${page.dir}/`,
     name: page.feature ? `${page.adapter} ${page.feature}` : page.adapter,

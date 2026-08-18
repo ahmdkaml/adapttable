@@ -156,8 +156,9 @@ surface: the `DOCS` array in `scripts/build-llms-full.mjs` AND a link in
   `scripts/build-showcase-html.mjs` writes the static HTML from, and
   `src/matrix/MatrixPage.tsx` renders. Add a feature there and it appears in the
   build, the sitemap, the nav and the served HTML at once.
-- Pagination, realtime, accessibility and RTL are properties of every one of
-  those pages rather than features of one, so they stay single shared pages.
+- Accessibility, RTL and realtime are matrix features — one page per kit,
+  same as filtering. Pagination is not a demo destination; the docs page
+  owns that search. `/demo/rtl/` is a redirect stub to `/demo/mantine/rtl/`.
 - Overlay contracts:
   - `filtersMode="popover"` (default) is a lightweight anchored card with
     **no backdrop**. It anchors under its trigger (flipping for RTL), closes

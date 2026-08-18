@@ -4,76 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-    <meta
-      name="description"
-      content="AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis."
-    />
-    <link
-      rel="canonical"
-      href="https://orwa-mahmoud.github.io/adapttable/demo/rtl/"
-    />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AdaptTable" />
-    <meta
-      property="og:title"
-      content="AdaptTable demo — Arabic and right-to-left"
-    />
-    <meta
-      property="og:description"
-      content="AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis."
-    />
-    <meta
-      property="og:url"
-      content="https://orwa-mahmoud.github.io/adapttable/demo/rtl/"
-    />
-    <meta
-      property="og:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="AdaptTable demo — Arabic and right-to-left"
-    />
-    <meta
-      name="twitter:description"
-      content="AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis."
-    />
-    <meta
-      name="twitter:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "AdaptTable",
-        "description": "AdaptTable RTL demo — an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis.",
-        "url": "https://orwa-mahmoud.github.io/adapttable/demo/rtl/",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Any",
-        "license": "https://opensource.org/license/mit",
-        "programmingLanguage": "TypeScript",
-        "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-      }
-    </script>
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
-    ></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Arabic is first paint on this page — load it with the UI face. -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <title>AdaptTable demo — RTL & Arabic table layout</title>
+    <!-- Static hosting has no redirect layer, so the move is declared in the
+         document: meta-refresh carries a reader across, and the canonical
+         link tells a crawler which URL is the real one. -->
+    <meta http-equiv="refresh" content="0; url=../mantine/rtl/" />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/mantine/rtl/" />
+    <meta name="description" content="The AdaptTable rtl demo is now right-to-left mantine data table at /demo/mantine/rtl/ — the same table, with that kit's install line and code on the page." />
+    <title>AdaptTable demo — rtl moved to /demo/mantine/rtl/</title>
     <script>
       try {
         if (localStorage.getItem("adapttable-demo-theme") === "dark")
@@ -81,15 +18,11 @@
       } catch {}
     </script>
     <style>
-      /* The pre-mount fallback inside #root. React replaces it on mount, so
-         this paints only while the bundle is still downloading — or
-         permanently, when JavaScript is unavailable. Styled so that moment
-         reads as the page arriving rather than as broken markup. */
       .at-fallback {
         max-width: 44rem;
         margin: 0 auto;
         padding: 4.5rem 1.5rem;
-        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-family: ui-sans-serif, system-ui, sans-serif;
         color: #52525b;
         line-height: 1.65;
       }
@@ -100,27 +33,18 @@
         margin: 0 0 1rem;
         letter-spacing: -0.01em;
       }
-      .at-fallback h2 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #18181b;
-        margin: 2rem 0 0.6rem;
-      }
-      .at-fallback ul {
-        padding-inline-start: 1.2rem;
-        margin: 0;
-      }
-      .at-fallback li {
-        margin: 0.4rem 0;
-      }
       .at-fallback a {
         color: #4f46e5;
       }
       [data-theme="dark"] .at-fallback {
         color: #a1a1aa;
       }
-      [data-theme="dark"] .at-fallback :is(h1, h2) {
+      [data-theme="dark"] .at-fallback h1 {
         color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
       }
       [data-theme="dark"] .at-fallback a {
         color: #a5b4fc;
@@ -128,42 +52,19 @@
     </style>
   </head>
   <body>
-    <!-- Replaced by React on mount — see the note in the showcase root
-         index.html for why the served HTML carries content at all. -->
-    <div id="root">
-      <main class="at-fallback">
-        <h1>AdaptTable demo — Arabic and right-to-left layout</h1>
-        <p>
-          The same table in a right-to-left document. RTL here is a layout
-          direction, not a stylesheet flip: column pinning is logical, so a
-          column pinned to the start pins to the right in Arabic. Search,
-          sorting and pagination follow the same logical axis.
-        </p>
-        <h2>What this focused page demonstrates</h2>
-        <ul>
-          <li>Arabic labels and values render in a genuinely RTL table.</li>
-          <li>
-            Pinned columns hold the logical start and end, not a hard-coded left
-            and right.
-          </li>
-          <li>
-            Search, sort arrows and pagination mirror without reversing data
-            meaning.
-          </li>
-          <li>
-            Visible table strings, pagination and empty states come from the
-            Arabic translation catalogue.
-          </li>
-        </ul>
-        <p>
-          Documentation: <a href="/adapttable/i18n-rtl/">i18n and RTL</a>,
-          <a href="/adapttable/column-management/">column management</a>,
-          <a href="/adapttable/customization/">customization</a>. Other demos:
-          <a href="/adapttable/demo/">the main showcase</a>,
-          <a href="/adapttable/demo/columns/">column management</a>.
-        </p>
-      </main>
-    </div>
-    <script type="module" src="/src/entry-rtl.tsx"></script>
+    <main class="at-fallback">
+      <h1>This demo is now at /demo/mantine/rtl/</h1>
+      <p>
+        The demo is adapter-first: this page became
+        <a href="../mantine/rtl/">right-to-left mantine data table</a>, which carries the
+        same table plus Mantine's own install line, imports
+        and code. Every capability that lived at this address lives there.
+      </p>
+      <p>
+        Your browser follows the move on its own. If it has not, open
+        <a href="../mantine/rtl/">/demo/mantine/rtl/</a> directly, or start from
+        <a href="/adapttable/demo/">the main showcase</a>.
+      </p>
+    </main>
   </body>
 </html>

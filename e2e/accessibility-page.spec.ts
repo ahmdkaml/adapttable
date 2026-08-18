@@ -1,6 +1,24 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { gotoFromNav } from "./nav";
+import {
+  adapterByKey,
+  builtAdapters,
+  featureBySlug,
+  fillTemplate,
+} from "../apps/showcase/matrix.mjs";
+import { gotoFromFeatureGrid } from "./nav";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+/** What the matrix says this page must serve, for the kit it is served for. */
+const ADAPTER = adapterByKey(KIT)!;
+const FEATURE = featureBySlug("accessibility")!;
+const copy = (text: string) => fillTemplate(text, ADAPTER);
 
 /**
  * The /accessibility/ page: keyboard reach and what the table says.
@@ -11,49 +29,48 @@ import { gotoFromNav } from "./nav";
  * nothing, the transcript stays empty and this fails, which is the point.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
-const demo = (page: Page) => page.locator("#accessibility");
+/** The box below the seam — everything inside it is the kit's. */
+const demo = (page: Page) => page.locator(".mx-demo");
 const transcript = (page: Page) => page.getByTestId("announcements");
 
-test("is reachable from the demo nav", async ({ page }) => {
-  await page.goto("/");
-  await gotoFromNav(page, "More", "Accessibility");
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "Accessibility");
   await expect(page).toHaveURL(/\/accessibility\/$/);
   await expect(page.getByRole("grid").first()).toBeVisible();
 });
 
-test("explains what is announced without JavaScript", async ({ browser }) => {
+test("answers the search phrase without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto("/accessibility/");
-  await expect(page).toHaveTitle(/Accessible React data table/);
+  await page.goto(`/${KIT}/accessibility/`);
+
+  await expect(page).toHaveTitle(copy(FEATURE.title));
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     "content",
-    /screen-reader/i
+    copy(FEATURE.description)
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Accessible React data table"
+    copy(FEATURE.h1)
   );
-  // The differentiator is the explanation, not just the demo.
-  await expect(page.locator("main")).toContainText("What gets announced");
-  await expect(page.locator("main")).toContainText("Sorting");
+  await expect(page.locator("main")).toContainText(
+    copy(FEATURE.intro[0]!).slice(0, 60)
+  );
+  await expect(page.locator("main")).toContainText(ADAPTER.pkg);
   await context.close();
 });
 
 test("the grid takes arrow-key focus, and says where it went", async ({
   page,
 }) => {
-  await page.goto("/accessibility/");
+  await page.goto(`/${KIT}/accessibility/`);
   const grid = demo(page).getByRole("grid").first();
   await expect(grid).toBeVisible();
   await expect(transcript(page)).toContainText("Nothing yet");
@@ -70,12 +87,7 @@ test("the grid takes arrow-key focus, and says where it went", async ({
 
 for (const kit of KITS) {
   test(`${kit}: exposes a grid with a focusable cell`, async ({ page }) => {
-    await page.goto("/accessibility/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/accessibility/`);
     const root = demo(page).locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await expect(root.getByRole("grid").first()).toBeVisible();

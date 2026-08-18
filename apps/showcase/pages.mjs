@@ -55,13 +55,13 @@ const demo = (dir, { indexable = true } = {}) => ({
 /**
  * The addresses a feature page used to answer at, and where it answers now.
  *
- * These six were live and linked before the demo became adapter-first, so each
+ * These were live and linked before the demo became adapter-first, so each
  * keeps a static meta-refresh stub at its old address. A stub carries no bundle
  * and stays out of the sitemap: asking a crawler to index a page whose whole
  * content is "this is elsewhere" competes with the page it points at.
  *
- * The nine other feature pages this restructure replaced were never published,
- * so they are simply gone — a redirect from an address nobody has is noise.
+ * The other feature pages this restructure replaced were never published, so
+ * they are simply gone — a redirect from an address nobody has is noise.
  *
  * @type {readonly [string, string][]}
  */
@@ -75,6 +75,7 @@ export const REPLACED_PAGES = [
   ["export-pdf", "mantine/export"],
   ["grouping", "mantine/grouping"],
   ["mobile", "mantine/mobile-cards"],
+  ["rtl", "mantine/rtl"],
   ["scale", "mantine/scale"],
 ];
 
@@ -85,14 +86,8 @@ export const REPLACED_PAGES = [
  */
 export const SHOWCASE_PAGES = [
   { key: "main", html: "./index.html", route: "/demo/", indexable: true },
-  // Shared pages: properties of every table rather than features of one, so
-  // they answer once for all eight kits instead of once per kit.
-  demo("accessibility"),
   demo("all-options"),
-  demo("pagination"),
-  demo("realtime"),
-  demo("rtl"),
-  // The adapter × feature matrix — a landing plus twelve feature pages per
+  // The adapter × feature matrix — a landing plus fifteen feature pages per
   // built adapter, expanded from `matrix.mjs`.
   ...matrixPages().map((page) => demo(page.dir)),
   // The addresses those pages replaced.

@@ -11,7 +11,7 @@ import { configureFeatureLab } from "./feature-lab";
  * claims can only be settled in a browser: what a real media query reports
  * about the pointer, and what a real tap does with no keyboard anywhere near it.
  *
- * The /accessibility/ page arms `cellNavigation` and `columnSelectionCheckbox`.
+ * The accessibility page arms `cellNavigation` and `columnSelectionCheckbox`.
  */
 
 const KITS = [
@@ -25,7 +25,7 @@ const KITS = [
   "tailwind",
 ] as const;
 
-const demo = (page: Page) => page.locator("#accessibility");
+const demo = (page: Page) => page.locator(".mx-demo");
 
 /** A real tablet: touch, a coarse pointer, and a viewport wide enough
  * for a table rather than the card layout a phone gets. */
@@ -36,12 +36,8 @@ const TOUCH_DEVICE = (() => {
 })();
 
 async function openKit(page: Page, kit: string): Promise<void> {
-  await page.goto("/accessibility/");
-  await expect(demo(page).locator('[data-adapter="mantine"]')).toBeVisible();
-  if (kit === "mantine") return;
-  const tab = page.getByTestId(`adapter-${kit}`);
-  await tab.scrollIntoViewIfNeeded();
-  await tab.click();
+  await page.goto(`/${kit}/accessibility/`);
+  await expect(demo(page).locator(`[data-adapter="${kit}"]`)).toBeVisible();
 }
 
 const boxes = (page: Page, kit: string) =>
@@ -161,7 +157,7 @@ test.describe("on a touchscreen", () => {
   test.use(TOUCH_DEVICE);
 
   test("a column selects with a tap and no keyboard", async ({ page }) => {
-    await page.goto("/accessibility/");
+    await page.goto("/mantine/accessibility/");
     const root = demo(page).locator('[data-adapter="mantine"]');
     await expect(root).toBeVisible();
 

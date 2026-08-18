@@ -7,8 +7,9 @@
  * heading and copy — the demo is client-rendered, so an empty root is an empty
  * page to everything that does not run JavaScript.
  *
- * Ninety-six of those files (eight adapters × twelve features, plus a landing
- * each) cannot be hand-written and stay true. So they are written from
+ * A hundred and twenty-eight of those files (eight adapters × fifteen
+ * features, plus a landing each) cannot be hand-written and stay true. So they
+ * are written from
  * `apps/showcase/matrix.mjs`, the same module the live page renders from: one
  * feature's words exist once, and the served HTML cannot drift from the page it
  * boots. The files are committed — Vite reads them as build inputs and the dev

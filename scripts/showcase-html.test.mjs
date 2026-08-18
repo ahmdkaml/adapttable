@@ -19,11 +19,11 @@ describe("the generated showcase pages", () => {
   const files = showcaseHtmlFiles();
 
   it("writes one page per matrix entry and per replaced address", () => {
-    // Thirteen pages per adapter — a landing plus twelve features — across all
-    // eight kits, and the seven addresses they replaced. Written out rather
+    // Sixteen pages per adapter — a landing plus fifteen features — across all
+    // eight kits, and the eight addresses they replaced. Written out rather
     // than recomputed from the matrix: the writer reads that same list, so a
     // derived count would agree with itself no matter what it produced.
-    assert.equal(files.length, 8 * 13 + 7);
+    assert.equal(files.length, 8 * 16 + 8);
     assert.equal(new Set(files.map((file) => file.dir)).size, files.length);
   });
 

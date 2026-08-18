@@ -2,8 +2,8 @@
  * One page component for the whole adapter × feature matrix.
  *
  * "AdaptTable for Mantine" and "Saved views in Mantine" are the same page with
- * different arguments, and so are the ninety-four that follow them. The words
- * come from `matrix.mjs`, the demo from `featureBodies.tsx`, and the kit's
+ * different arguments, and so are the hundred and twenty-six that follow them.
+ * The words come from `matrix.mjs`, the demo from `featureBodies.tsx`, and the kit's
  * accent from the adapter's own token — so a new adapter is a data entry, not a
  * new component.
  *
@@ -22,6 +22,7 @@ import {
 import { cssVars } from "../cssVars";
 import { DemoFallback } from "../kitDemos";
 import {
+  Bolt,
   Check,
   CheckSquare,
   Columns,
@@ -30,6 +31,8 @@ import {
   External,
   Filter,
   Formula,
+  Globe,
+  Keyboard,
   Pencil,
   Phone,
   Pivot,
@@ -58,6 +61,7 @@ import { FEATURE_BODIES, LandingTable } from "./featureBodies";
  * grid is scannable before any of it is read.
  */
 const FEATURE_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
+  accessibility: Keyboard,
   columns: Columns,
   editing: Pencil,
   export: Download,
@@ -66,6 +70,8 @@ const FEATURE_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
   grouping: Rows,
   "mobile-cards": Phone,
   pivot: Pivot,
+  realtime: Bolt,
+  rtl: Globe,
   "saved-views": Star,
   scale: Database,
   selection: CheckSquare,
@@ -217,7 +223,7 @@ function SpecPlate({ adapter }: Readonly<{ adapter: ShowcaseAdapter }>) {
   );
 }
 
-/** The twelve features of one kit, as a grid of links. */
+/** The fifteen features of one kit, as a grid of links. */
 function FeatureGrid({
   adapter,
   root,

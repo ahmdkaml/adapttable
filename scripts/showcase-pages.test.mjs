@@ -19,8 +19,8 @@ const NOT_PAGES = new Set(["dist", "node_modules", "public", "src"]);
  *
  * Walked rather than listed one level deep: the demo is adapter-first, so a
  * feature page lives at `mantine/saved-views/index.html` and a scan that only
- * reads the top level would report ninety-six pages as missing while the
- * manifest lists them.
+ * reads the top level would report a hundred and twenty-eight pages as
+ * missing while the manifest lists them.
  */
 const entriesOnDisk = () => {
   const found = existsSync(join(SHOWCASE, INDEX)) ? [`./${INDEX}`] : [];

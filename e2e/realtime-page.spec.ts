@@ -1,6 +1,24 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { gotoFromNav } from "./nav";
+import {
+  adapterByKey,
+  builtAdapters,
+  featureBySlug,
+  fillTemplate,
+} from "../apps/showcase/matrix.mjs";
+import { gotoFromFeatureGrid } from "./nav";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+/** What the matrix says this page must serve, for the kit it is served for. */
+const ADAPTER = adapterByKey(KIT)!;
+const FEATURE = featureBySlug("realtime")!;
+const copy = (text: string) => fillTemplate(text, ADAPTER);
 
 /**
  * The /realtime/ page: rows changing while the reader works.
@@ -10,23 +28,13 @@ import { gotoFromNav } from "./nav";
  * something moved.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
-const demo = (page: Page) => page.locator("#realtime");
+const demo = (page: Page) => page.locator(".mx-demo");
 const feed = (page: Page) => page.getByTestId("realtime-feed");
 
-test("is reachable from the demo nav", async ({ page }) => {
-  await page.goto("/");
-  await gotoFromNav(page, "More", "Realtime");
+test("is reachable from the kit's feature grid", async ({ page }) => {
+  await gotoFromFeatureGrid(page, "mantine", "Realtime");
   await expect(page).toHaveURL(/\/realtime\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });
@@ -34,21 +42,25 @@ test("is reachable from the demo nav", async ({ page }) => {
 test("answers the search phrase without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto("/realtime/");
-  await expect(page).toHaveTitle(/live updates/i);
+  await page.goto(`/${KIT}/realtime/`);
+
+  await expect(page).toHaveTitle(copy(FEATURE.title));
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     "content",
-    /websocket/i
+    copy(FEATURE.description)
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "React table live updates"
+    copy(FEATURE.h1)
   );
-  await expect(page.locator("main")).toContainText("row patches");
+  await expect(page.locator("main")).toContainText(
+    copy(FEATURE.intro[0]!).slice(0, 60)
+  );
+  await expect(page.locator("main")).toContainText(ADAPTER.pkg);
   await context.close();
 });
 
 test("the feed fills as patches land", async ({ page }) => {
-  await page.goto("/realtime/");
+  await page.goto(`/${KIT}/realtime/`);
   await expect(feed(page)).toContainText("waiting for the first patch");
   // The updates are on a timer; the point is that they arrive at all.
   await expect(feed(page).locator("li").first()).toBeVisible({
@@ -57,8 +69,8 @@ test("the feed fills as patches land", async ({ page }) => {
 });
 
 test("a selection survives the updates", async ({ page }) => {
-  await page.goto("/realtime/");
-  const root = demo(page).locator('[data-adapter="mantine"]');
+  await page.goto(`/${KIT}/realtime/`);
+  const root = demo(page).locator(`[data-adapter="${KIT}"]`);
   await expect(root.first()).toBeVisible();
   // Wait for the feed to prove patches are actually flowing.
   await expect(feed(page).locator("li").first()).toBeVisible({
@@ -74,12 +86,7 @@ test("a selection survives the updates", async ({ page }) => {
 
 for (const kit of KITS) {
   test(`${kit}: renders the live table and its feed`, async ({ page }) => {
-    await page.goto("/realtime/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/realtime/`);
     const root = demo(page).locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await expect(feed(page).locator("li").first()).toBeVisible({
