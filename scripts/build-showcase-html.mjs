@@ -27,7 +27,9 @@ import {
   adapterByKey,
   featureBySlug,
   fillTemplate,
+  introFor,
   LANDING,
+  landingHead,
   MATRIX_FEATURES,
   matrixPages,
 } from "../apps/showcase/matrix.mjs";
@@ -256,7 +258,9 @@ const featurePage = (adapter, feature) => {
       <main class="at-fallback">
         <p class="at-fallback__kicker">AdaptTable for ${escapeHtml(adapter.label)}</p>
         <h1>${escapeHtml(fill(feature.h1))}</h1>
-${feature.intro.map((line) => `        <p>${paragraph(fill(line))}</p>`).join("\n")}
+${introFor(feature, adapter)
+  .map((line) => `        <p>${paragraph(fill(line))}</p>`)
+  .join("\n")}
 ${note ? `        <p>${paragraph(note)}</p>\n` : ""}        <h2>The code</h2>
         <pre><code>${escapeHtml(fill(feature.snippet))}</code></pre>
         <h2>Install</h2>
@@ -288,6 +292,7 @@ const landingPage = (adapter) => {
   const fill = (text) => fillTemplate(text, adapter);
   const dir = adapter.key;
   const route = `/demo/${dir}/`;
+  const head_ = landingHead(adapter);
   const body = `    <!-- Replaced by React on mount — see the note on a feature page for why the
          served markup carries content. Written by
          scripts/build-showcase-html.mjs. -->
@@ -319,8 +324,8 @@ ${MATRIX_FEATURES.map(
       head({
         dir,
         route,
-        title: fill(LANDING.title),
-        description: fill(LANDING.description),
+        title: fill(head_.title),
+        description: fill(head_.description),
       }),
       body
     ),

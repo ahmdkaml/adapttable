@@ -41,6 +41,7 @@ import {
   adapterHref,
   DOCS_URL,
   fillTemplate,
+  introFor,
   kitAccent,
   LANDING,
   MATRIX_FEATURES,
@@ -382,7 +383,7 @@ function FeaturePage({
             {feature.label}
           </Kicker>
           <KitHeading text={fill(feature.h1)} kit={adapter.label} />
-          {feature.intro.map((line) => (
+          {introFor(feature, adapter).map((line) => (
             <Lead key={line} text={fill(line)} />
           ))}
         </div>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
+    <meta name="description" content="Group rows in a shadcn data table by one key or several — nested group headers with counts, per-group subtotals, group footers, and collapse state in the URL." />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/shadcn/grouping/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content="shadcn table row grouping — AdaptTable" />
+    <meta property="og:description" content="Group rows in a shadcn data table by one key or several — nested group headers with counts, per-group subtotals, group footers, and collapse state in the URL." />
+    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/shadcn/grouping/" />
+    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="shadcn table row grouping — AdaptTable" />
+    <meta name="twitter:description" content="Group rows in a shadcn data table by one key or several — nested group headers with counts, per-group subtotals, group footers, and collapse state in the URL." />
+    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"Group rows in a shadcn data table by one key or several — nested group headers with counts, per-group subtotals, group footers, and collapse state in the URL.","url":"https://orwa-mahmoud.github.io/adapttable/demo/shadcn/grouping/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
+    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <title>shadcn table row grouping — AdaptTable</title>
+    <script>
+      try {
+        if (localStorage.getItem("adapttable-demo-theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch {}
+    </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback p {
+        text-wrap: pretty;
+      }
+      .at-fallback__kicker {
+        margin: 0 0 0.75rem;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+      .at-fallback h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback pre {
+        overflow-x: auto;
+        padding: 1rem 1.1rem;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        background: #fafafa;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.8rem;
+        line-height: 1.7;
+        color: #3f3f46;
+      }
+      .at-fallback p code {
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: #f4f4f5;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.86em;
+        color: #27272a;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback pre {
+        border-color: #3f3f46;
+        background: #18181b;
+        color: #d4d4d8;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Replaced by React on mount — the served markup carries the page's
+         own words so a crawler, and anyone whose bundle has not arrived, reads
+         a real page. Written by scripts/build-showcase-html.mjs. -->
+    <div id="root" data-matrix-page="shadcn/grouping">
+      <main class="at-fallback">
+        <p class="at-fallback__kicker">AdaptTable for shadcn</p>
+        <h1>Row grouping in shadcn</h1>
+        <p>Pass <code>groupBy</code> and rows fold into shadcn group headers with counts. Pass a list and each key nests inside the one before it, however deep the nesting goes.</p>
+        <p><code>groupAggregates</code> adds per-group subtotals from the same mapper <code>summaryRow</code> uses, so every header totals its whole subtree and <code>groupFooters</code> closes each group with the same numbers.</p>
+        <p>Collapse state travels in the URL, and export writes the grouped sheet — outline levels and all — rather than the flat rows underneath it.</p>
+        <p>A group row sits on bg-muted, and the footer flips the rule rather than the colour — same surface, a top border instead of a bottom one — so a group reads as opening and closing on the same note.</p>
+        <h2>The code</h2>
+        <pre><code>import { DataTable } from &quot;@adapttable/shadcn&quot;;
+
+export function People({ rows, columns }) {
+  return (
+    &lt;DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) =&gt; row.id}
+      groupBy={[&quot;team&quot;, &quot;status&quot;]}
+      groupFooters
+      groupAggregates={(group) =&gt; ({
+        budget: group.reduce(
+          (sum, row) =&gt; sum + row.budget,
+          0
+        ),
+      })}
+    /&gt;
+  );
+}</code></pre>
+        <h2>Install</h2>
+        <pre><code>pnpm add @adapttable/shadcn @adapttable/core</code></pre>
+        <p>
+          Reference: <a href="https://orwa-mahmoud.github.io/adapttable/grouping/">grouping</a>. More of this kit:
+          <a href="../">AdaptTable for shadcn</a>, or
+          <a href="/adapttable/demo/">the live demo</a>.
+        </p>
+      </main>
+    </div>
+    <script type="module" src="/src/entry-matrix.tsx"></script>
+  </body>
+</html>

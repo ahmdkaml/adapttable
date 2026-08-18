@@ -146,7 +146,7 @@
         <p>Everything a user expects to do to a column, without writing a column-settings panel: show and hide, reorder by drag, pin to either edge, resize by drag or keyboard, and switch row density.</p>
         <p>Pinning is logical rather than physical, so a column pinned to the start stays on the correct side in a right-to-left layout.</p>
         <p>The arrangement is state like any other: persist it to the URL, to localStorage, or to your own server through <code>columnLayout</code> and <code>onColumnLayoutChange</code>.</p>
-        <p>The column menu is a Mantine Popover of Checkboxes and ActionIcons, and the resize handle sits on the kit's own header cell — no second design language on top of your theme.</p>
+        <p>The column menu is a Mantine Popover — a Popover rather than a Menu, because the panel holds drag handles and arrow keys have to reorder rather than move a highlight — and every control in it is an ActionIcon.</p>
         <h2>The code</h2>
         <pre><code>import { DataTable } from &quot;@adapttable/mantine&quot;;
 

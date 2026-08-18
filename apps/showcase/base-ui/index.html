@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <meta name="description" content="A batteries-included React data table for Base UI: filtering, grouping, pivot, editing, saved views and export, rendered with @base-ui/react's own components. Install @adapttable/base-ui." />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/base-ui/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content="AdaptTable for Base UI — a data table built from @base-ui/react" />
+    <meta property="og:description" content="A batteries-included React data table for Base UI: filtering, grouping, pivot, editing, saved views and export, rendered with @base-ui/react's own components. Install @adapttable/base-ui." />
+    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/base-ui/" />
+    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AdaptTable for Base UI — a data table built from @base-ui/react" />
+    <meta name="twitter:description" content="A batteries-included React data table for Base UI: filtering, grouping, pivot, editing, saved views and export, rendered with @base-ui/react's own components. Install @adapttable/base-ui." />
+    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"A batteries-included React data table for Base UI: filtering, grouping, pivot, editing, saved views and export, rendered with @base-ui/react's own components. Install @adapttable/base-ui.","url":"https://orwa-mahmoud.github.io/adapttable/demo/base-ui/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
+    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <title>AdaptTable for Base UI — a data table built from @base-ui/react</title>
+    <script>
+      try {
+        if (localStorage.getItem("adapttable-demo-theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch {}
+    </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback p {
+        text-wrap: pretty;
+      }
+      .at-fallback__kicker {
+        margin: 0 0 0.75rem;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+      .at-fallback h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback pre {
+        overflow-x: auto;
+        padding: 1rem 1.1rem;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        background: #fafafa;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.8rem;
+        line-height: 1.7;
+        color: #3f3f46;
+      }
+      .at-fallback p code {
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: #f4f4f5;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.86em;
+        color: #27272a;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback pre {
+        border-color: #3f3f46;
+        background: #18181b;
+        color: #d4d4d8;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Replaced by React on mount — see the note on a feature page for why the
+         served markup carries content. Written by
+         scripts/build-showcase-html.mjs. -->
+    <div id="root" data-matrix-page="base-ui">
+      <main class="at-fallback">
+        <p class="at-fallback__kicker">@adapttable/base-ui</p>
+        <h1>AdaptTable for Base UI</h1>
+        <p>A Base UI data table — their primitives, your tokens.</p>
+        <p>The engine is headless and shared — sorting, filtering, grouping, the pivot, URL state, saved views and export live in @adapttable/core. Every control you can see and click is Base UI's Popover, Dialog, Checkbox, Select and Menu primitives.</p>
+        <p>That is the whole trade: one model to learn, and a table that belongs in a Base UI app rather than sitting inside one.</p>
+        <h2>Install</h2>
+        <pre><code>pnpm add @adapttable/base-ui @adapttable/core @base-ui/react</code></pre>
+        <h2>Every feature, on its own page</h2>
+        <ul>
+          <li><a href="./saved-views/">Saved views in Base UI</a> — Name an arrangement, share it as a link, manage the list in place.</li>
+          <li><a href="./pivot/">Pivot tables in Base UI</a> — Rows down the side, dimensions across the top, subtotals at every level.</li>
+          <li><a href="./formulas/">Spreadsheet formulas in Base UI</a> — Computed columns typed as formulas, errors reported in the cell.</li>
+          <li><a href="./editing/">Inline cell editing in Base UI</a> — Kit-native editors in the cell; every write goes through your handler.</li>
+          <li><a href="./tree/">Tree data in Base UI</a> — Rows that contain rows — nesting, chevrons, keyboard traversal.</li>
+          <li><a href="./mobile-cards/">Mobile cards in Base UI</a> — Every row becomes a card on phones. Automatically, with the same state.</li>
+          <li><a href="./scale/">Large datasets in Base UI</a> — 100k rows, 40 columns, virtualized rows and columns, sticky chrome.</li>
+          <li><a href="./columns/">Column management in Base UI</a> — Show, hide, reorder, pin and resize — from a menu you did not write.</li>
+          <li><a href="./filtering/">Filtering in Base UI</a> — Kit-native operators, date ranges, checklists, an AND/OR tree, chips.</li>
+          <li><a href="./export/">Export and print in Base UI</a> — CSV, XLSX and PDF from one seam — plus a real print layout.</li>
+          <li><a href="./selection/">Row selection in Base UI</a> — A set of ids that survives paging, with bulk actions over it.</li>
+          <li><a href="./grouping/">Row grouping in Base UI</a> — Nested group headers with counts, subtotals, footers and collapse state.</li>
+        </ul>
+        <p>
+          Reference: <a href="https://orwa-mahmoud.github.io/adapttable/getting-started/">getting started</a>. Or
+          open <a href="/adapttable/demo/">the live demo</a> and switch kits on
+          the same table.
+        </p>
+      </main>
+    </div>
+    <script type="module" src="/src/entry-matrix.tsx"></script>
+  </body>
+</html>

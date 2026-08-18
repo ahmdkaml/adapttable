@@ -47,6 +47,13 @@
  * @property {boolean} built Whether this adapter has its own landing and
  *   feature pages yet. Until it does, the nav sends readers to the live demo
  *   pinned to that kit, which is a page that exists and shows that kit.
+ * @property {{ title: string, description: string }} [landing] The landing
+ *   page's `<title>` and meta description, where the shared pair would not be
+ *   true of this kit. The unstyled family is the case it exists for: shadcn and
+ *   Tailwind render semantic markup wearing classes, so "rendered with its own
+ *   components" is a claim about them that is simply false. Every other kit
+ *   uses `LANDING`, and the page body needs no override anywhere — `tagline`
+ *   and `surface` already carry what differs.
  */
 
 /**
@@ -84,12 +91,11 @@ export const SHOWCASE_ADAPTERS = [
     accentDark: "oklch(0.7 0.15 264)",
     pkg: "@adapttable/mui",
     peer: "@mui/material",
-    install:
-      "pnpm add @adapttable/mui @adapttable/core @mui/material @emotion/react @emotion/styled",
+    install: "pnpm add @adapttable/mui @adapttable/core @mui/material",
     provider: "ThemeProvider",
     tagline: "A Material data table, drawn by MUI's own components.",
     surface: "MUI's Paper, Table, Popover, Drawer, Card, Checkbox and Select",
-    built: false,
+    built: true,
   },
   {
     key: "chakra",
@@ -99,11 +105,12 @@ export const SHOWCASE_ADAPTERS = [
     accentDark: "oklch(0.72 0.1 188)",
     pkg: "@adapttable/chakra",
     peer: "@chakra-ui/react",
-    install: "pnpm add @adapttable/chakra @adapttable/core @chakra-ui/react",
+    install:
+      "pnpm add @adapttable/chakra @adapttable/core @chakra-ui/react @emotion/react",
     provider: "ChakraProvider",
     tagline: "A Chakra data table, with Chakra's controls throughout.",
     surface: "Chakra's Table, Popover, Drawer, Card, Checkbox and Select",
-    built: false,
+    built: true,
   },
   {
     key: "antd",
@@ -117,7 +124,7 @@ export const SHOWCASE_ADAPTERS = [
     provider: "ConfigProvider",
     tagline: "An Ant Design data table, in Ant Design's own controls.",
     surface: "antd's Table, Popover, Drawer, Card, Checkbox and Select",
-    built: false,
+    built: true,
   },
   {
     key: "radix",
@@ -131,7 +138,7 @@ export const SHOWCASE_ADAPTERS = [
     provider: "Theme",
     tagline: "A Radix Themes data table, accent token and all.",
     surface: "Radix Themes' Table, Popover, Dialog, Card, Checkbox and Select",
-    built: false,
+    built: true,
   },
   {
     key: "base-ui",
@@ -145,7 +152,7 @@ export const SHOWCASE_ADAPTERS = [
     provider: "",
     tagline: "A Base UI data table — their primitives, your tokens.",
     surface: "Base UI's Popover, Dialog, Checkbox, Select and Menu primitives",
-    built: false,
+    built: true,
   },
   {
     key: "shadcn",
@@ -159,7 +166,13 @@ export const SHOWCASE_ADAPTERS = [
     provider: "",
     tagline: "A shadcn/ui data table, styled by the classes you already own.",
     surface: "the shadcn class conventions over the unstyled adapter's markup",
-    built: false,
+    landing: {
+      title:
+        "AdaptTable for shadcn/ui — a data table in your own design tokens",
+      description:
+        "A batteries-included React data table for shadcn/ui: filtering, grouping, pivot, editing, saved views and export, drawn as semantic markup wearing shadcn's own tokens. Install @adapttable/shadcn.",
+    },
+    built: true,
   },
   {
     key: "tailwind",
@@ -173,7 +186,13 @@ export const SHOWCASE_ADAPTERS = [
     provider: "",
     tagline: "Native controls and no opinions — every class is yours.",
     surface: "native HTML controls, every one addressable by class name",
-    built: false,
+    landing: {
+      title:
+        "AdaptTable for Tailwind — a data table you style with your own classes",
+      description:
+        "A batteries-included React data table for Tailwind CSS: filtering, grouping, pivot, editing, saved views and export, rendered as semantic HTML whose every part takes your classes. Install @adapttable/unstyled.",
+    },
+    built: true,
   },
 ];
 
@@ -195,6 +214,12 @@ export const SHOWCASE_ADAPTERS = [
  * @property {Record<string, string>} notes What is true about this feature in
  *   THIS kit, keyed by adapter — the sentence that cannot be templated. A kit
  *   with nothing honest to add has no entry, and the page shows none.
+ * @property {Record<string, string[]>} [intros] The intro this feature needs in
+ *   THIS kit, keyed by adapter, where a shared paragraph would state something
+ *   untrue of it. Two features say outright that every control "comes from" the
+ *   kit's package, which is the one claim the unstyled family cannot make: it
+ *   renders semantic markup and takes classes. Those get an intro of their own
+ *   here rather than a sentence bent far enough to cover both.
  * @property {string[]} docs Documentation slugs this feature is written up in.
  */
 
@@ -256,6 +281,30 @@ export function People({ rows, columns }) {
     notes: {
       mantine:
         "The panel is a Mantine Stack of rows; each name is a Button that applies the view, the icon cluster is ActionIcons, and renaming happens in a Mantine TextInput without leaving the row.",
+      mui: "The panel is an outlined Paper with an overline caption; each name is a Button, the icon cluster is IconButtons, renaming happens in a TextField, and the default and read-only markers are Chips.",
+      chakra:
+        "The panel is a bordered Box rather than a Card — Chakra's Card carries padding this list does not want — with a ghost Button per name, an xs Input for renaming, and Badges for the default and read-only markers.",
+      antd: "The panel is a small Card using antd's own title slot, each name is a text Button, renaming happens in a small Input, and the default and read-only markers are Tags.",
+      radix:
+        "The panel is a size-1 Card with a TextField for renaming and IconButtons that switch from ghost to soft when pressed; the menu is a real Popover, so Escape, outside click and focus return are Radix's.",
+      "base-ui":
+        "The controls are Base UI's Button and Input, and the panel re-declares the adapter's token class on itself — mounted beside the table it sits outside the table's scope, and every token in it would otherwise resolve to nothing.",
+      shadcn:
+        "The panel and the toolbar menu share one set of class keys, so both read as the same surface: bg-card over border-border, rows highlighting on bg-muted, and the save action in bg-primary.",
+      tailwind:
+        "Every row is native markup carrying the map's classes — a gray-bordered button per name, an indigo ring on the rename input, and the save action in bg-indigo-600.",
+    },
+    intros: {
+      shadcn: [
+        "A view is everything the table can put in a URL — search, sort, filters, grouping, the column layout, density and the pivot — saved under a name.",
+        "Readers pick one from the views menu; the panel beside the table renames, reorders, sets the default and deletes. A view someone else shared arrives read-only and says so on the row.",
+        "Both are semantic markup wearing the shadcn class preset: the surface is bg-card, the rows highlight on bg-muted, and the save button is bg-primary — the tokens your own components already read.",
+      ],
+      tailwind: [
+        "A view is everything the table can put in a URL — search, sort, filters, grouping, the column layout, density and the pivot — saved under a name.",
+        "Readers pick one from the views menu; the panel beside the table renames, reorders, sets the default and deletes. A view someone else shared arrives read-only and says so on the row.",
+        "Both are native elements — buttons, inputs, a list — and every one of them takes your classes, so the panel matches the rest of your app because you styled it, not because a kit did.",
+      ],
     },
     docs: ["saved-views", "url-state"],
   },
@@ -298,6 +347,18 @@ export function Spend({ rows, fields }) {
     notes: {
       mantine:
         "The zone panel is Mantine's — Stack, Group, Select and Button — and the pivot renders through the same Mantine table as everything else, header tree included.",
+      mui: "Each zone is a Stack drawn as a fieldset with a Typography legend, the field moves are IconButtons rather than Buttons because a 64px minimum will not fit a sidebar, and the field and aggregation pickers are TextField selects.",
+      chakra:
+        "Each zone is a Stack rendered as a fieldset with a Text legend — Chakra's reset strips the browser's own frame, so the border is the kit's — and the moves are xs outline Buttons beside NativeSelect pickers.",
+      antd: "The zones are plain fieldsets rather than Cards, and both Selects set getPopupContainer so their dropdowns stay with the trigger instead of portalling to the body away from the panel they belong to.",
+      radix:
+        "Each zone is a Card wrapping a real fieldset — the fieldset is what a screen reader hears, the Card is what you see — with soft Buttons for the moves and Radix Selects for the pickers.",
+      "base-ui":
+        "The zones are real fieldsets carrying the adapter's card class, the pickers are Base UI Selects, and the panel re-declares the token class for the same reason the saved-views panel does.",
+      shadcn:
+        "The pivot panel is the one surface the preset does not reach: it renders the unstyled adapter's fieldset, legend, selects and buttons with no classes at all, so this zone editor is browser-default until you style it.",
+      tailwind:
+        "The pivot panel takes no class map at all, so its fieldset, legend, selects and buttons are browser defaults — the table below is fully styled, and the zone editor is yours to dress.",
     },
     docs: ["pivot"],
   },
@@ -342,6 +403,18 @@ export function People({ rows, columns }) {
     notes: {
       mantine:
         "The formula bar on this page is the host's own chrome, not the table's — the engine hands back column definitions, and Mantine renders the resulting columns exactly like the declared ones.",
+      mui: "There is no MUI-specific formula code: the engine returns ordinary column definitions, so a computed column is a TableCell like any other and an error value is the text inside it.",
+      chakra:
+        "There is no Chakra-specific formula code: a computed column arrives as an ordinary column definition and renders in the same Table.Cell as a declared one, error token included.",
+      antd: "The engine returns ordinary column definitions, so a computed column renders through antd's own Table cell — and an error reads as its token text rather than being dressed up as an Alert or a Tag.",
+      radix:
+        "The engine returns ordinary column definitions, so a computed column renders in the same Table.Cell as a declared one and an error value is simply the cell's text.",
+      "base-ui":
+        "There is no Base UI-specific formula code: a computed column is a column definition like any other, and the cell that holds it is the same cell that holds a declared one.",
+      shadcn:
+        "A computed column is an ordinary cell wearing the preset's padding, and an error token is the text inside it — the preset gives errors no colour of their own here.",
+      tailwind:
+        "A computed column is an ordinary cell carrying the map's padding classes, and an error token is plain text — nothing in the map singles it out.",
     },
     docs: ["formulas"],
   },
@@ -387,6 +460,18 @@ export function People({ rows, onSave }) {
     notes: {
       mantine:
         "The editors are Mantine's TextInput, NumberInput and NativeSelect, mounted in the cell — so an edit in progress carries your Mantine theme's focus ring and sizing.",
+      mui: "Every editor is a small TextField — text, number and the select variant with MenuItem options — so a rejected value reports through the field's own error state and helperText rather than through chrome bolted beside it.",
+      chakra:
+        "The editors are Chakra's Input and NativeSelect at size sm; Chakra v3 ships no NumberInput here, so a number cell is an Input typed number and the validation message is the table's own.",
+      antd: "Text and number both edit in an antd Input rather than an InputNumber — one control, one commit path — while a select column edits in antd's Select and a multi-select in the same Select in multiple mode.",
+      radix:
+        "Text and number edit in a TextField.Root, a select column edits in a Radix Select that commits on change, and a boolean edits in a Radix Checkbox.",
+      "base-ui":
+        "The editors are Base UI's Input, Select and Checkbox; because Base UI does not forward a ref to the inner input, the cell finds the focusable node itself when the editor mounts.",
+      shadcn:
+        "Text, number and select editors all share one class key, so every editor in the table is the same h-8 field over border-input — and a rejected commit reads as a form error in text-destructive, the tone shadcn already uses for one.",
+      tailwind:
+        "The editor is a native input or select carrying the map's field classes with an indigo focus ring; the validation and rollback parts carry no classes in this map, so a rejected commit reads as browser-default text.",
     },
     docs: ["editing", "cell-navigation"],
   },
@@ -420,6 +505,18 @@ export function Org({ people, columns }) {
     notes: {
       mantine:
         "The branch toggle is a Mantine ActionIcon in the tree column, and the indent is drawn on the kit's own cell — so a nested row is still a Mantine table row.",
+      mui: "The branch toggle is a small IconButton whose caret rotates as it opens; the indent itself is a logical inline padding from the engine, so a nested row is still an ordinary TableRow.",
+      chakra:
+        "The branch toggle is a ghost IconButton with a rotating caret, and the indent is the engine's logical padding — a nested row stays a Table.Row.",
+      antd: "The branch toggle is a text Button with a rotating caret rather than antd's built-in expand icon, which the adapter draws itself so the label follows the table's locale instead of the provider's.",
+      radix:
+        "The branch toggle is an IconButton around the engine's chevron, which points by writing direction rather than by rotation — so it turns the correct way in a right-to-left layout.",
+      "base-ui":
+        "The branch toggle is a Base UI Button holding a caret that rotates on open, and the indent is the engine's logical padding on the cell.",
+      shadcn:
+        "The branch toggle carries exactly the class the group toggle carries — one table can hold both, and two disclosure controls that looked different would read as two mechanisms.",
+      tailwind:
+        "The tree parts carry no classes in this map, so the branch toggle is a browser-default button; the engine's indent still lands, which is what keeps the hierarchy legible until you style it.",
     },
     docs: ["tree-data"],
   },
@@ -455,6 +552,18 @@ export function People({ rows, columns }) {
     notes: {
       mantine:
         "Each card is a Mantine Card, and compact density switches it to the tighter Mantine padding — the phone layout inherits your theme rather than approximating it.",
+      mui: "Each card is an outlined Card with a CardContent body, its labels Typography captions; compact density tightens the content padding, and the desktop table drops to MUI's own small size.",
+      chakra:
+        "Each card is a Card.Root with a Card.Body, labels and values are Text at Chakra's own scale, and compact density tightens the body padding and the gap between fields.",
+      antd: "Each card is a small Card using antd's own title and extra slots for the leading and trailing controls, with the fields in a Descriptions list — antd's card stays small at either density, so compact tightens the gap between cards rather than the cards themselves.",
+      radix:
+        "Each card is a Radix Card that changes size with density — size 2 comfortable, size 1 compact — so the phone layout tightens the way the rest of a Radix app does.",
+      "base-ui":
+        "A card here is the adapter's own bordered surface rather than a Base UI component, since Base UI ships no Card; density tightens the gaps around it rather than the card's own padding.",
+      shadcn:
+        "Each card is a list item over bg-card and border-border, and density is real: the preset carries compact variants keyed off the density attribute the table writes on its root.",
+      tailwind:
+        "Each card is a list item carrying the map's rounded border and dark-mode variants; the map declares no density variants, so the density control changes the attribute without changing this look.",
     },
     docs: ["mobile"],
   },
@@ -489,6 +598,18 @@ export function Ledger({ rows, columns }) {
     notes: {
       mantine:
         "Virtualization happens inside Mantine's own scroll box — the sticky header and pinned cells are the adapter's, so the 100,000th row is styled exactly like the first.",
+      mui: "The scroll box is a plain Box rather than MUI's TableContainer, whose own horizontal overflow would trap the sticky header; the header sticks per TableCell against the paper background, and the rows outside the window are spacer TableRows.",
+      chakra:
+        "The scroll box is a Box rather than a Table.ScrollArea, so the sticky header keeps working; each header cell carries the sticky rule, and pinned cells take an explicit opaque background so scrolled content cannot show through.",
+      antd: "This is antd's own virtual table, not a second virtualizer over it: antd owns the scroller, so the adapter feeds it an explicit scroll size, drives infinite paging off antd's internal scroll position, and pins columns through antd's native fixed API.",
+      radix:
+        "Radix's Table.Root brings its own ScrollArea, so the adapter restores overflow on the inner table and hands it the min-width — without that the table shrinks to the viewport and a pinned column has nothing to stick against. Columns virtualize here as well as rows.",
+      "base-ui":
+        "The scroll box is the adapter's own element with an injected rule that lets the inner table exceed it, the header sticks by inline rule, and pinned cells take their opaque background from the adapter's surface token.",
+      shadcn:
+        "Sticky and pinned cells stay opaque because the preset paints them bg-card — a transparent pinned cell would show the rows sliding under it — and a windowed-out row is a real table row with a height and nothing in it.",
+      tailwind:
+        "The map paints the header and pinned cells opaque per element rather than through a token, which is what stops scrolled rows showing through them, and the scroll box contains its own overscroll.",
     },
     docs: ["performance", "virtualization"],
   },
@@ -522,7 +643,19 @@ export function People({ rows, columns, layout, onLayout }) {
 }`,
     notes: {
       mantine:
-        "The column menu is a Mantine Popover of Checkboxes and ActionIcons, and the resize handle sits on the kit's own header cell — no second design language on top of your theme.",
+        "The column menu is a Mantine Popover — a Popover rather than a Menu, because the panel holds drag handles and arrow keys have to reorder rather than move a highlight — and every control in it is an ActionIcon.",
+      mui: "The menu is a Popover rather than a Menu, so the grip's arrow keys reorder columns instead of walking menu items; visibility is an eye IconButton reporting aria-pressed rather than a checkbox.",
+      chakra:
+        "The menu is a Chakra Popover portalled out of the table, visibility is an eye IconButton with aria-pressed, and a pinned column's button turns solid — the sortable header itself is Chakra's styled button factory rather than a Button.",
+      antd: "The menu is a controlled antd Popover with its content padding stripped, flipped by writing direction, and closed by a keydown listener the adapter adds — antd's Popover has no Escape handling of its own.",
+      radix:
+        "The menu is a Radix Popover, so Escape and outside click come free, and the drag grip is a real IconButton carrying the keyboard reorder keys rather than a decorative handle.",
+      "base-ui":
+        "The menu is a Base UI Popover mounted through its own portal and positioner, with an eye button per column and a grip that reorders from the keyboard as well as by drag.",
+      shadcn:
+        "The menu is a native disclosure — a positioned panel that closes on outside pointer-down and Escape — over bg-card, with hidden columns struck through in text-muted-foreground rather than merely dimmed.",
+      tailwind:
+        "The button, panel, grip, pin and resize handle all carry the map's classes, with an indigo active state; the search box, bulk buttons and overflow submenu are not in the map, so those read as browser defaults.",
     },
     docs: ["column-management", "columns"],
   },
@@ -565,6 +698,30 @@ export function People({ rows }) {
     notes: {
       mantine:
         "The popover is Mantine's Popover and the drawer its Drawer; inside them the controls are TextInput, NumberInput, Select, MultiSelect and Checkbox — the filter form is Mantine all the way down.",
+      mui: "The popover is a Popper over an elevated Paper rather than MUI's Popover, which is modal and would dim the table behind it; the drawer is a real Drawer, the operators are TextField selects, and a multi-select filter is an Autocomplete.",
+      chakra:
+        "The popover is Chakra's Popover and the drawer its Drawer, backdrop and all; inside, the operators are NativeSelects, the bounds are Inputs, and a multi-select filter is a group of Chakra Checkboxes.",
+      antd: "The popover lets antd portal its Selects and pickers to the body the way antd does everywhere, and teaches the outside-click handler to ignore those layers instead — numbers filter through an InputNumber, and each active filter is a closable Tag.",
+      radix:
+        "Radix Themes ships no Drawer, so the drawer is a Dialog pinned to the inline edge; the popover holds its ground by clamping its own height rather than flipping, and the chips are full-radius Badges.",
+      "base-ui":
+        "The popover shifts rather than flips — the form grows when an operator takes a second bound, and flipping threw it over the page header — and the drawer is Base UI's, with its swipe direction mirrored for right-to-left.",
+      shadcn:
+        "Plain DOM has no collision detection, so the popover clamps itself to the viewport in script; the drawer is a real modal dialog with its own focus trap, and a checkbox option hides its native box and turns the whole label into the swatch.",
+      tailwind:
+        "The backdrop, panel, popover and every filter input carry the map's classes with an indigo focus ring, and a checked option fills its label in indigo; the checklist and the AND/OR builder are not in the map, so they read as browser defaults.",
+    },
+    intros: {
+      shadcn: [
+        "Declare what a column filters by and the table builds the control: text and number operators, date ranges with relative presets, and a checklist of the values actually present.",
+        "For the cases one row of inputs cannot express there is an AND/OR tree, and every active filter shows as a chip that removes itself.",
+        "The whole filter state lives in the URL, so a filtered view is a link someone can send — and the popover, drawer, inputs and chips are semantic markup wearing shadcn's tokens rather than components you have to install.",
+      ],
+      tailwind: [
+        "Declare what a column filters by and the table builds the control: text and number operators, date ranges with relative presets, and a checklist of the values actually present.",
+        "For the cases one row of inputs cannot express there is an AND/OR tree, and every active filter shows as a chip that removes itself.",
+        "The whole filter state lives in the URL, so a filtered view is a link someone can send — and the popover, drawer, inputs and chips are native elements, each one addressable by class so the filter form looks like the form you wrote.",
+      ],
     },
     docs: ["filtering", "filter-tree", "url-state"],
   },
@@ -602,6 +759,18 @@ export function People({ rows, columns }) {
     notes: {
       mantine:
         "The export control is a Mantine Button in the kit's toolbar, and its busy state is Mantine's — the file is written off the main thread either way.",
+      mui: "The export control is an outlined Button that grows a CircularProgress in its start-icon slot while the file is written — the Button's own loading prop arrived after the MUI version this adapter supports.",
+      chakra:
+        "The export control is a Chakra Button using the kit's own loading prop, so the spinner replaces the label and the button blocks a second press while the file is written.",
+      antd: "The export control is an antd Button in its loading state, which takes the icon slot and disables the button for the duration — antd's own answer to a control that is working.",
+      radix:
+        "The export control wraps its label in Radix's Spinner rather than swapping it out, which keeps the button the same width so the toolbar does not reflow when an export starts.",
+      "base-ui":
+        "Base UI ships no loading button, so the busy affordance is the adapter's own spinner element — the same one the filter form uses — beside a disabled Button.",
+      shadcn:
+        "There is no kit button to borrow a loading state from, so the spinner is a bare element the preset styles: a spinning ring built from a transparent-topped border.",
+      tailwind:
+        "The button and its spinner are both plain elements the map styles — the same construction shadcn's preset uses, in this map's own neutrals.",
     },
     docs: ["export-csv", "export-pdf"],
   },
@@ -640,6 +809,18 @@ export function People({ rows, columns, onArchive }) {
     notes: {
       mantine:
         "Every box is a Mantine Checkbox, indeterminate state included, and the bulk bar that appears above the table is built from Mantine Buttons.",
+      mui: "Every box is a MUI Checkbox in a checkbox-padded TableCell, indeterminate included, and the bulk bar is a Stack of contained Buttons with a Tooltip explaining any action it has to disable.",
+      chakra:
+        "Every box is Chakra's Checkbox — v3 spells the mixed state as a checked value rather than a flag — and the bulk bar is an HStack of Buttons above the table.",
+      antd: "The row boxes come from antd's own rowSelection API rather than a column the adapter draws, so the part name lands inside the cell here; the bulk bar is an antd Alert banner with its action slot, which is antd's own batch-operation pattern.",
+      radix:
+        "Every box is a Radix Checkbox with a real mixed state, and the bulk bar is a plain Flex of Buttons — Radix's Callout is saved for the error chrome rather than spent on a toolbar.",
+      "base-ui":
+        "Base UI's Checkbox draws a genuine mixed state — a dash rather than a tick — and where a box carries a visible label the part moves to the label wrapper, because that is the element Base UI names.",
+      shadcn:
+        "The boxes are native checkboxes tinted with accent-primary and set indeterminate through a ref, since HTML has no attribute for it; the bulk bar sits on bg-accent above the table.",
+      tailwind:
+        "The boxes are native checkboxes tinted indigo, a selected row takes an indigo wash that has its own dark variant, and the bulk bar is styled to match.",
     },
     docs: ["selection", "bulk-actions"],
   },
@@ -678,6 +859,18 @@ export function People({ rows, columns }) {
     notes: {
       mantine:
         "A group header is a Mantine table row with the kit's own chevron ActionIcon, and on phones it becomes a Mantine Card header — the same grouping, both layouts.",
+      mui: "A group header is a TableRow with a spanning TableCell holding an IconButton chevron, a Checkbox and Typography; the footer is the same component with the controls taken away, and the summary sits in a real TableFooter.",
+      chakra:
+        "A group header is a Table.Row with a spanning cell — IconButton chevron, Chakra Checkbox, Text label and count — and the footer is that same row with its controls removed.",
+      antd: "Group headers and footers are records spliced into antd's own dataSource and spanned through its onCell hook, so grouping happens inside antd's Table rather than around it; the summary row is antd's Table.Summary.",
+      radix:
+        "A group header is a real Table.Row with a spanning cell, and its toggle wraps the engine's chevron — which points by writing direction rather than rotating, so it reads correctly right-to-left.",
+      "base-ui":
+        "A group header is a table row with a spanning cell carrying the indent, a Base UI Checkbox for the tri-state group selection, and the engine's chevron inside a Base UI Button.",
+      shadcn:
+        "A group row sits on bg-muted, and the footer flips the rule rather than the colour — same surface, a top border instead of a bottom one — so a group reads as opening and closing on the same note.",
+      tailwind:
+        "The group row, toggle, label, count and aggregate all carry the map's classes with a dark variant; group footers and the show-more row are not in the map, so those two read as browser defaults.",
     },
     docs: ["grouping"],
   },
@@ -726,6 +919,25 @@ export const fillTemplate = (text, adapter) =>
     .replaceAll("{kit}", adapter.label)
     .replaceAll("{pkg}", adapter.pkg)
     .replaceAll("{peer}", adapter.peer);
+
+/**
+ * The paragraphs a feature page opens with, for the kit it is written for.
+ *
+ * @param {MatrixFeature} feature
+ * @param {ShowcaseAdapter} adapter
+ * @returns {string[]}
+ */
+export const introFor = (feature, adapter) =>
+  feature.intros?.[adapter.key] ?? feature.intro;
+
+/**
+ * The landing page's `<title>` and meta description for this kit.
+ *
+ * @param {ShowcaseAdapter} adapter
+ * @returns {{ title: string, description: string }}
+ */
+export const landingHead = (adapter) =>
+  adapter.landing ?? { title: LANDING.title, description: LANDING.description };
 
 /**
  * The adapters whose own pages are built. Every other kit is reachable, and
