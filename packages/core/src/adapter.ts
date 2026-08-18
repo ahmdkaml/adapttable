@@ -353,6 +353,8 @@ export {
 } from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
 export {
+  type SavedViewControlKey,
+  type SavedViewRowControl,
   SavedViewsPanelChrome,
   type SavedViewsPanelChromeProps,
   type SavedViewsPanelEmptyProps,

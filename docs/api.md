@@ -866,10 +866,13 @@ without it a store keeps every other operation and `move` reorders for the
 session only. See [saved views](./saved-views.md).
 
 **The saved-views management panel.** `SavedViewsPanelChrome` from
-`@adapttable/core/adapter` lists every saved view with its apply, rename,
-reorder, set-default and delete controls; `SavedViewsPanelChromeProps` takes
-the views and those five handlers. `SavedViewsPanelSlots` names the four
-kit-supplied pieces — `SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`,
+`@adapttable/core/adapter` is a titled card listing every saved view;
+`SavedViewsPanelChromeProps` takes the views, the five handlers, and an
+optional `footer` rendered inside the card under the list. Applying a view is
+clicking its name; rename, move, set-default and delete are an icon cluster
+described by `SavedViewRowControl`, keyed by `SavedViewControlKey`.
+`SavedViewsPanelSlots` names the four kit-supplied pieces —
+`SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`,
 `SavedViewsPanelInputProps` and `SavedViewsPanelEmptyProps`. Reordering is
 buttons, and renaming is an inline input that Escape abandons. See
 [saved views](./saved-views.md).

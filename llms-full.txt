@@ -1873,7 +1873,7 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`editable` columns + `onCellEdit`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [edit cells in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/editing/) — a real table you can type into, not a recording.
+▶ **See it working:** [edit cells in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/) — a real table you can type into, not a recording.
 
 Edit a cell in place by passing `onCellEdit` and marking columns `editable`.
 Omit `onCellEdit` and the table never opens an editor — even if columns
@@ -3177,7 +3177,7 @@ because getting it wrong is invisible on screen.
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`groupBy="role"` + `groupAggregates`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [collapse groups and read per-group subtotals in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/grouping/) — a real table you can click, not a recording.
+▶ **See it working:** [collapse groups and read per-group subtotals in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/grouping/) — a real table you can click, not a recording.
 
 Each subtotal renders in its own column's cell, so it sits under the column it
 totals — on a mobile card, where there are no columns to align to, the same
@@ -3952,7 +3952,7 @@ Related: [row grouping](./row-grouping.md) ·
 
 # React table formulas — spreadsheet columns computed from your rows
 
-▶ **See it working:** [type a formula and watch the column appear in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/formulas/) — a real table you can click, not a recording.
+▶ **See it working:** [type a formula and watch the column appear in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/formulas/) — a real table you can click, not a recording.
 
 A column whose value is `=[Unit Price] * Quantity`, typed by the user rather
 than written by you.
@@ -4370,7 +4370,7 @@ each piece: `tree-cell` (the indented wrapper), `tree-toggle` (the chevron), and
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`enableColumnMenu` + `resizableColumns`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [pin, resize and reorder columns in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/columns/) — a real table you can drag, not a recording.
+▶ **See it working:** [pin, resize and reorder columns in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/columns/) — a real table you can drag, not a recording.
 
 Let users show/hide, reorder, pin, and resize columns — one prop per capability, with the resulting layout persistable to the URL or localStorage. Every adapter shares the same engine from `@adapttable/core`.
 
@@ -4700,8 +4700,8 @@ import { SavedViewsPanelChrome } from "@adapttable/core/adapter";
 ```
 
 `SavedViewsPanelSlots` names the four kit-supplied pieces —
-`SavedViewsPanelSurfaceProps` (the body), `SavedViewsPanelRowProps` (one view
-and its controls), `SavedViewsPanelInputProps` (the inline rename box) and
+`SavedViewsPanelSurfaceProps` (the titled card), `SavedViewsPanelRowProps` (one
+view and its controls), `SavedViewsPanelInputProps` (the inline rename box) and
 `SavedViewsPanelEmptyProps`. `SavedViewsPanelChromeProps` is what the panel
 itself takes.
 
@@ -4717,14 +4717,32 @@ import { SavedViewsPanel } from "@adapttable/mantine";
   onMove={move}
   onSetDefault={setDefault}
   onRemove={remove}
+  footer={<span>Upgraded on load: Legacy view (v1)</span>}
 />;
 ```
+
+`footer` puts anything of yours inside the card, under the list — a note about
+where the views came from, a link to your own docs. Outside the card a line
+like that reads as a caption belonging to whatever follows it on the page.
+
+The panel is a card with a title, and each view is one row inside it. The row
+has a single primary action: **applying a view is clicking its name**, which is
+the widest target on the row and the thing a reader wants nine times out of
+ten. Rename, move up, move down, set-default and delete are icons in a compact
+cluster at the end of the line, each with its own localized accessible name.
+`SavedViewRowControl` describes one of them and `SavedViewControlKey` names
+which — an adapter maps over `controls` rather than hand-writing five buttons,
+so no kit can render four of them or put them in a different order.
 
 Reordering is buttons rather than drag, because a list you can only reorder by
 dragging is a list some people cannot reorder. The move a row cannot make is
 disabled rather than removed, so the row does not jump as the list is
 reordered. Renaming is an inline input rather than a dialog: the name is
 already on screen, and Escape abandons the edit without changing anything.
+
+The card names four parts for styling and testing: `saved-views-panel` and
+`saved-views-title` on the card, `saved-view-row` on each view, and
+`saved-views-footer` on your note.
 
 ## Example
 
@@ -4864,7 +4882,7 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [scroll 50,000 rows in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/scale/) — a real table you can scroll, not a recording.
+▶ **See it working:** [scroll 50,000 rows in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/scale/) — a real table you can scroll, not a recording.
 
 Long lists can opt into row/card windowing with one prop: `virtualize`. Fifty
 thousand rows render as a handful of DOM nodes, on the page or inside a
@@ -5003,9 +5021,9 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 # Responsive React table — automatic mobile card layout
 
-▶ **See it before you install:** [the live mobile demo](https://orwa-mahmoud.github.io/adapttable/demo/mobile/) — the same table flipped between desktop rows and phone cards with one toggle.
+▶ **See it before you install:** [the live mobile demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/) — the same table flipped between desktop rows and phone cards with one toggle.
 
-[![The same AdaptTable data table as phone cards — scrolling the card list, then switching to the desktop table](https://orwa-mahmoud.github.io/adapttable/media/features/mobile.gif)](https://orwa-mahmoud.github.io/adapttable/demo/mobile/)
+[![The same AdaptTable data table as phone cards — scrolling the card list, then switching to the desktop table](https://orwa-mahmoud.github.io/adapttable/media/features/mobile.gif)](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/)
 
 Most React data tables answer the phone problem with a horizontal scrollbar.
 AdaptTable answers it with a different layout: below the mobile breakpoint,
@@ -5051,7 +5069,7 @@ layouts.
 - **`sortByOptions`** — the options offered by the mobile sort-by select.
 - **`forceMobile`** — pin either layout regardless of viewport: cards inside a
   desktop dashboard panel, or the full table in a tablet kiosk. The
-  [mobile demo](https://orwa-mahmoud.github.io/adapttable/demo/mobile/) uses
+  [mobile demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/) uses
   exactly this prop for its toggle.
 - **`rowClassName`** applies to desktop rows and mobile cards alike, and the
   [class-hook / `data-adapttable-part` surface](./customization.md) names the
@@ -5178,7 +5196,7 @@ but the choice stays yours per table.
 
 Related: [Getting started](./getting-started.md) ·
 [API reference](./api.md) ·
-[Live mobile demo](https://orwa-mahmoud.github.io/adapttable/demo/mobile/)
+[Live mobile demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/)
 
 ---
 
@@ -5418,7 +5436,7 @@ when there is no `window`, so nothing crashes under SSR either way.
 
 # React table PDF export and print layout
 
-▶ **See it working:** [download a grouped PDF and print the same view](https://orwa-mahmoud.github.io/adapttable/demo/export/) — a real table, not a recording.
+▶ **See it working:** [download a grouped PDF and print the same view](https://orwa-mahmoud.github.io/adapttable/demo/mantine/export/) — a real table, not a recording.
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — import `@adapttable/core/pdf`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
@@ -7727,10 +7745,13 @@ without it a store keeps every other operation and `move` reorders for the
 session only. See [saved views](./saved-views.md).
 
 **The saved-views management panel.** `SavedViewsPanelChrome` from
-`@adapttable/core/adapter` lists every saved view with its apply, rename,
-reorder, set-default and delete controls; `SavedViewsPanelChromeProps` takes
-the views and those five handlers. `SavedViewsPanelSlots` names the four
-kit-supplied pieces — `SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`,
+`@adapttable/core/adapter` is a titled card listing every saved view;
+`SavedViewsPanelChromeProps` takes the views, the five handlers, and an
+optional `footer` rendered inside the card under the list. Applying a view is
+clicking its name; rename, move, set-default and delete are an icon cluster
+described by `SavedViewRowControl`, keyed by `SavedViewControlKey`.
+`SavedViewsPanelSlots` names the four kit-supplied pieces —
+`SavedViewsPanelSurfaceProps`, `SavedViewsPanelRowProps`,
 `SavedViewsPanelInputProps` and `SavedViewsPanelEmptyProps`. Reordering is
 buttons, and renaming is an inline input that Escape abandons. See
 [saved views](./saved-views.md).

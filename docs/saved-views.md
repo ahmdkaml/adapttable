@@ -151,8 +151,8 @@ import { SavedViewsPanelChrome } from "@adapttable/core/adapter";
 ```
 
 `SavedViewsPanelSlots` names the four kit-supplied pieces —
-`SavedViewsPanelSurfaceProps` (the body), `SavedViewsPanelRowProps` (one view
-and its controls), `SavedViewsPanelInputProps` (the inline rename box) and
+`SavedViewsPanelSurfaceProps` (the titled card), `SavedViewsPanelRowProps` (one
+view and its controls), `SavedViewsPanelInputProps` (the inline rename box) and
 `SavedViewsPanelEmptyProps`. `SavedViewsPanelChromeProps` is what the panel
 itself takes.
 
@@ -168,14 +168,32 @@ import { SavedViewsPanel } from "@adapttable/mantine";
   onMove={move}
   onSetDefault={setDefault}
   onRemove={remove}
+  footer={<span>Upgraded on load: Legacy view (v1)</span>}
 />;
 ```
+
+`footer` puts anything of yours inside the card, under the list — a note about
+where the views came from, a link to your own docs. Outside the card a line
+like that reads as a caption belonging to whatever follows it on the page.
+
+The panel is a card with a title, and each view is one row inside it. The row
+has a single primary action: **applying a view is clicking its name**, which is
+the widest target on the row and the thing a reader wants nine times out of
+ten. Rename, move up, move down, set-default and delete are icons in a compact
+cluster at the end of the line, each with its own localized accessible name.
+`SavedViewRowControl` describes one of them and `SavedViewControlKey` names
+which — an adapter maps over `controls` rather than hand-writing five buttons,
+so no kit can render four of them or put them in a different order.
 
 Reordering is buttons rather than drag, because a list you can only reorder by
 dragging is a list some people cannot reorder. The move a row cannot make is
 disabled rather than removed, so the row does not jump as the list is
 reordered. Renaming is an inline input rather than a dialog: the name is
 already on screen, and Escape abandons the edit without changing anything.
+
+The card names four parts for styling and testing: `saved-views-panel` and
+`saved-views-title` on the card, `saved-view-row` on each view, and
+`saved-views-footer` on your note.
 
 ## Example
 

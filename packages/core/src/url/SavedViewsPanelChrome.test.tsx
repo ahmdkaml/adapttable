@@ -1,8 +1,9 @@
 /**
  * The saved-views management panel.
  *
- * The slots are plain HTML: what is being tested is what core decides — which
- * controls exist on which row, what each one does, and that renaming can be
+ * The slots are plain HTML: what is being tested is what core decides — the
+ * card's title, which controls exist on which row and in what order, what each
+ * one does, that applying a view is clicking its name, and that renaming can be
  * abandoned without changing anything.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -21,7 +22,13 @@ const VIEWS: SavedView[] = [
 ];
 
 const slots: SavedViewsPanelSlots = {
-  Surface: ({ children, ...rest }) => <div {...rest}>{children}</div>,
+  Surface: ({ children, title, footer, ...rest }) => (
+    <div {...rest}>
+      <h2>{title}</h2>
+      {children}
+      {footer && <footer>{footer}</footer>}
+    </div>
+  ),
   Empty: ({ message }) => <p>{message}</p>,
   Input: ({ label, value, onChange, onCommit, onCancel }) => (
     <input
@@ -38,49 +45,37 @@ const slots: SavedViewsPanelSlots = {
   ),
   Row: ({
     name,
+    viewName,
+    isEditing,
     isDefault,
     defaultLabel,
     onApply,
-    onRename,
-    onMoveUp,
-    onMoveDown,
-    onSetDefault,
-    onRemove,
     applyLabel,
-    renameLabel,
-    moveUpLabel,
-    moveDownLabel,
-    setDefaultLabel,
-    removeLabel,
+    controls,
     ...rest
   }) => (
     <div {...rest}>
-      <span>{name}</span>
+      {isEditing ? (
+        name
+      ) : (
+        <button type="button" title={applyLabel} onClick={onApply}>
+          {viewName}
+        </button>
+      )}
       {isDefault && <em>{defaultLabel}</em>}
-      <button type="button" onClick={onApply}>
-        {applyLabel}
-      </button>
-      {onRename && (
-        <button type="button" onClick={onRename}>
-          {renameLabel}
+      {controls.map((control) => (
+        <button
+          key={control.key}
+          type="button"
+          data-control={control.key}
+          aria-label={control.label}
+          aria-pressed={control.pressed}
+          disabled={!control.onPress}
+          onClick={control.onPress}
+        >
+          {control.icon}
         </button>
-      )}
-      {onMoveUp && (
-        <button type="button" onClick={onMoveUp}>
-          {moveUpLabel}
-        </button>
-      )}
-      {onMoveDown && (
-        <button type="button" onClick={onMoveDown}>
-          {moveDownLabel}
-        </button>
-      )}
-      <button type="button" onClick={onSetDefault}>
-        {setDefaultLabel}
-      </button>
-      <button type="button" onClick={onRemove}>
-        {removeLabel}
-      </button>
+      ))}
     </div>
   ),
 };
@@ -106,16 +101,36 @@ function renderPanel(
   return handlers;
 }
 
+/** The controls one row offers, in the order the chrome hands them over. */
+const controlKeysOfRow = (index: number) =>
+  Array.from(
+    document
+      .querySelectorAll('[data-adapttable-part="saved-view-row"]')
+      [index]?.querySelectorAll("[data-control]") ?? []
+  ).map((node) => node.getAttribute("data-control"));
+
 describe("SavedViewsPanelChrome", () => {
-  it("lists every view with its controls", () => {
+  it("titles the card and lists every view", () => {
     renderPanel();
 
     expect(
+      screen.getByRole("heading", { name: "Saved views" })
+    ).toBeInTheDocument();
+    expect(
       document.querySelectorAll('[data-adapttable-part="saved-view-row"]')
     ).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "Apply view" })).toHaveLength(
-      2
-    );
+  });
+
+  it("makes the view's own name the control that applies it", () => {
+    const handlers = renderPanel();
+
+    // The row's primary action is the widest target on it and carries the
+    // view's name — not a sixth button competing with Delete for attention.
+    const apply = screen.getByRole("button", { name: "Mine" });
+    expect(apply).toHaveAttribute("title", "Apply view");
+    fireEvent.click(apply);
+
+    expect(handlers.onApply).toHaveBeenCalledWith("Mine");
   });
 
   it("marks the default view", () => {
@@ -124,31 +139,62 @@ describe("SavedViewsPanelChrome", () => {
     expect(screen.getByText("Default")).toBeInTheDocument();
   });
 
-  it("withholds the move controls at each end", () => {
+  it("gives every row the same five controls, in the same order", () => {
     renderPanel();
 
-    expect(
-      screen.getAllByRole("button", { name: "Move view up" })
-    ).toHaveLength(1);
-    expect(
-      screen.getAllByRole("button", { name: "Move view down" })
-    ).toHaveLength(1);
+    const order = ["rename", "moveUp", "moveDown", "default", "remove"];
+    expect(controlKeysOfRow(0)).toEqual(order);
+    expect(controlKeysOfRow(1)).toEqual(order);
   });
 
-  it("reports apply, move, default and delete", () => {
+  it("disables the move controls at each end rather than dropping them", () => {
+    renderPanel();
+
+    // A control that vanishes on the last row makes every row jump as the list
+    // is reordered, so the button stays and reports that it cannot run.
+    expect(
+      screen.getAllByRole("button", { name: "Move view up" })
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", { name: "Move view up" })[0]
+    ).toBeDisabled();
+    expect(
+      screen.getAllByRole("button", { name: "Move view down" })[1]
+    ).toBeDisabled();
+  });
+
+  it("reports the default control's own state", () => {
+    renderPanel();
+
+    const buttons = screen.getAllByRole("button", { name: "Set as default" });
+    expect(buttons[0]).toHaveAttribute("aria-pressed", "false");
+    expect(buttons[1]).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("reports move, default and delete", () => {
     const handlers = renderPanel();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Apply view" })[0]!);
-    fireEvent.click(screen.getByRole("button", { name: "Move view down" }));
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Move view down" })[0]!
+    );
     fireEvent.click(
       screen.getAllByRole("button", { name: "Set as default" })[0]!
     );
     fireEvent.click(screen.getAllByRole("button", { name: "Delete view" })[0]!);
 
-    expect(handlers.onApply).toHaveBeenCalledWith("Mine");
     expect(handlers.onMove).toHaveBeenCalledWith("Mine", 1);
     expect(handlers.onSetDefault).toHaveBeenCalledWith("Mine");
     expect(handlers.onRemove).toHaveBeenCalledWith("Mine");
+  });
+
+  it("withholds every control on a view this reader does not own", () => {
+    renderPanel({
+      views: [{ name: "Shared", search: "t.q=c", readOnly: true }],
+    });
+
+    for (const button of screen.getAllByRole("button")) {
+      if (button.hasAttribute("data-control")) expect(button).toBeDisabled();
+    }
   });
 
   it("renames in place, seeded with the current name", () => {
@@ -176,7 +222,20 @@ describe("SavedViewsPanelChrome", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
-  it("hands every row the same wrapping layout", () => {
+  it("puts the host's note inside the card", () => {
+    renderPanel({ footer: "Upgraded on load: Legacy view (v1)" });
+
+    // Under the list and inside the surface — outside it the note reads as a
+    // caption belonging to whatever comes next on the page.
+    const panel = document.querySelector(
+      '[data-adapttable-part="saved-views-panel"]'
+    );
+    expect(panel?.querySelector("footer")?.textContent).toBe(
+      "Upgraded on load: Legacy view (v1)"
+    );
+  });
+
+  it("hands every row the same layout", () => {
     const seen: Record<string, CSSProperties>[] = [];
     renderPanel({
       slots: {
@@ -188,15 +247,15 @@ describe("SavedViewsPanelChrome", () => {
       },
     });
 
-    // The row wraps, the caption never touches its badge, and a control keeps
-    // its own width: the three decisions that stop a narrow panel from
-    // truncating its buttons or spilling them into the next view's row.
+    // The row wraps and the cluster does not: a panel too narrow to hold the
+    // name and the five icons on one line drops the whole cluster to the next
+    // line intact, rather than breaking it into two ragged halves.
     expect(seen).toHaveLength(2);
     expect(seen[0]).toBe(seen[1]);
     const layout = seen[0]!;
     expect(layout.row).toMatchObject({ display: "flex", flexWrap: "wrap" });
     expect(layout.caption?.gap).toBeGreaterThan(0);
-    expect(layout.controls).toMatchObject({ flexWrap: "wrap" });
+    expect(layout.controls).toMatchObject({ flex: "0 0 auto" });
     expect(layout.control).toMatchObject({ flex: "0 0 auto" });
   });
 
@@ -206,6 +265,6 @@ describe("SavedViewsPanelChrome", () => {
     expect(
       document.querySelectorAll('[data-adapttable-part="saved-view-row"]')
     ).toHaveLength(0);
-    expect(screen.getByText("Saved views")).toBeInTheDocument();
+    expect(screen.getAllByText("Saved views").length).toBeGreaterThan(1);
   });
 });
