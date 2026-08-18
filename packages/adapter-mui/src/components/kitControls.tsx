@@ -2,6 +2,7 @@
  * MUI kit controls — TextField / Button / IconButton / Checkbox.
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
+import { filterLabel } from "@adapttable/core";
 import {
   BatchEditBarChrome,
   type BatchEditBarProps,
@@ -52,6 +53,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Popover,
   TextField,
 } from "@mui/material";
 import { useId, useState } from "react";
@@ -247,6 +249,47 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  return !(Array.isArray(value) && value.length === 0);
+}
+
+/** Funnel on the column header — opens that column's compact filter. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const active = headerFilterActive(props.source.extra[props.def.key]);
+  return (
+    <>
+      <IconButton
+        size="small"
+        aria-label={filterLabel(props.def)}
+        data-adapttable-part="filter-header-trigger"
+        data-active={active ? "" : undefined}
+        onClick={(event) => setAnchor(event.currentTarget)}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+          <path fill="currentColor" d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z" />
+        </svg>
+      </IconButton>
+      <Popover
+        open={anchor !== null}
+        anchorEl={anchor}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        <div
+          data-adapttable-part="filter-header-cell"
+          style={{ minWidth: "12rem", padding: 8 }}
+        >
+          <FilterHeaderControl {...props} />
+        </div>
+      </Popover>
+    </>
+  );
 }
 
 function FindSearch({

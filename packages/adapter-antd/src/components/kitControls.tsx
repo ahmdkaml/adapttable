@@ -2,6 +2,7 @@
  * Ant Design kit controls — Input / Select / Button / Checkbox.
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
+import { filterLabel } from "@adapttable/core";
 import {
   BatchEditBarChrome,
   type BatchEditBarProps,
@@ -45,8 +46,8 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
-import { Button, Checkbox, Dropdown, Input, Select } from "antd";
-import type { ReactNode } from "react";
+import { Button, Checkbox, Dropdown, Input, Popover, Select } from "antd";
+import { type ReactNode, useEffect, useState } from "react";
 
 export type {
   BatchEditBarProps,
@@ -250,6 +251,53 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  return !(Array.isArray(value) && value.length === 0);
+}
+
+/** Funnel on the column header — opens that column's compact filter. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const [open, setOpen] = useState(false);
+  const active = headerFilterActive(props.source.extra[props.def.key]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+  return (
+    <Popover
+      trigger="click"
+      open={open}
+      onOpenChange={setOpen}
+      placement="bottomLeft"
+      destroyOnHidden
+      content={
+        <div data-adapttable-part="filter-header-cell">
+          <FilterHeaderControl {...props} />
+        </div>
+      }
+    >
+      <Button
+        type={active ? "primary" : "text"}
+        size="small"
+        aria-label={filterLabel(props.def)}
+        data-adapttable-part="filter-header-trigger"
+        data-active={active ? "" : undefined}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+          <path fill="currentColor" d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z" />
+        </svg>
+      </Button>
+    </Popover>
+  );
 }
 
 function FindSearch({

@@ -1953,19 +1953,16 @@ describe("custom header and footer", () => {
   });
 });
 
-describe("header filter row", () => {
-  it("writes a compact name filter under the header cell", () => {
+describe("header filter trigger", () => {
+  it("puts a filter icon on the column header instead of a second row", () => {
     renderHarness({
       override: {
         headerFilters: true,
         filters: [{ key: "name", type: "text", label: "Name" }],
       },
     });
-    const input = screen.getByLabelText("Name");
-    fireEvent.change(input, { target: { value: "Ali" } });
-    expect(input).toHaveValue("Ali");
     expect(
-      document.querySelector('[data-adapttable-part="filter-header-cell"]')
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
     ).not.toBeNull();
   });
 });

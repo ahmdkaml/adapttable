@@ -1096,21 +1096,29 @@ describe("custom header and footer", () => {
   });
 });
 
-describe("header filter row", () => {
-  it("writes a compact name filter under the header", () => {
+describe("header filter trigger", () => {
+  it("puts a filter icon on the column header instead of a second row", () => {
     renderHarness({
       override: {
         headerFilters: true,
         filters: [{ key: "name", type: "text", label: "Name" }],
       },
     });
-    const input = screen.getByLabelText("Name");
-    fireEvent.change(input, { target: { value: "Ali" } });
+    expect(screen.queryByRole("row", { name: "Column filters" })).toBeNull();
+    const trigger = document.querySelector(
+      '[data-adapttable-part="filter-header-trigger"]'
+    );
+    expect(trigger).not.toBeNull();
+    fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+    const input = document.querySelector(
+      '[data-adapttable-part="filter-header-input"]'
+    );
+    expect(input).not.toBeNull();
+    fireEvent.change(input!, { target: { value: "Ali" } });
     expect(input).toHaveValue("Ali");
-    expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
   });
 
-  it("hides the header filter row on mobile cards", () => {
+  it("hides the header filter trigger on mobile cards", () => {
     renderHarness({
       isMobile: true,
       override: {
@@ -1119,7 +1127,7 @@ describe("header filter row", () => {
       },
     });
     expect(
-      document.querySelector('[data-adapttable-part="filter-header-row"]')
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
     ).toBeNull();
   });
 });

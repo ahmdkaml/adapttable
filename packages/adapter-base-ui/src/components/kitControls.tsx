@@ -2,6 +2,7 @@
  * Base UI kit controls — TextField / Button / IconButton / Checkbox.
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
+import { filterLabel } from "@adapttable/core";
 import {
   BatchEditBarChrome,
   type BatchEditBarProps,
@@ -220,6 +221,51 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  return !(Array.isArray(value) && value.length === 0);
+}
+
+/** Funnel on the column header — opens that column's compact filter. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props.source.extra[props.def.key]);
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        render={
+          <IconButton
+            type="button"
+            size="1"
+            variant={active ? "soft" : "ghost"}
+            aria-label={filterLabel(props.def)}
+            data-adapttable-part="filter-header-trigger"
+            data-active={active ? "" : undefined}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+              <path
+                fill="currentColor"
+                d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z"
+              />
+            </svg>
+          </IconButton>
+        }
+      />
+      <Popover.Portal>
+        <Popover.Positioner side="bottom" align="start" sideOffset={4}>
+          <Popover.Popup
+            data-adapttable-part="filter-header-cell"
+            style={{ minWidth: "12rem", padding: 8 }}
+          >
+            <FilterHeaderControl {...props} />
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
 }
 
 function FindSearch({

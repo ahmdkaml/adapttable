@@ -81,20 +81,34 @@ test("keeps other pages' subjects off it", async ({ page }) => {
   ).toHaveCount(0);
 });
 
-test("switches the filter layout between popover and header row", async ({
+test("switches the filter layout between popover, drawer and header", async ({
   page,
 }) => {
   await page.goto(`/${KIT}/filtering/`);
+  const layout = demo(page).getByRole("group", { name: "Filter layout" });
   await expect(
     demo(page).getByRole("button", { name: "Filters", exact: true })
   ).toBeVisible();
+
+  await layout.getByRole("button", { name: "Drawer" }).click();
   await demo(page)
-    .getByRole("group", { name: "Filter layout" })
-    .getByRole("button", { name: "Header row" })
+    .getByRole("button", { name: "Filters", exact: true })
     .click();
   await expect(
-    demo(page).locator('[data-adapttable-part="filter-header-row"]').first()
+    page.locator('[data-adapttable-part="filters-form"]').first()
   ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await layout.getByRole("button", { name: "Header" }).click();
+  await expect(
+    demo(page).locator('[data-adapttable-part="filter-header-trigger"]').first()
+  ).toBeVisible();
+  await expect(
+    demo(page).locator('[data-adapttable-part="filter-header-row"]')
+  ).toHaveCount(0);
+  await expect(
+    demo(page).getByRole("button", { name: "Filters", exact: true })
+  ).toHaveCount(0);
 });
 
 for (const kit of KITS) {

@@ -1,8 +1,11 @@
 import { Suspense, useState } from "react";
 
+import type { FiltersUi } from "./Demo";
 import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
+
+type FilterLayout = FiltersUi;
 
 /**
  * The filtering page: every way this table narrows a set, and nothing else.
@@ -13,41 +16,42 @@ import { Check, Layers } from "./sectionIcons";
  * rather than decoration.
  */
 export function FilteringDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
-  const [headerRow, setHeaderRow] = useState(false);
+  const [layout, setLayout] = useState<FilterLayout>("popover");
   const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   return (
     <div className="mx-demo">
       <div className="hint-row">
         <span className="hint">
-          <Layers size={12} /> Filters opens the popover — operators per type
+          <Layers size={12} /> Filters opens the popover or drawer
         </span>
         <span className="hint">
           <Check size={12} /> chips clear one filter each
         </span>
         <span className="hint">
-          <Check size={12} /> the URL carries the whole filter state
+          <Check size={12} /> Header puts a filter icon on each column
         </span>
         <div className="seg" role="group" aria-label="Filter layout">
-          <button
-            type="button"
-            className={`seg__btn${headerRow ? "" : " is-on"}`}
-            aria-pressed={!headerRow}
-            onClick={() => setHeaderRow(false)}
-          >
-            Popover
-          </button>
-          <button
-            type="button"
-            className={`seg__btn${headerRow ? " is-on" : ""}`}
-            aria-pressed={headerRow}
-            onClick={() => setHeaderRow(true)}
-          >
-            Header row
-          </button>
+          {(
+            [
+              ["popover", "Popover"],
+              ["drawer", "Drawer"],
+              ["header", "Header"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`seg__btn${layout === value ? " is-on" : ""}`}
+              aria-pressed={layout === value}
+              onClick={() => setLayout(value)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
       <div className="mx-demo__body">
-        <div key={`${adapter}-${String(headerRow)}`} data-adapter={adapter}>
+        <div key={`${adapter}-${layout}`} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
             <Demo
               mode="frontend"
@@ -55,7 +59,8 @@ export function FilteringDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
               dark={dark}
               urlKey="flt"
               filterControls
-              headerFilters={headerRow}
+              filtersUi={layout === "header" ? "popover" : layout}
+              headerFilters={layout === "header"}
               focused
             />
           </Suspense>

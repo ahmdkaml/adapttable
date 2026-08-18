@@ -2,6 +2,7 @@
  * Mantine kit controls — TextInput / NativeSelect / Button / ActionIcon / Checkbox.
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
+import { filterLabel } from "@adapttable/core";
 import {
   BatchEditBarChrome,
   type BatchEditBarProps,
@@ -215,6 +216,41 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  return !(Array.isArray(value) && value.length === 0);
+}
+
+/** Funnel on the column header — opens that column's compact filter. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props.source.extra[props.def.key]);
+  return (
+    <Popover position="bottom-start" shadow="md">
+      <Popover.Target>
+        <ActionIcon
+          variant={active ? "light" : "subtle"}
+          size="sm"
+          aria-label={filterLabel(props.def)}
+          data-adapttable-part="filter-header-trigger"
+          data-active={active ? "" : undefined}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+            <path
+              fill="currentColor"
+              d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z"
+            />
+          </svg>
+        </ActionIcon>
+      </Popover.Target>
+      <Popover.Dropdown data-adapttable-part="filter-header-cell" p="sm">
+        <FilterHeaderControl {...props} />
+      </Popover.Dropdown>
+    </Popover>
+  );
 }
 
 function FindSearch({

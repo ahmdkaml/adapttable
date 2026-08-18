@@ -45,6 +45,7 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
+import { filterLabel } from "@adapttable/core";
 import type { ChangeEvent } from "react";
 
 export type {
@@ -264,6 +265,62 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function FilterGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+      <path fill="currentColor" d="M4 5h16l-6.2 7.4V19l-3.6 2v-8.6L4 5z" />
+    </svg>
+  );
+}
+
+function headerFilterActive(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  return !(Array.isArray(value) && value.length === 0);
+}
+
+/** Funnel on the column header — opens that column's compact filter. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props.source.extra[props.def.key]);
+  return (
+    <details
+      data-adapttable-part="filter-header-trigger"
+      style={{ position: "relative", display: "inline-block" }}
+    >
+      <summary
+        aria-label={filterLabel(props.def)}
+        data-active={active ? "" : undefined}
+        style={{
+          listStyle: "none",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          padding: 2,
+        }}
+      >
+        <FilterGlyph />
+      </summary>
+      <div
+        data-adapttable-part="filter-header-cell"
+        style={{
+          position: "absolute",
+          zIndex: 3,
+          insetInlineStart: 0,
+          top: "100%",
+          minWidth: "12rem",
+          padding: "0.5rem",
+          background: "Canvas",
+          color: "CanvasText",
+          border: "1px solid currentColor",
+        }}
+      >
+        <FilterHeaderControl {...props} />
+      </div>
+    </details>
+  );
 }
 
 function FindSearch({

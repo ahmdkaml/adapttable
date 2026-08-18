@@ -7,8 +7,8 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  filterDefForColumn,
   type GridFocusState,
-  headerFilterStickTop,
   PIN_Z,
   pinnedCellStyle,
   resolveColumnFooter,
@@ -84,7 +84,7 @@ import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
 import {
   ColumnGroupToggle,
-  FilterHeaderRow,
+  FilterHeaderTrigger,
   RowEditActions,
   RowReorderHandle,
   TreeCell,
@@ -210,6 +210,7 @@ function HeaderCell<TRow>({
   resizeHandle,
   columnProps,
   columnSelect,
+  filterTrigger,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   column: ColumnDef<TRow>;
@@ -219,6 +220,8 @@ function HeaderCell<TRow>({
   columnProps?: Record<string, unknown>;
   /** The column-selection checkbox, when the table asked for one. */
   columnSelect?: ReactNode;
+  /** Per-column filter icon, when `headerFilters` is on. */
+  filterTrigger?: ReactNode;
 }>) {
   // The part name is added here rather than taken from the prop-getter:
   // the kits that pull only `aria-sort` out of it would not get one, so the
@@ -253,6 +256,7 @@ function HeaderCell<TRow>({
         <span title={column.headerTooltip}>{caption}</span>
         {columnSelect}
         {actions}
+        {filterTrigger}
         {resizeHandle}
       </Table.Th>
     );
@@ -291,6 +295,7 @@ function HeaderCell<TRow>({
       </Group>
       {columnSelect}
       {actions}
+      {filterTrigger}
       {resizeHandle}
     </Table.Th>
   );
@@ -904,7 +909,7 @@ export function DesktopTable<TRow>({
     grouping,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
-  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
+  const [headerRowRef] = useOffsetHeight();
   // Expansion state only exists when `renderRowDetail` is set (the chrome
   // couples them), so its presence alone decides the leading chevron column.
   const expandable = expansion !== undefined;
@@ -1314,61 +1319,49 @@ export function DesktopTable<TRow>({
                 />
               </Table.Th>
             )}
-            {columns.map((column, headerIndex) => (
-              <HeaderCell
-                key={column.key}
-                table={table}
-                column={column}
-                stickyStyle={headerStyleFor(column)}
-                resizeHandle={resizeHandleFor(column)}
-                columnProps={gridFocus?.getColumnHeaderProps(headerIndex, {
-                  sortable: column.sortable,
-                })}
-                columnSelect={
-                  gridFocus?.columnCheckbox === true ? (
-                    <ColumnSelectCheckbox
-                      label={columnSelectLabel(labels.selectColumn, column)}
-                      checked={gridFocus.isColumnSelected(headerIndex)}
-                      onToggle={() => gridFocus.toggleColumn(headerIndex)}
-                    />
-                  ) : undefined
-                }
-              />
-            ))}
+            {columns.map((column, headerIndex) => {
+              const headerDef =
+                headerFilters === true
+                  ? filterDefForColumn(filterDefs ?? [], column.key)
+                  : undefined;
+              return (
+                <HeaderCell
+                  key={column.key}
+                  table={table}
+                  column={column}
+                  stickyStyle={headerStyleFor(column)}
+                  resizeHandle={resizeHandleFor(column)}
+                  columnProps={gridFocus?.getColumnHeaderProps(headerIndex, {
+                    sortable: column.sortable,
+                  })}
+                  columnSelect={
+                    gridFocus?.columnCheckbox === true ? (
+                      <ColumnSelectCheckbox
+                        label={columnSelectLabel(labels.selectColumn, column)}
+                        checked={gridFocus.isColumnSelected(headerIndex)}
+                        onToggle={() => gridFocus.toggleColumn(headerIndex)}
+                      />
+                    ) : undefined
+                  }
+                  filterTrigger={
+                    headerDef ? (
+                      <FilterHeaderTrigger
+                        def={headerDef}
+                        source={table.source}
+                        labels={labels}
+                        registry={filterRegistry}
+                      />
+                    ) : undefined
+                  }
+                />
+              );
+            })}
             {showActions && (
               <Table.Th ta="end" w={actionsWidth} style={actionsHeaderStyle}>
                 {labels.actions}
               </Table.Th>
             )}
           </Table.Tr>
-          <FilterHeaderRow
-            enabled={headerFilters === true}
-            columns={columns}
-            defs={filterDefs ?? []}
-            source={table.source}
-            labels={labels}
-            expandable={expandable}
-            showReorder={showReorder}
-            selection={Boolean(selection)}
-            showActions={showActions}
-            columnSpacers={columnSpacers}
-            cellStyle={(column) =>
-              headerFilterStickTop(
-                stickyHeader,
-                headerStyleFor(column),
-                headerPinTop + leafHeaderHeight
-              )
-            }
-            pinSide={(key) => pinOffset?.(key)?.side}
-            padStyle={headerFilterStickTop(
-              stickyHeader,
-              undefined,
-              headerPinTop + leafHeaderHeight,
-              { position: "sticky", zIndex: PIN_Z.header }
-            )}
-            stickyAttr={stickyHeader || undefined}
-            registry={filterRegistry}
-          />
         </Table.Thead>
         {pinnedTopRows.length > 0 && (
           <Table.Tbody

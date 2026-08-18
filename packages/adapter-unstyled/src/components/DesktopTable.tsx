@@ -8,8 +8,8 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  filterDefForColumn,
   type GridFocusState,
-  headerFilterStickTop,
   PIN_Z,
   pinnedCellStyle,
   resolveColumnFooter,
@@ -70,7 +70,7 @@ import { FillHandle } from "./FillHandle";
 import { GroupHeaderRow } from "./GroupHeader";
 import {
   ColumnGroupToggle,
-  FilterHeaderRow,
+  FilterHeaderTrigger,
   RowEditActions,
   RowReorderHandle,
   TreeCell,
@@ -717,7 +717,7 @@ export function DesktopTable<TRow>({
     grouping,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
-  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
+  const [headerRowRef] = useOffsetHeight();
   // The actions column sticks when the user end-pins IT in the Columns menu —
   // independently of any data pin on that side (and only while it renders).
   const stickActions = showActions && actionsPinned;
@@ -1071,6 +1071,10 @@ export function DesktopTable<TRow>({
               toggleSort: sortButtonProps.onClick,
             });
             const headerCaption = resolveColumnHeader(column, headerController);
+            const headerDef =
+              headerFilters === true
+                ? filterDefForColumn(filterDefs ?? [], column.key)
+                : undefined;
             return (
               <th
                 key={column.key}
@@ -1121,6 +1125,14 @@ export function DesktopTable<TRow>({
                     {column.headerActions}
                   </span>
                 ) : null}
+                {headerDef ? (
+                  <FilterHeaderTrigger
+                    def={headerDef}
+                    source={table.source}
+                    labels={labels}
+                    registry={filterRegistry}
+                  />
+                ) : null}
                 {setWidth && (
                   <span
                     {...columnResizeHandleProps(
@@ -1151,34 +1163,6 @@ export function DesktopTable<TRow>({
             </th>
           )}
         </tr>
-        <FilterHeaderRow
-          enabled={headerFilters === true}
-          columns={columns}
-          defs={filterDefs ?? []}
-          source={table.source}
-          labels={labels}
-          expandable={expandable}
-          showReorder={showReorder}
-          selection={Boolean(selection)}
-          showActions={showActions}
-          columnSpacers={columnSpacers}
-          cellStyle={(column) =>
-            headerFilterStickTop(
-              stickyHeader,
-              headStyle(column),
-              headerStickTop + leafHeaderHeight
-            )
-          }
-          pinSide={(key) => pinOffset?.(key)?.side}
-          padStyle={headerFilterStickTop(
-            stickyHeader,
-            stickyStyle,
-            headerStickTop + leafHeaderHeight
-          )}
-          stickyAttr={stickyAttr}
-          classNames={classNames}
-          registry={filterRegistry}
-        />
       </thead>
       {pinnedTopRows.length > 0 && (
         <tbody

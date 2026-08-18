@@ -58,7 +58,7 @@ import {
 } from "./components/grouping";
 import {
   ColumnGroupToggle,
-  FilterHeaderControl,
+  FilterHeaderTrigger,
   RowEditActions,
   RowReorderHandle,
   TreeCell,
@@ -672,14 +672,12 @@ export function buildColumns<TRow>({
               />
             )}
             {headerDef && filterSource ? (
-              <span data-adapttable-part="filter-header-cell">
-                <FilterHeaderControl
-                  def={headerDef}
-                  source={filterSource}
-                  labels={labels}
-                  registry={filterRegistry}
-                />
-              </span>
+              <FilterHeaderTrigger
+                def={headerDef}
+                source={filterSource}
+                labels={labels}
+                registry={filterRegistry}
+              />
             ) : null}
           </span>
         ),

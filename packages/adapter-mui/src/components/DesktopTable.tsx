@@ -8,8 +8,8 @@ import {
   type ConfirmHandler,
   edgePinStyle,
   type EditableCellEditing,
+  filterDefForColumn,
   type GridFocusState,
-  headerFilterStickTop,
   PIN_Z,
   pinnedCellStyle,
   resolveColumnFooter,
@@ -63,7 +63,7 @@ import { ExpandToggle } from "./ExpandToggle";
 import { FillHandle } from "./FillHandle";
 import {
   ColumnGroupToggle,
-  FilterHeaderRow,
+  FilterHeaderTrigger,
   RowEditActions,
   RowReorderHandle,
   TreeCell,
@@ -740,7 +740,7 @@ export function DesktopTable<TRow>({
     grouping,
   });
   const [theadRef, headerHeight] = useOffsetHeight();
-  const [headerRowRef, leafHeaderHeight] = useOffsetHeight();
+  const [headerRowRef] = useOffsetHeight();
   // Presentational header groups: contiguous visible columns sharing a
   // `group` merge into one spanning cell; `null` means no second header row.
   const groupRows = headerGroupRows(
@@ -1093,6 +1093,10 @@ export function DesktopTable<TRow>({
                     onToggle={() => gridFocus.toggleColumn(headerIndex)}
                   />
                 ) : null;
+              const headerDef =
+                headerFilters === true
+                  ? filterDefForColumn(filterDefs ?? [], column.key)
+                  : undefined;
               return (
                 <TableCell
                   key={column.key}
@@ -1132,6 +1136,14 @@ export function DesktopTable<TRow>({
                   )}
                   {columnSelect}
                   {actions}
+                  {headerDef ? (
+                    <FilterHeaderTrigger
+                      def={headerDef}
+                      source={table.source}
+                      labels={labels}
+                      registry={filterRegistry}
+                    />
+                  ) : null}
                   {setWidth && (
                     <Box
                       component="span"
@@ -1161,36 +1173,6 @@ export function DesktopTable<TRow>({
               </TableCell>
             )}
           </TableRow>
-          <FilterHeaderRow
-            enabled={headerFilters === true}
-            columns={columns}
-            defs={filterDefs ?? []}
-            source={table.source}
-            labels={labels}
-            expandable={expandActive}
-            showReorder={showReorder}
-            selection={Boolean(selection)}
-            showActions={showActions}
-            columnSpacers={columnSpacers}
-            cellStyle={(column) => ({
-              ...headerFilterStickTop(
-                stickyHeader,
-                undefined,
-                headerPinTop + leafHeaderHeight,
-                { position: "sticky", zIndex: PIN_Z.header }
-              ),
-              ...pinnedCellStyle(pinOffset?.(column.key), PIN_Z.headerPinned),
-            })}
-            pinSide={(key) => pinOffset?.(key)?.side}
-            padStyle={headerFilterStickTop(
-              stickyHeader,
-              undefined,
-              headerPinTop + leafHeaderHeight,
-              { position: "sticky", zIndex: PIN_Z.header }
-            )}
-            stickyAttr={stickyHeader || undefined}
-            registry={filterRegistry}
-          />
         </TableHead>
         {pinnedTopRows.length > 0 && (
           <TableBody

@@ -85,12 +85,7 @@ const SHELL_KITS = [
  * Parts a kit genuinely cannot render, with the reason. An entry here is a
  * claim about that kit's own component model — not a way to quiet the check.
  */
-const EXPECTED_GAPS = {
-  "adapter-antd": {
-    "filter-header-cell":
-      "antd renders its own header row, so the filter cell is not ours to tag.",
-  },
-};
+const EXPECTED_GAPS = {};
 
 /**
  * The structural contract: the seven names an app is entitled to find in EVERY
