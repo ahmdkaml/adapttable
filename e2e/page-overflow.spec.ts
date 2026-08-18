@@ -7,9 +7,11 @@ import { SHOWCASE_PAGES } from "../apps/showcase/pages.mjs";
  *
  * A page-level horizontal scrollbar is the one layout fault that touches every
  * page at once, because it comes from the shared chrome rather than from a
- * demo: the nav carries eighteen destinations, and a strip that cannot wrap
- * pushes the whole document wider than the viewport at every width below
- * ~1800px. jsdom has no layout, so only a real browser can measure it.
+ * demo: the nav is on top of all eighteen of them, and anything in it that
+ * cannot fit pushes the whole document wider than the viewport. jsdom has no
+ * layout, so only a real browser can measure it. The nav's own metrics — one
+ * row at every desktop width, panels that float rather than widen the bar —
+ * are held to in `nav-menu.spec.ts`.
  *
  * The pages come from `apps/showcase/pages.mjs`, the manifest Vite's build
  * inputs and the sitemap are generated from, so a page added there is covered
@@ -21,7 +23,7 @@ const devPath = (route: string) => route.replace(/^\/demo/, "") || "/";
 
 /**
  * Both above the nav's 920px mobile breakpoint, where the `<select>` takes over:
- * the narrowest desktop the tab strip has to fit into, and a common one.
+ * the narrowest desktop the nav strip has to fit into, and a common one.
  */
 const VIEWPORTS = [
   { width: 1024, height: 900 },
@@ -100,8 +102,8 @@ test("the wide column set scrolls inside the table, not the page", async ({
 
 /**
  * The pinned header parks at the bottom edge of the nav, whatever height the
- * wrapped tab strip gives it — 1024px is the width where the strip takes a
- * third line, which a fixed offset would slide the header under.
+ * bar reports — the offset is measured from the live element rather than
+ * written down, so a header cannot end up behind chrome that changed shape.
  */
 test("the pinned table header lands under the nav on a narrow desktop", async ({
   page,

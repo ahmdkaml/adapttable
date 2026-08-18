@@ -88,45 +88,140 @@ a {
   display: flex;
   align-items: center;
   gap: 24px;
-  /* `min-height`, not `height`: below 1140px the tab strip needs a third line,
-     and the bar grows for it instead of spilling out of it. */
   min-height: 62px;
   padding-block: 6px;
 }
-/* Eighteen destinations do not fit one row until roughly 1800px, so the strip
-   is the part that gives: `flex-wrap` drops its min-content width to its
-   widest single tab, which is what keeps the bar — and therefore the document —
-   inside every viewport instead of scrolling the page sideways. The metrics are
-   measured, not guessed: at this column gap the strip takes two lines from
-   1140px up, and two lines of tabs sit inside the 62px bar, so the sticky
-   chrome keeps its height on a normal desktop. */
+/* Five things across the bar — two links and three menus — so the strip is one
+   line at every desktop width and the sticky chrome is a constant 63px. The
+   sixteen feature pages live inside the menus, where a panel is free to be
+   taller than the bar it hangs from. */
 .nav__links {
   display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
+  align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
   min-width: 0;
-  column-gap: 12px;
-  row-gap: 2px;
+  column-gap: 18px;
   margin-inline-start: 14px;
 }
-/* The wordmark and the actions never absorb the deficit — only the strip that
-   can wrap does. */
+/* The wordmark and the actions keep their intrinsic width; nothing in the bar
+   has to shrink at the widths this strip is shown at. */
 .nav__inner > .wm,
 .nav__right {
   flex: 0 0 auto;
 }
-.nav__links a {
+.nav__links > a,
+.nav__trigger {
   color: var(--ink-2);
   font-size: 14px;
   font-weight: 500;
-  /* Each tab is one line; the strip wraps between tabs, never inside a label. */
+  /* Every top-level item is one line; the strip never wraps. */
   white-space: nowrap;
   transition: color 0.15s;
 }
-.nav__links a:hover {
+.nav__links > a:hover,
+.nav__trigger:hover {
   color: var(--ink);
 }
-.nav__links a.is-on {
+.nav__links > a.is-on,
+.nav__trigger.is-on {
+  color: var(--brand);
+  font-weight: 650;
+}
+
+/* ---------- nav dropdowns ---------- */
+.nav__group {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.nav__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+.nav__chev {
+  flex: none;
+  color: var(--ink-3);
+  transition: rotate 0.15s ease;
+}
+.nav__trigger[aria-expanded="true"] {
+  color: var(--ink);
+}
+.nav__trigger[aria-expanded="true"] .nav__chev {
+  rotate: 180deg;
+}
+.nav__trigger.is-on .nav__chev {
+  color: currentcolor;
+}
+/* The panel sits inside `.nav`, whose own stacking context (sticky, z-index 40)
+   already floats the whole bar over the page — this index only settles the
+   order against the bar's own children. `visibility` is what hides it: the
+   links stay in the markup for a crawler and a middle click, while a hidden
+   subtree is out of the tab order and out of the accessibility tree. */
+.nav__menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  inset-inline-start: -12px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 186px;
+  padding: 6px;
+  border: 1px solid var(--page-border);
+  border-radius: 12px;
+  background: var(--page-surface);
+  box-shadow: var(--shadow-card);
+  visibility: hidden;
+  opacity: 0;
+  translate: 0 -5px;
+  pointer-events: none;
+  transition:
+    opacity 0.14s ease,
+    translate 0.14s ease,
+    visibility 0s linear 0.14s;
+}
+.nav__menu[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+  transition:
+    opacity 0.14s ease,
+    translate 0.14s ease,
+    visibility 0s;
+}
+.nav__menu a {
+  display: block;
+  padding: 7px 11px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.nav__menu a:hover {
+  background: var(--page-surface-2);
+  color: var(--ink);
+}
+.nav__menu a:focus-visible {
+  background: var(--page-surface-2);
+  color: var(--ink);
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.nav__menu a.is-on {
+  background: var(--brand-soft);
   color: var(--brand);
   font-weight: 650;
 }

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /realtime/ page: rows changing while the reader works.
  *
@@ -24,7 +26,7 @@ const feed = (page: Page) => page.getByTestId("realtime-feed");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Realtime", exact: true }).click();
+  await gotoFromNav(page, "Features", "Realtime");
   await expect(page).toHaveURL(/\/realtime\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

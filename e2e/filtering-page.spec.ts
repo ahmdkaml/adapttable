@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /filtering/ page: one subject, every kit.
  *
@@ -23,7 +25,7 @@ const demo = (page: Page) => page.locator("#filtering");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Filtering" }).click();
+  await gotoFromNav(page, "Features", "Filtering");
   await expect(page).toHaveURL(/\/filtering\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

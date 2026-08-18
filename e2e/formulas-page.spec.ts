@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /formulas/ page.
  *
@@ -36,7 +38,7 @@ async function columnText(root: Locator, key: string): Promise<string[]> {
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Formulas" }).click();
+  await gotoFromNav(page, "Power", "Formulas");
   await expect(page).toHaveURL(/\/formulas\/$/);
 });
 

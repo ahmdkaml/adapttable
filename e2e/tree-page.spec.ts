@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /tree/ page: hierarchy in a table, in every kit.
  *
@@ -24,7 +26,7 @@ const demo = (page: Page) => page.locator("#tree");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Tree", exact: true }).click();
+  await gotoFromNav(page, "Features", "Tree");
   await expect(page).toHaveURL(/\/tree\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

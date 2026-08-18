@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /accessibility/ page: keyboard reach and what the table says.
  *
@@ -25,7 +27,7 @@ const transcript = (page: Page) => page.getByTestId("announcements");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Accessibility", exact: true }).click();
+  await gotoFromNav(page, "Platform", "Accessibility");
   await expect(page).toHaveURL(/\/accessibility\/$/);
   await expect(page.getByRole("grid").first()).toBeVisible();
 });

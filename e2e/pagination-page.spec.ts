@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /pagination/ page: both ways of moving through a long set.
  *
@@ -29,7 +31,7 @@ const mode = (page: Page, name: "Paged" | "Infinite") =>
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Pagination", exact: true }).click();
+  await gotoFromNav(page, "Features", "Pagination");
   await expect(page).toHaveURL(/\/pagination\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /editing/ demo is the inline cell-editing page: editing is always on
  * (no toggle to find), so every editable column can be exercised directly.
@@ -31,7 +33,7 @@ async function openEditor(page: Page, column: string) {
 test.describe("editing demo page", () => {
   test("is reachable from the demo nav", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Editing" }).click();
+    await gotoFromNav(page, "Features", "Editing");
     await expect(page).toHaveURL(/\/editing\/$/);
     await expect(page.getByRole("grid").first()).toBeVisible();
   });

@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The grouping page across every kit.
  *
@@ -20,7 +22,7 @@ const KITS = [
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Grouping" }).click();
+  await gotoFromNav(page, "Features", "Grouping");
   await expect(page).toHaveURL(/\/grouping\/$/);
 });
 

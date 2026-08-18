@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { gotoFromNav } from "./nav";
+
 /**
  * The /selection/ page: choosing rows and acting on them, in every kit.
  *
@@ -25,7 +27,7 @@ const demo = (page: Page) => page.locator("#selection");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Selection", exact: true }).click();
+  await gotoFromNav(page, "Features", "Selection");
   await expect(page).toHaveURL(/\/selection\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });
