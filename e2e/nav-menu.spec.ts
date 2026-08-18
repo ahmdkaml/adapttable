@@ -384,3 +384,112 @@ test("the phone keeps the select instead of the menus", async ({ page }) => {
   await pageSelect.selectOption("mantine/saved-views");
   await expect(page).toHaveURL(/\/mantine\/saved-views\/$/);
 });
+
+/**
+ * Nothing a menu draws may land outside the panel that holds it.
+ *
+ * This is the fault a screenshot hides and a layout only shows at one width: a
+ * multi-column panel whose tracks cannot shrink pushes its own text past the
+ * rounded border, so a tagline paints on the page behind the card. `minmax(0,
+ * 1fr)` sizes the TRACK to zero but does nothing for content that cannot wrap,
+ * and a panel pinned to a guessed `min-width` has no way to grow to what it
+ * actually holds.
+ *
+ * The assertion is geometric and needs no fixture: for every menu, every
+ * descendant rect has to sit inside the panel's own box with its interior
+ * padding to spare. Run against a panel with `white-space: nowrap` taglines and
+ * it reports the overflow in pixels.
+ */
+const EDGE = { inline: 12, block: 8 } as const;
+
+for (const path of ["/mantine/", "/"]) {
+  for (const width of [1440, 1024]) {
+    test(`every menu keeps its content inside the panel at ${width}px on ${path}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+      await expect(page.locator(".nav__inner")).toBeVisible();
+
+      const groups = await page
+        .locator(".nav__trigger")
+        .evaluateAll((nodes) =>
+          nodes.map((node) => (node.textContent ?? "").trim())
+        );
+      expect(groups.length).toBeGreaterThan(0);
+
+      for (const group of groups) {
+        await openNavGroup(page, group);
+        const report = await page.evaluate(
+          ({ group: label, edge }) => {
+            const trig = Array.from(
+              document.querySelectorAll(".nav__trigger")
+            ).find((node) => (node.textContent ?? "").trim() === label);
+            const id = trig?.getAttribute("aria-controls");
+            const panel = id ? document.getElementById(id) : null;
+            if (!panel) return { panel: null, violations: ["no panel"] };
+            const box = panel.getBoundingClientRect();
+            const violations: string[] = [];
+            for (const node of panel.querySelectorAll("*")) {
+              const r = node.getBoundingClientRect();
+              if (r.width === 0 && r.height === 0) continue;
+              const name = node.className || node.tagName;
+              if (r.right > box.right - edge.inline)
+                violations.push(
+                  `${name} right ${r.right.toFixed(1)} vs panel right ${(
+                    box.right - edge.inline
+                  ).toFixed(1)}`
+                );
+              if (r.left < box.left + edge.inline)
+                violations.push(
+                  `${name} left ${r.left.toFixed(1)} vs panel left ${(
+                    box.left + edge.inline
+                  ).toFixed(1)}`
+                );
+              if (r.bottom > box.bottom - edge.block)
+                violations.push(
+                  `${name} bottom ${r.bottom.toFixed(1)} vs panel bottom ${(
+                    box.bottom - edge.block
+                  ).toFixed(1)}`
+                );
+              if (r.top < box.top + edge.block)
+                violations.push(
+                  `${name} top ${r.top.toFixed(1)} vs panel top ${(
+                    box.top + edge.block
+                  ).toFixed(1)}`
+                );
+            }
+            return {
+              panel: {
+                left: Math.round(box.left),
+                right: Math.round(box.right),
+                width: Math.round(box.width),
+              },
+              violations,
+            };
+          },
+          { group, edge: EDGE }
+        );
+
+        expect(
+          report.violations,
+          `the ${group} panel paints outside itself: ${report.violations.join(
+            "; "
+          )}`
+        ).toEqual([]);
+        // The panel also has to stay a panel — inside the window, and never
+        // widening the document from the right edge.
+        expect(report.panel?.left).toBeGreaterThanOrEqual(0);
+        expect(report.panel?.right).toBeLessThanOrEqual(width);
+        expect(
+          await page.evaluate(
+            () =>
+              document.documentElement.scrollWidth -
+              document.documentElement.clientWidth
+          )
+        ).toBeLessThanOrEqual(1);
+        await page.keyboard.press("Escape");
+      }
+    });
+  }
+}

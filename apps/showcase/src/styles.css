@@ -153,7 +153,11 @@ a {
   flex-direction: column;
   gap: 1px;
   min-width: 186px;
-  padding: 6px;
+  /* Real interior padding, on every panel: the item boxes are what fill the
+     content box, so the panel's own padding IS the clearance between a hover
+     row and the rounded border. `nav-menu.spec.ts` holds every descendant to
+     12px of it. */
+  padding: 12px;
   border: 1px solid var(--page-border);
   border-radius: 12px;
   background: var(--page-surface);
@@ -193,12 +197,27 @@ a {
 /* The Adapters menu: eight kits read as a list of eight product names, so each
    one carries its own mark and its own one-line description, in two columns.
    The panel is measured and slid back from the viewport edge like every other
-   one — `nav-menu.spec.ts` holds it to that at 1024px. */
+   one — `nav-menu.spec.ts` holds it to that at 1024px.
+
+   The panel sizes to its content: the taglines set the column width, so the box
+   is as wide as what it holds rather than a guessed figure the content then
+   overshoots. `max-width` is the ceiling on a narrow window, and the wrapping
+   below is what makes that ceiling hold — a track that cannot wrap spills its
+   text past the panel edge instead of shrinking. */
 .nav__menu--wide {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  min-width: 26rem;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: 16px;
+  width: max-content;
+  max-width: min(40rem, calc(100vw - 32px));
+}
+/* A tagline is a phrase, not a label — it wraps inside its own column. The
+   labels above keep the `nowrap` every other menu item has. */
+.nav__menu--wide .nav__item-hint {
+  white-space: normal;
+  text-wrap: pretty;
 }
 .nav__item-label {
   display: inline-flex;
