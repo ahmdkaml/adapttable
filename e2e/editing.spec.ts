@@ -1,5 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
 import { gotoFromNav } from "./nav";
 
 /**
@@ -43,7 +52,7 @@ test.describe("editing demo page", () => {
   // Columns menu from the layout showcase.
   for (const column of ["Person", "Email", "Status", "Budget", "Load"]) {
     test(`${column} opens an editor on double-click`, async ({ page }) => {
-      await page.goto("/editing/");
+      await page.goto(`/${KIT}/editing/`);
       await expect(page.getByRole("grid").first()).toBeVisible();
       await expect(await openEditor(page, column)).toBeVisible();
     });
@@ -52,7 +61,7 @@ test.describe("editing demo page", () => {
   test("keeps unrelated table chrome out of the editing walkthrough", async ({
     page,
   }) => {
-    await page.goto("/editing/");
+    await page.goto(`/${KIT}/editing/`);
     await expect(page.getByRole("grid").first()).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Filters", exact: true })
@@ -73,7 +82,7 @@ test.describe("editing demo page", () => {
   });
 
   test("Team uses its select editor", async ({ page }) => {
-    await page.goto("/editing/");
+    await page.goto(`/${KIT}/editing/`);
     await expect(page.getByRole("grid").first()).toBeVisible();
     await expect(
       page.getByRole("columnheader", { name: "Team" })
@@ -83,7 +92,7 @@ test.describe("editing demo page", () => {
   });
 
   test("Enter commits the new value into the cell", async ({ page }) => {
-    await page.goto("/editing/");
+    await page.goto(`/${KIT}/editing/`);
     const editor = await openEditor(page, "Email");
     await expect(editor).toBeVisible();
     await editor.fill("changed@adapttable.dev");
@@ -96,7 +105,7 @@ test.describe("editing demo page", () => {
   });
 
   test("Escape leaves the original value untouched", async ({ page }) => {
-    await page.goto("/editing/");
+    await page.goto(`/${KIT}/editing/`);
     const cell = page.locator("tbody tr").first().locator("td");
     const editor = await openEditor(page, "Email");
     const original = await editor.inputValue();
@@ -115,25 +124,17 @@ test.describe("editing demo page", () => {
  * Editing has to open in every kit, not just the one that loads first — the
  * editors are kit-native controls now, so "it works" is a per-kit claim.
  */
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 for (const kit of KITS) {
   test(`${kit}: opens an editor on the editing page`, async ({ page }) => {
-    await page.goto("/editing/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/editing/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     // antd puts a zero-height measure row first — it carries the header text,

@@ -4,82 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-    <meta
-      name="description"
-      content="The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll."
-    />
-    <link
-      rel="canonical"
-      href="https://orwa-mahmoud.github.io/adapttable/demo/mobile/"
-    />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AdaptTable" />
-    <meta
-      property="og:title"
-      content="AdaptTable demo — automatic mobile cards"
-    />
-    <meta
-      property="og:description"
-      content="The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll."
-    />
-    <meta
-      property="og:url"
-      content="https://orwa-mahmoud.github.io/adapttable/demo/mobile/"
-    />
-    <meta
-      property="og:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="AdaptTable demo — automatic mobile cards"
-    />
-    <meta
-      name="twitter:description"
-      content="The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll."
-    />
-    <meta
-      name="twitter:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "AdaptTable",
-        "description": "The same React table becomes a card list on phones automatically — identical columns, row content, search and query state, with infinite scroll.",
-        "url": "https://orwa-mahmoud.github.io/adapttable/demo/mobile/",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Any",
-        "license": "https://opensource.org/license/mit",
-        "programmingLanguage": "TypeScript",
-        "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-      }
-    </script>
-    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
-    ></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
-      rel="stylesheet"
-      media="print"
-      onload="this.media = 'all'"
-    />
-    <title>AdaptTable demo — automatic mobile card layout</title>
+    <!-- Static hosting has no redirect layer, so the move is declared in the
+         document: meta-refresh carries a reader across, and the canonical
+         link tells a crawler which URL is the real one. -->
+    <meta http-equiv="refresh" content="0; url=../mantine/mobile-cards/" />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/" />
+    <meta name="description" content="The AdaptTable mobile cards demo is now mobile cards in mantine at /demo/mantine/mobile-cards/ — the same table, with that kit's install line and code on the page." />
+    <title>AdaptTable demo — mobile cards moved to /demo/mantine/mobile-cards/</title>
     <script>
       try {
         if (localStorage.getItem("adapttable-demo-theme") === "dark")
@@ -87,15 +18,11 @@
       } catch {}
     </script>
     <style>
-      /* The pre-mount fallback inside #root. React replaces it on mount, so
-         this paints only while the bundle is still downloading — or
-         permanently, when JavaScript is unavailable. Styled so that moment
-         reads as the page arriving rather than as broken markup. */
       .at-fallback {
         max-width: 44rem;
         margin: 0 auto;
         padding: 4.5rem 1.5rem;
-        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-family: ui-sans-serif, system-ui, sans-serif;
         color: #52525b;
         line-height: 1.65;
       }
@@ -106,27 +33,18 @@
         margin: 0 0 1rem;
         letter-spacing: -0.01em;
       }
-      .at-fallback h2 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #18181b;
-        margin: 2rem 0 0.6rem;
-      }
-      .at-fallback ul {
-        padding-inline-start: 1.2rem;
-        margin: 0;
-      }
-      .at-fallback li {
-        margin: 0.4rem 0;
-      }
       .at-fallback a {
         color: #4f46e5;
       }
       [data-theme="dark"] .at-fallback {
         color: #a1a1aa;
       }
-      [data-theme="dark"] .at-fallback :is(h1, h2) {
+      [data-theme="dark"] .at-fallback h1 {
         color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
       }
       [data-theme="dark"] .at-fallback a {
         color: #a5b4fc;
@@ -134,46 +52,19 @@
     </style>
   </head>
   <body>
-    <!-- Replaced by React on mount — see the note in the showcase root
-         index.html for why the served HTML carries content at all. -->
-    <div id="root">
-      <main class="at-fallback">
-        <h1>AdaptTable demo — automatic mobile card layout</h1>
-        <p>
-          Below a breakpoint the same table stops being a table. Rows become
-          cards and the pager becomes infinite scroll. Columns, row content,
-          search and URL-synced query state stay on the same table instance.
-          There is no second component to build and no mobile-only prop tree to
-          maintain.
-        </p>
-        <h2>What changes, and what does not</h2>
-        <ul>
-          <li>
-            Each row renders as a card with a title, subtitle and the fields you
-            mark as summary columns; the rest collapse behind a details toggle.
-          </li>
-          <li>
-            Search and query state stay identical while this focused page
-            switches between table and card layouts.
-          </li>
-          <li>
-            Pagination becomes infinite scroll, so a thumb never has to find a
-            page control.
-          </li>
-          <li>
-            The switch is automatic by viewport, and can be forced either way
-            with <code>forceMobile</code> for testing.
-          </li>
-        </ul>
-        <p>
-          Documentation: <a href="/adapttable/mobile/">mobile cards</a>,
-          <a href="/adapttable/row-expansion/">row expansion</a>,
-          <a href="/adapttable/pagination/">pagination</a>. Other demos:
-          <a href="/adapttable/demo/">the main showcase</a>,
-          <a href="/adapttable/demo/scale/">virtualization</a>.
-        </p>
-      </main>
-    </div>
-    <script type="module" src="/src/entry-mobile.tsx"></script>
+    <main class="at-fallback">
+      <h1>This demo is now at /demo/mantine/mobile-cards/</h1>
+      <p>
+        The demo is adapter-first: this page became
+        <a href="../mantine/mobile-cards/">mobile cards in mantine</a>, which carries the
+        same table plus Mantine's own install line, imports
+        and code. Every capability that lived at this address lives there.
+      </p>
+      <p>
+        Your browser follows the move on its own. If it has not, open
+        <a href="../mantine/mobile-cards/">/demo/mantine/mobile-cards/</a> directly, or start from
+        <a href="/adapttable/demo/">the main showcase</a>.
+      </p>
+    </main>
   </body>
 </html>

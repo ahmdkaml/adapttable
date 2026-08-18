@@ -26,7 +26,7 @@ const feed = (page: Page) => page.getByTestId("realtime-feed");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await gotoFromNav(page, "Features", "Realtime");
+  await gotoFromNav(page, "More", "Realtime");
   await expect(page).toHaveURL(/\/realtime\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

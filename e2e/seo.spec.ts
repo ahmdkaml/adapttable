@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { matrixPages } from "../apps/showcase/matrix.mjs";
+
 /**
  * Every demo page answers without JavaScript.
  *
@@ -9,25 +11,22 @@ import { expect, test } from "@playwright/test";
  * say what the page is. A page that renders an empty root is invisible.
  */
 
+/**
+ * The shared pages, and every page the adapter × feature matrix builds — read
+ * from the manifest, so a page that ships is a page held to this bar without
+ * being listed twice.
+ */
 const PAGES = [
   { path: "/", name: "live demo" },
   { path: "/all-options/", name: "Feature Lab" },
-  { path: "/columns/", name: "columns" },
-  { path: "/editing/", name: "editing" },
-  { path: "/grouping/", name: "grouping" },
-  { path: "/export/", name: "export and print" },
-  { path: "/mobile/", name: "mobile cards" },
-  { path: "/rtl/", name: "RTL" },
-  { path: "/scale/", name: "scale" },
-  { path: "/filtering/", name: "filtering" },
-  { path: "/tree/", name: "tree" },
-  { path: "/selection/", name: "selection" },
-  { path: "/pagination/", name: "pagination" },
   { path: "/accessibility/", name: "accessibility" },
+  { path: "/pagination/", name: "pagination" },
   { path: "/realtime/", name: "realtime" },
-  { path: "/formulas/", name: "formulas" },
-  { path: "/pivot/", name: "pivot" },
-  { path: "/saved-views/", name: "saved views" },
+  { path: "/rtl/", name: "RTL" },
+  ...matrixPages().map((page) => ({
+    path: `/${page.dir}/`,
+    name: page.feature ? `${page.adapter} ${page.feature}` : page.adapter,
+  })),
 ] as const;
 
 for (const { path, name } of PAGES) {

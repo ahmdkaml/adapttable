@@ -9,8 +9,8 @@ import {
 import { getLabels } from "@adapttable/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { KitSwitcher, readKitFromUrl } from "./kitDemos";
 import { kitClassNames, KitProvider, kitTable } from "./kitProviders";
+import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { useNavHeight } from "./sections";
 
 interface BigPerson {
@@ -322,9 +322,9 @@ function ServerScaleTable({
   );
 }
 
-/** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
-export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const [kit, setKit] = useState(readKitFromUrl);
+/** The kit's own table, element-virtualized over tens of thousands of rows. */
+export function ScaleDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
+  const kit = adapter;
   const {
     total,
     virtual,
@@ -339,41 +339,42 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
     variableHeight,
   } = scaleParams();
   const columns = useMemo(() => widen(COLUMNS, cols, edit), [cols, edit]);
-  const switcher = <KitSwitcher adapter={kit} dark={dark} onChange={setKit} />;
   if (server) {
     return (
-      <>
-        {switcher}
-        <ServerScaleTable
+      <div className="mx-demo">
+        <div className="mx-demo__body">
+          <ServerScaleTable
+            total={total}
+            columns={columns}
+            virtual={virtual}
+            virtualCols={virtualCols}
+            variableHeight={variableHeight}
+            dark={dark}
+            kit={kit}
+          />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="mx-demo">
+      <div className="mx-demo__body">
+        <FrontendScaleTable
           total={total}
           columns={columns}
           virtual={virtual}
           virtualCols={virtualCols}
           variableHeight={variableHeight}
+          all={all}
+          edit={edit}
+          patches={patches}
+          incremental={incremental}
+          tree={tree}
           dark={dark}
           kit={kit}
         />
-      </>
-    );
-  }
-  return (
-    <>
-      {switcher}
-      <FrontendScaleTable
-        total={total}
-        columns={columns}
-        virtual={virtual}
-        virtualCols={virtualCols}
-        variableHeight={variableHeight}
-        all={all}
-        edit={edit}
-        patches={patches}
-        incremental={incremental}
-        tree={tree}
-        dark={dark}
-        kit={kit}
-      />
-    </>
+      </div>
+    </div>
   );
 }
 

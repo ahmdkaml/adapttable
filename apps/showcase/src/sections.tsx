@@ -8,6 +8,14 @@ import {
   useState,
 } from "react";
 
+import { cssVars } from "./cssVars";
+import {
+  adapterByKey,
+  builtAdapters,
+  MATRIX_FEATURES,
+  SHOWCASE_ADAPTERS,
+  type ShowcaseAdapter,
+} from "./matrix/content";
 import { Check, External, Moon, Sun } from "./sectionIcons";
 
 function Wordmark({ href }: Readonly<{ href: string }>) {
@@ -99,98 +107,121 @@ function Wordmark({ href }: Readonly<{ href: string }>) {
   );
 }
 
-export type DemoPage =
-  | "demo"
-  | "columns"
-  | "filtering"
-  | "tree"
-  | "selection"
-  | "pagination"
-  | "accessibility"
-  | "realtime"
-  | "editing"
-  | "grouping"
-  | "pivot"
-  | "formulas"
-  | "saved-views"
-  | "export"
-  | "all-options"
-  | "mobile"
-  | "scale"
-  | "rtl";
+/**
+ * Which page the nav marks as current: a page id.
+ *
+ * Two forms, because the demo has two kinds of page — a shared page's own key
+ * (`demo`, `all-options`, `pagination`, `realtime`, `accessibility`, `rtl`), or
+ * a matrix page's id, which is `mantine` for an adapter's landing and
+ * `mantine/saved-views` for one of its features. Both are plain strings and the
+ * nav compares them as such: the matrix half is generated, so a union spelling
+ * out ninety-six literals would be a second list to keep in step.
+ *
+ * @see resolveMatrixRoute — where a matrix id is turned back into its page.
+ */
 
-/** One demo page — a static HTML entry, linked with a plain anchor. */
-type NavPage = Readonly<{ key: DemoPage; label: string; path: string }>;
+/** One destination in the nav — a static HTML page, linked with a plain anchor. */
+type NavPage = Readonly<{
+  key: string;
+  label: string;
+  /** Already resolved against the demo root, so items can point anywhere. */
+  href: string;
+  /** A second line under the label, in the wide menus. */
+  hint?: string;
+  /** The kit's accent, for the mark beside an adapter's name. */
+  accent?: string;
+}>;
 
 /** One nav dropdown: a labelled trigger and the pages it holds. */
 type NavGroupSpec = Readonly<{
   key: string;
   label: string;
   pages: readonly NavPage[];
+  /** Lay the panel out in two columns, for the menu that holds eight kits. */
+  wide?: boolean;
 }>;
 
-/** The destinations that stay at the top level: the demo itself, and the one
- * page that turns every option on at once. */
-const TOP_PAGES: readonly NavPage[] = [
-  { key: "demo", label: "Live demo", path: "" },
-  { key: "all-options", label: "Feature Lab", path: "all-options" },
-];
-
 /**
- * The sixteen feature pages, in three menus.
+ * The nav's whole shape: five things across the bar, and every page two moves
+ * away.
  *
- * This is the nav's whole shape: five things across the bar, and a page is
- * reached in two moves rather than read out of a wall of tabs. The split is by
- * what a reader is looking for — the table features everyone needs, the
- * analysis layer on top of them, and the environments the table has to survive.
+ * It is adapter-first because the demo is. **Adapters** is the primary menu —
+ * eight kits, each going to its own landing page. **Features** holds the twelve
+ * pages of whichever kit the reader is currently in, so the menu answers
+ * "saved views, in this kit" rather than "saved views, pick a kit". **More**
+ * holds the four pages that are properties of every kit rather than features of
+ * one, so they answer once instead of eight times.
+ *
+ * Five items is also what keeps the strip one line at 1024px, which
+ * `e2e/nav-menu.spec.ts` measures at every desktop width.
  */
-const NAV_GROUPS: readonly NavGroupSpec[] = [
+const buildGroups = (
+  href: (path: string) => string,
+  current: ShowcaseAdapter,
+  dark: boolean
+): readonly NavGroupSpec[] => [
+  {
+    key: "adapters",
+    label: "Adapters",
+    wide: true,
+    pages: SHOWCASE_ADAPTERS.map((kit) => ({
+      key: kit.key,
+      label: kit.label,
+      hint: kit.blurb,
+      accent: dark ? kit.accentDark : kit.accentLight,
+      href: kit.built ? href(kit.key) : `${href("")}?kit=${kit.key}`,
+    })),
+  },
   {
     key: "features",
     label: "Features",
-    pages: [
-      { key: "columns", label: "Columns", path: "columns" },
-      { key: "filtering", label: "Filtering", path: "filtering" },
-      { key: "tree", label: "Tree", path: "tree" },
-      { key: "selection", label: "Selection", path: "selection" },
-      { key: "pagination", label: "Pagination", path: "pagination" },
-      { key: "editing", label: "Editing", path: "editing" },
-      { key: "grouping", label: "Grouping", path: "grouping" },
-      { key: "realtime", label: "Realtime", path: "realtime" },
-    ],
+    pages: MATRIX_FEATURES.map((feature) => ({
+      key: `${current.key}/${feature.slug}`,
+      label: feature.label,
+      href: href(`${current.key}/${feature.slug}`),
+    })),
   },
   {
-    key: "power",
-    label: "Power",
+    key: "more",
+    label: "More",
     pages: [
-      { key: "pivot", label: "Pivot", path: "pivot" },
-      { key: "formulas", label: "Formulas", path: "formulas" },
-      { key: "saved-views", label: "Saved views", path: "saved-views" },
-      { key: "export", label: "Export & print", path: "export" },
-    ],
-  },
-  {
-    key: "platform",
-    label: "Platform",
-    pages: [
-      { key: "mobile", label: "Mobile", path: "mobile" },
-      { key: "rtl", label: "RTL", path: "rtl" },
-      { key: "scale", label: "Scale", path: "scale" },
-      { key: "accessibility", label: "Accessibility", path: "accessibility" },
+      { key: "pagination", label: "Pagination", href: href("pagination") },
+      { key: "realtime", label: "Realtime", href: href("realtime") },
+      {
+        key: "accessibility",
+        label: "Accessibility",
+        href: href("accessibility"),
+      },
+      { key: "rtl", label: "RTL", href: href("rtl") },
     ],
   },
 ];
 
 /**
- * Every page, flat and in nav order — the phone `<select>`'s option list.
+ * Whether a nav item covers the page being read.
  *
- * Derived rather than written twice: a page added to a group appears in the
- * menu and in the phone picker from the same line.
+ * An exact match is the current page. A prefix match is the adapter a feature
+ * page belongs to — someone on `mantine/pivot` IS in Mantine, and the Adapters
+ * menu says so. Only the exact match takes `aria-current`, because only one
+ * page is the page.
+ *
+ * @param key - The nav item's page id.
+ * @param active - The page id being read.
+ * @returns Whether the item should read as current.
  */
-const PAGES: readonly NavPage[] = [
-  ...TOP_PAGES,
-  ...NAV_GROUPS.flatMap((group) => group.pages),
-];
+const inScope = (key: string, active: string): boolean =>
+  active === key || active.startsWith(`${key}/`);
+
+/**
+ * The kit the Features menu is showing, read from the page the reader is on.
+ *
+ * A shared page belongs to no kit, so it falls back to the first built adapter
+ * — which is also the kit every page's switcher opens on.
+ */
+const currentAdapter = (active: string): ShowcaseAdapter => {
+  const key = active.split("/")[0] ?? "";
+  return adapterByKey(key) ?? builtAdapters()[0];
+};
 
 /**
  * How long an open menu waits after the pointer leaves before it closes.
@@ -245,7 +276,6 @@ function Chevron() {
  */
 function NavGroup({
   group,
-  href,
   active,
   open,
   onPress,
@@ -254,8 +284,7 @@ function NavGroup({
   onClose,
 }: Readonly<{
   group: NavGroupSpec;
-  href: (path: string) => string;
-  active: DemoPage;
+  active: string;
   open: boolean;
   onPress: () => void;
   onHoverOpen: () => void;
@@ -272,7 +301,7 @@ function NavGroup({
   const [shift, setShift] = useState(0);
 
   const menuId = `nav-menu-${group.key}`;
-  const holdsActive = group.pages.some((page) => page.key === active);
+  const holdsActive = group.pages.some((page) => inScope(page.key, active));
 
   const items = useCallback(
     () =>
@@ -424,7 +453,7 @@ function NavGroup({
         <Chevron />
       </button>
       <div
-        className="nav__menu"
+        className={group.wide ? "nav__menu nav__menu--wide" : "nav__menu"}
         id={menuId}
         ref={menuRef}
         role="menu"
@@ -443,12 +472,19 @@ function NavGroup({
             data-nav-item=""
             role="menuitem"
             tabIndex={-1}
-            href={href(page.path)}
-            className={active === page.key ? "is-on" : undefined}
+            href={page.href}
+            className={inScope(page.key, active) ? "is-on" : undefined}
             aria-current={active === page.key ? "page" : undefined}
+            style={page.accent ? cssVars({ "--c": page.accent }) : undefined}
             onClick={onClose}
           >
-            {page.label}
+            <span className="nav__item-label">
+              {page.accent ? <span className="nav__dot" /> : null}
+              {page.label}
+            </span>
+            {page.hint ? (
+              <span className="nav__item-hint">{page.hint}</span>
+            ) : null}
           </a>
         ))}
       </div>
@@ -472,13 +508,33 @@ export function AppNav({
   dark,
   onToggleDark,
 }: Readonly<{
-  active: DemoPage;
+  active: string;
   root: string;
   dark: boolean;
   onToggleDark: () => void;
 }>) {
   const href = (path: string) =>
     path === "" ? `${root}/` : `${root}/${path}/`;
+
+  // The kit the Features menu answers for, and the menus built around it.
+  const kit = currentAdapter(active);
+  const groups = buildGroups(href, kit, dark);
+  const topPages: readonly NavPage[] = [
+    { key: "demo", label: "Live demo", href: href("") },
+    { key: "all-options", label: "Feature Lab", href: href("all-options") },
+  ];
+  // The phone picker, from the same lists: one flat option set with the menus
+  // as `optgroup`s, so a page reachable in the bar is reachable on a phone.
+  const pickerGroups: readonly (readonly [string, readonly NavPage[]])[] = [
+    ["Demo", topPages],
+    ...groups.map(
+      (group) =>
+        [
+          group.key === "features" ? `${kit.label} features` : group.label,
+          group.pages,
+        ] as const
+    ),
+  ];
 
   const [openMenu, setOpenMenu] = useState<OpenMenu | null>(null);
   const closeTimer = useRef<number | undefined>(undefined);
@@ -537,21 +593,20 @@ export function AppNav({
       <div className="nav__inner shell">
         <Wordmark href={href("")} />
         <nav className="nav__links" aria-label="Demo pages">
-          {TOP_PAGES.map((p) => (
+          {topPages.map((p) => (
             <a
               key={p.key}
-              href={href(p.path)}
+              href={p.href}
               className={active === p.key ? "is-on" : undefined}
               aria-current={active === p.key ? "page" : undefined}
             >
               {p.label}
             </a>
           ))}
-          {NAV_GROUPS.map((group) => (
+          {groups.map((group) => (
             <NavGroup
               key={group.key}
               group={group}
-              href={href}
               active={active}
               open={openMenu?.key === group.key}
               onPress={() => press(group.key)}
@@ -566,16 +621,21 @@ export function AppNav({
             aria-label="Demo page"
             value={active}
             onChange={(event) => {
-              const page = PAGES.find(
-                (candidate) => candidate.key === event.currentTarget.value
-              );
-              if (page) window.location.assign(href(page.path));
+              const chosen = event.currentTarget.value;
+              const page = pickerGroups
+                .flatMap(([, pages]) => pages)
+                .find((candidate) => candidate.key === chosen);
+              if (page) window.location.assign(page.href);
             }}
           >
-            {PAGES.map((page) => (
-              <option key={page.key} value={page.key}>
-                {page.label}
-              </option>
+            {pickerGroups.map(([label, pages]) => (
+              <optgroup key={label} label={label}>
+                {pages.map((page) => (
+                  <option key={page.key} value={page.key}>
+                    {page.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <span aria-hidden>▾</span>

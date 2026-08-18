@@ -121,6 +121,10 @@ Committed but **generated — never hand-edit**:
 - `llms-full.txt` — built by `pnpm llms` from `docs/*.md` in the `DOCS`
   array order of `scripts/build-llms-full.mjs`. Edit docs → `pnpm format` →
   regenerate → commit, in that order.
+- `apps/showcase/<adapter>/**/index.html` and the redirect stubs beside them —
+  written by `node scripts/build-showcase-html.mjs` from
+  `apps/showcase/matrix.mjs`. Edit the matrix → regenerate → commit;
+  `scripts/showcase-html.test.mjs` fails the gate when they disagree.
 - `packages/*/CHANGELOG.md` — written by changesets only.
 - `pnpm-lock.yaml`.
 
@@ -144,6 +148,16 @@ surface: the `DOCS` array in `scripts/build-llms-full.mjs` AND a link in
   manifest, and `pnpm check:sitemap` verifies the composed site against it in
   the docs workflow. A page that must ship without being indexed — a redirect
   stub — sets `indexable: false`.
+- The demo is **adapter-first**: each adapter has a landing page
+  (`/demo/mantine/`) and one page per feature (`/demo/mantine/pivot/`), so a
+  reader searching for a Mantine pivot table lands on one. Those pages are not
+  written by hand — the adapters, the features and every word on the pages live
+  in `apps/showcase/matrix.mjs`, which `pages.mjs` expands into the manifest,
+  `scripts/build-showcase-html.mjs` writes the static HTML from, and
+  `src/matrix/MatrixPage.tsx` renders. Add a feature there and it appears in the
+  build, the sitemap, the nav and the served HTML at once.
+- Pagination, realtime, accessibility and RTL are properties of every one of
+  those pages rather than features of one, so they stay single shared pages.
 - Overlay contracts:
   - `filtersMode="popover"` (default) is a lightweight anchored card with
     **no backdrop**. It anchors under its trigger (flipping for RTL), closes

@@ -1,5 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
 /**
  * The /columns/ demo is the wide table: "Person" pinned to the start, eight
  * columns overflowing sideways, Columns menu + resize enabled. Only a real
@@ -38,7 +47,7 @@ async function scrollTableX(page: Page, dx: number): Promise<number> {
 test("the focused page has column tools without unrelated table chrome", async ({
   page,
 }) => {
-  await page.goto("/columns/");
+  await page.goto(`/${KIT}/columns/`);
   await expect(headerCell(page, "Person")).toBeVisible();
   await expect(page.getByText("Assignment", { exact: true })).toHaveCount(0);
   await expect(
@@ -55,7 +64,7 @@ test.describe("columns — pinning", () => {
   test("the default-pinned column holds its offset while the table scrolls sideways", async ({
     page,
   }) => {
-    await page.goto("/columns/");
+    await page.goto(`/${KIT}/columns/`);
     await expect(headerCell(page, "Person")).toBeVisible();
 
     const pinBefore = await headerX(page, "Person");
@@ -81,7 +90,7 @@ test.describe("columns — pinning", () => {
   test("pinning a floating column through the Columns menu makes it sticky", async ({
     page,
   }) => {
-    await page.goto("/columns/");
+    await page.goto(`/${KIT}/columns/`);
     await expect(headerCell(page, "Person")).toBeVisible();
 
     await page.getByRole("button", { name: "Columns", exact: true }).click();
@@ -157,7 +166,7 @@ test.describe("columns — export the selected range", () => {
   test("downloads a workbook holding exactly the highlighted block", async ({
     page,
   }) => {
-    await page.goto("/columns/");
+    await page.goto(`/${KIT}/columns/`);
     await expect(headerCell(page, "Person")).toBeVisible();
 
     // Enter the grid at its first cell, then highlight a 2×2 block.
@@ -197,27 +206,19 @@ test.describe("columns — export the selected range", () => {
  * on an antd-only flag, and the wide column set collapsed to fit in Mantine
  * because a pixel min-width was being rem-scaled to zero.
  */
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 for (const kit of KITS) {
   test(`${kit}: offers the Columns menu over a table that scrolls sideways`, async ({
     page,
   }) => {
-    await page.goto("/columns/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/columns/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await expect(

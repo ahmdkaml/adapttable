@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 /**
  * The /pivot/ page.
  *
@@ -15,16 +17,20 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
  * column of the pivot. Those hold across the switcher.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 const table = (page: Page) => page.getByTestId("pivot-table");
 
@@ -47,7 +53,7 @@ const parse = (text: string) => Number(text.replaceAll(/[^0-9.-]/g, "")) || 0;
 test("opens already pivoted, with a header row per column value", async ({
   page,
 }) => {
-  await page.goto("/pivot/");
+  await page.goto(`/${KIT}/pivot/`);
   await expect(table(page)).toBeVisible();
 
   // The default puts teams down the side and statuses across the top.
@@ -70,7 +76,7 @@ test("opens already pivoted, with a header row per column value", async ({
 test("totals every column, and the grand total agrees with the rows", async ({
   page,
 }) => {
-  await page.goto("/pivot/");
+  await page.goto(`/${KIT}/pivot/`);
 
   const total = footer(table(page)).locator('[data-column-key="pivot-0"]');
   await expect(total).toBeVisible();
@@ -87,7 +93,7 @@ test("totals every column, and the grand total agrees with the rows", async ({
 test("the grand total is the table's footer, not one more line of data", async ({
   page,
 }) => {
-  await page.goto("/pivot/");
+  await page.goto(`/${KIT}/pivot/`);
 
   await expect(footer(table(page))).toContainText("Grand total");
   // And it is NOT in the body: two places to read one number is how they end
@@ -98,7 +104,7 @@ test("the grand total is the table's footer, not one more line of data", async (
 });
 
 test("builds a pivot with the keyboard alone", async ({ page }) => {
-  await page.goto("/pivot/");
+  await page.goto(`/${KIT}/pivot/`);
 
   // Add a second row dimension using only keys.
   const rows = page.getByRole("group", { name: "Rows" });
@@ -115,7 +121,7 @@ test("builds a pivot with the keyboard alone", async ({ page }) => {
 });
 
 test("puts the whole configuration in the URL", async ({ page }) => {
-  await page.goto("/pivot/");
+  await page.goto(`/${KIT}/pivot/`);
 
   const remove = page
     .getByRole("group", { name: "Columns" })
@@ -142,12 +148,16 @@ test("a folded group travels in the link, and comes back folded", async ({
 }) => {
   // Two row dimensions, so there are subtotal lines to fold — and the URL that
   // asks for them is itself the first half of the round trip.
-  await page.goto("/pivot/?p.pivot=rows:team,role;cols:status;sum:budget");
+  await page.goto(
+    `/${KIT}/pivot/?p.pivot=rows:team,role;cols:status;sum:budget`
+  );
 
   const lines = table(page).locator("tbody tr");
-  const before = await lines.count();
   const fold = table(page).getByTestId("pivot-fold").first();
+  // The demo arrives on its own chunk, so the fold control being on screen is
+  // what says the pivot is rendered — counting before that counts nothing.
   await expect(fold).toHaveAttribute("aria-expanded", "true");
+  const before = await lines.count();
 
   await fold.click();
 
@@ -170,7 +180,7 @@ test("a folded group travels in the link, and comes back folded", async ({
 test("changing a measure's aggregation changes the numbers", async ({
   page,
 }) => {
-  await page.goto("/pivot/");
+  await page.goto(`/${KIT}/pivot/`);
 
   // The grand total, not the first data cell: a single team/status pair can
   // legitimately be empty, and an empty cell proves nothing either way.
@@ -190,12 +200,9 @@ for (const kit of KITS) {
   test(`${kit}: renders the pivot with its own table`, async ({ page }) => {
     // Two row dimensions, so a subtotal line and its fold control are on
     // screen in every kit rather than only where the default puts them.
-    await page.goto("/pivot/?p.pivot=rows:team,role;cols:status;sum:budget");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(
+      `/${kit}/pivot/?p.pivot=rows:team,role;cols:status;sum:budget`
+    );
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     const pivot = root.getByTestId("pivot-table");

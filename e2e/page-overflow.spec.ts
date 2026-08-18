@@ -79,7 +79,7 @@ test("the wide column set scrolls inside the table, not the page", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/scale/?cols=40");
+  await page.goto("/mantine/scale/?cols=40");
   const box = page.locator('[data-adapttable-part="scroll-box"]').first();
   await expect(box).toBeVisible();
 
@@ -109,7 +109,7 @@ test("the pinned table header lands under the nav on a narrow desktop", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1024, height: 800 });
-  await page.goto("/scale/");
+  await page.goto("/mantine/scale/");
   await expect(page.locator("thead th").first()).toBeVisible();
   // The window grows as rows stream in; there is nothing to pin the header
   // against until the document is taller than the scroll this takes.

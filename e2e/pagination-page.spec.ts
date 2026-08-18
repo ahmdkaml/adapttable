@@ -31,7 +31,7 @@ const mode = (page: Page, name: "Paged" | "Infinite") =>
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await gotoFromNav(page, "Features", "Pagination");
+  await gotoFromNav(page, "More", "Pagination");
   await expect(page).toHaveURL(/\/pagination\/$/);
   await expect(page.getByRole("table").first()).toBeVisible();
 });

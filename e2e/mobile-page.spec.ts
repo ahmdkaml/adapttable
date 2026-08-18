@@ -1,5 +1,7 @@
 import { devices, expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 /**
  * The /mobile/ page at an actual phone size.
  *
@@ -9,25 +11,30 @@ import { devices, expect, type Page, test } from "@playwright/test";
  * one place the viewport is genuinely small.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
 
-const demo = (page: Page) => page.locator("#mobile");
+const KITS = builtAdapters().map((adapter) => adapter.key);
+
+/** The box below the seam — everything inside it is the kit's. */
+const demo = (page: Page) => page.locator(".mx-demo");
 
 test.use({ ...devices["Pixel 7"] });
 
 test("swaps rows for cards on a phone, with no sideways scroll", async ({
   page,
 }) => {
-  await page.goto("/mobile/");
+  await page.goto(`/${KIT}/mobile-cards/`);
   const cards = demo(page).locator('[data-adapttable-part="cards"]');
   await expect(cards.first()).toBeVisible();
 
@@ -42,7 +49,7 @@ test("swaps rows for cards on a phone, with no sideways scroll", async ({
 });
 
 test("the nav is reachable on a phone", async ({ page }) => {
-  await page.goto("/mobile/");
+  await page.goto(`/${KIT}/mobile-cards/`);
   // The demo nav collapses to a select below the breakpoint; either shape is
   // fine, but one of them has to be there or the page is a dead end.
   const nav = page
@@ -53,12 +60,7 @@ test("the nav is reachable on a phone", async ({ page }) => {
 
 for (const kit of KITS) {
   test(`${kit}: renders cards, not a table, on a phone`, async ({ page }) => {
-    await page.goto("/mobile/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/mobile-cards/`);
     const root = demo(page).locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await expect(
@@ -73,12 +75,7 @@ for (const kit of KITS) {
   test(`${kit}: a custom card body keeps the list semantics`, async ({
     page,
   }) => {
-    await page.goto("/mobile/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/mobile-cards/`);
     await page.getByRole("button", { name: "Custom card" }).click();
 
     const root = demo(page).locator(`[data-adapter="${kit}"]`);

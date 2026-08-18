@@ -1,5 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+import { REPLACED_PAGES } from "../apps/showcase/pages.mjs";
+
 /**
  * The /export/ demo is the live PDF export: `pdfWriter` plus
  * `scope: "all"`, button caption `labels.exportFile("pdf")`. jsdom never
@@ -21,7 +32,7 @@ const AMIRI_BYTES = 431_116;
 
 test.describe("pdf export", () => {
   test("downloads a real PDF from /export/", async ({ page }) => {
-    await page.goto("/export/");
+    await page.goto(`/${KIT}/export/`);
     await expect(
       page.getByRole("columnheader", { name: "Person" }).first()
     ).toBeVisible();
@@ -84,7 +95,7 @@ test.describe("pdf export", () => {
  * letters going out as typed.
  */
 test("embeds a subset font in the Arabic download", async ({ page }) => {
-  await page.goto("/export/");
+  await page.goto(`/${KIT}/export/`);
   await expect(
     page.getByRole("columnheader", { name: "Person" }).first()
   ).toBeVisible();
@@ -137,27 +148,19 @@ test("embeds a subset font in the Arabic download", async ({ page }) => {
  * The export button is toolbar chrome each adapter renders itself, so a kit
  * that never draws it offers no way to export at all.
  */
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 for (const kit of KITS) {
   test(`${kit}: offers the export button on the export page`, async ({
     page,
   }) => {
-    await page.goto("/export/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/export/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await expect(
@@ -166,12 +169,7 @@ for (const kit of KITS) {
   });
 
   test(`${kit}: draws the Print toolbar entry`, async ({ page }) => {
-    await page.goto("/export/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/export/`);
     // Opt-in chrome, so a kit that never draws it leaves the reader with the
     // palette shortcut or nothing at all. antd assembles its toolbar props by
     // hand rather than through the shell, which is exactly where this drifts.
@@ -185,9 +183,9 @@ for (const kit of KITS) {
 
 /** The caption is `labels.print`, so it turns over with the table's locale. */
 test("the Print entry speaks the table's language", async ({ page }) => {
-  await page.goto("/export/");
+  await page.goto(`/${KIT}/export/`);
   const button = page
-    .locator('[data-adapter="mantine"] [data-adapttable-part="print-button"]')
+    .locator(`[data-adapter="${KIT}"] [data-adapttable-part="print-button"]`)
     .first();
   await expect(button).toHaveText("Print");
 
@@ -196,42 +194,50 @@ test("the Print entry speaks the table's language", async ({ page }) => {
 });
 
 /**
- * The address this demo used to live at is published — in docs, in llms.txt,
- * in whatever a reader bookmarked. GitHub Pages serves files, so the move is
- * a document that carries the reader across rather than a 301. The test that
- * matters is the reader's: open the old URL, arrive at the live demo.
+ * The addresses these demos used to live at are published — in docs, in
+ * llms.txt, in whatever a reader bookmarked. GitHub Pages serves files, so a
+ * move is a document that carries the reader across rather than a 301. The
+ * test that matters is the reader's: open the old URL, arrive at the page that
+ * replaced it.
+ *
+ * The list is the manifest's, so a page that moves later is covered here from
+ * the same line that registers its stub.
  */
-test.describe("the old /export-pdf/ address", () => {
-  test("carries a reader to /export/", async ({ page }) => {
-    await page.goto("/export-pdf/");
-    await page.waitForURL(/\/export\/$/);
-    await expect(
-      page.getByRole("columnheader", { name: "Person" }).first()
-    ).toBeVisible();
+for (const [from, to] of REPLACED_PAGES) {
+  test.describe(`the old /${from}/ address`, () => {
+    test(`carries a reader to /${to}/`, async ({ page }) => {
+      await page.goto(`/${from}/`);
+      await page.waitForURL(new RegExp(`/${to}/$`));
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    });
+
+    test("declares the new URL to a crawler without JavaScript", async ({
+      browser,
+    }) => {
+      const context = await browser.newContext({ javaScriptEnabled: false });
+      const page = await context.newPage();
+      // Meta-refresh still fires with scripting off, so take the response the
+      // moment it commits — a page that has already forwarded itself hands
+      // back the destination's bytes, or none at all.
+      const response = await page.goto(`/${from}/`, { waitUntil: "commit" });
+      const html = await response!.text();
+
+      expect(html).toContain('http-equiv="refresh"');
+      expect(html).toContain(`${to}/`);
+      expect(html).toContain(
+        `href="https://orwa-mahmoud.github.io/adapttable/demo/${to}/"`
+      );
+
+      // Not thin content: a stub carrying one line of text reads as a soft
+      // 404, so it says what moved and where in real prose.
+      const words = (await page.locator("main").innerText()).split(
+        /\s+/
+      ).length;
+      expect(words, `the stub serves only ${words} words`).toBeGreaterThan(40);
+
+      // And it mounts no demo — the bundle belongs to the page that moved.
+      expect(html).not.toContain("/src/entry-");
+      await context.close();
+    });
   });
-
-  test("declares the new URL to a crawler without JavaScript", async ({
-    browser,
-  }) => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
-    const page = await context.newPage();
-    // Meta-refresh still fires with scripting off, so read the stub's own
-    // bytes rather than whatever the navigation settles on.
-    const html = await (await page.goto("/export-pdf/"))!.text();
-
-    expect(html).toContain('http-equiv="refresh"');
-    expect(html).toContain("url=../export/");
-    expect(html).toContain(
-      'href="https://orwa-mahmoud.github.io/adapttable/demo/export/"'
-    );
-
-    // Not thin content: a stub carrying one line of text reads as a soft 404,
-    // so it says what moved and where in real prose.
-    const words = (await page.locator("main").innerText()).split(/\s+/).length;
-    expect(words, `the stub serves only ${words} words`).toBeGreaterThan(40);
-
-    // And it mounts no demo — the bundle belongs to the page that moved.
-    expect(html).not.toContain("/src/entry-");
-    await context.close();
-  });
-});
+}

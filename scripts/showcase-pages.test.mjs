@@ -14,15 +14,28 @@ const INDEX = "index.html";
 /** Not page directories: build output, dependencies, static assets, source. */
 const NOT_PAGES = new Set(["dist", "node_modules", "public", "src"]);
 
-/** The HTML entries that exist on disk, in the manifest's own path spelling. */
+/**
+ * The HTML entries that exist on disk, in the manifest's own path spelling.
+ *
+ * Walked rather than listed one level deep: the demo is adapter-first, so a
+ * feature page lives at `mantine/saved-views/index.html` and a scan that only
+ * reads the top level would report ninety-six pages as missing while the
+ * manifest lists them.
+ */
 const entriesOnDisk = () => {
   const found = existsSync(join(SHOWCASE, INDEX)) ? [`./${INDEX}`] : [];
-  for (const entry of readdirSync(SHOWCASE, { withFileTypes: true })) {
-    if (!entry.isDirectory() || NOT_PAGES.has(entry.name)) continue;
-    if (existsSync(join(SHOWCASE, entry.name, INDEX))) {
-      found.push(`./${entry.name}/${INDEX}`);
+  const walk = (dir, prefix) => {
+    for (const entry of readdirSync(join(SHOWCASE, dir), {
+      withFileTypes: true,
+    })) {
+      if (!entry.isDirectory() || NOT_PAGES.has(entry.name)) continue;
+      const rel = `${prefix}${entry.name}`;
+      if (existsSync(join(SHOWCASE, rel, INDEX)))
+        found.push(`./${rel}/${INDEX}`);
+      walk(rel, `${rel}/`);
     }
-  }
+  };
+  walk("", "");
   return found.sort((a, b) => a.localeCompare(b));
 };
 

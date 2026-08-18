@@ -1,27 +1,32 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 /**
- * The utility-class kits look like themselves on every page.
+ * The kits look like themselves wherever they are mounted.
  *
  * `@adapttable/unstyled` renders native controls by contract, so the Tailwind
- * tab's whole appearance is the class map the page hands it — and the pages
- * that mount a kit's table directly (`kitTable`) have to pass it themselves,
- * because they never go through an adapter demo that would. Miss it on one
- * page and that page answers a Tailwind click with raw HTML, which is exactly
- * what jsdom cannot see: the classes are in the DOM either way, so this asserts
- * the computed look as well.
+ * tab's whole appearance is the class map the page hands it. Miss it and that
+ * page answers a Tailwind click with raw HTML — which is exactly what jsdom
+ * cannot see, because the classes are in the DOM either way. So this asserts
+ * the computed look, not the markup.
+ *
+ * Two surfaces, because they get the map by different routes: a page that
+ * mounts an adapter demo (the live demo, the Feature Lab), and a page that
+ * builds its own table and panel from `kitTable` / `kitSavedViewsPanel` and so
+ * has to pass the map itself.
  */
-
-/** The pages that build their own table instead of mounting an adapter demo. */
-const PAGES = ["/saved-views/", "/scale/", "/pivot/"] as const;
 
 /** Both members of the unstyled family: one preset from the page, one baked in. */
 const KITS = ["tailwind", "shadcn"] as const;
 
+/** The pages where a reader picks the kit. */
+const SWITCHER_PAGES = ["/", "/all-options/"] as const;
+
 const tableRoot = (page: Page) =>
   page.locator('[data-adapttable-part="root"]').first();
 
-for (const path of PAGES) {
+for (const path of SWITCHER_PAGES) {
   for (const kit of KITS) {
     test(`${path} · ${kit}: the table carries the kit's classes`, async ({
       page,
@@ -52,32 +57,49 @@ for (const path of PAGES) {
 }
 
 /**
- * The panel beside the table is the same promise: native markup with the
- * kit's classes, not raw HTML next to a styled table.
+ * The panel beside the table, on each adapter's own saved-views page.
+ *
+ * The page fixes the kit — that is what an adapter-first demo means — so the
+ * loop runs over the adapters whose pages are built, and grows to cover the
+ * utility-class kits as their pages arrive. A panel that carries no card of
+ * its own is a panel mounted without its kit.
  */
-for (const kit of KITS) {
-  test(`/saved-views/ · ${kit}: the panel carries the kit's classes`, async ({
+for (const adapter of builtAdapters()) {
+  test(`${adapter.key}: the saved-views panel is drawn by its kit`, async ({
     page,
   }) => {
-    await page.goto(`/saved-views/?kit=${kit}`);
+    await page.goto(`/${adapter.key}/saved-views/`);
     const panel = page.locator('[data-adapttable-part="saved-views-panel"]');
     await expect(panel).toBeVisible();
 
-    const look = await panel.evaluate((element) => ({
-      className: element.className,
-      radius: parseFloat(getComputedStyle(element).borderTopLeftRadius),
-      row:
-        element.querySelector('[data-adapttable-part="saved-view-row"]')
-          ?.className ?? "",
-      apply: element.querySelector<HTMLElement>("button")?.className ?? "",
-    }));
+    const look = await panel.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        radius: parseFloat(style.borderTopLeftRadius),
+        borderWidth: parseFloat(style.borderTopWidth),
+        title:
+          element
+            .querySelector('[data-adapttable-part="saved-views-title"]')
+            ?.textContent?.trim() ?? "",
+        cluster: element.querySelectorAll(
+          '[data-adapttable-part="saved-view-controls"] button'
+        ).length,
+        rows: element.querySelectorAll(
+          '[data-adapttable-part="saved-view-row"]'
+        ).length,
+      };
+    });
 
-    expect(
-      look.className,
-      `the ${kit} saved-views panel renders unstyled`
-    ).toMatch(/rounded|border|bg-/);
-    expect(look.radius).toBeGreaterThan(0);
-    expect(look.row).not.toBe("");
-    expect(look.apply).not.toBe("");
+    // A card: the panel has an edge of its own rather than floating on the
+    // page, which is what a titled container is for.
+    expect(look.radius, `the ${adapter.key} panel has no card`).toBeGreaterThan(
+      0
+    );
+    expect(look.borderWidth).toBeGreaterThan(0);
+    expect(look.title.toLowerCase()).toContain("saved views");
+    // Two seeded views, each with the same five-icon cluster — a kit that
+    // renders four of them, or none, is a kit that did not get the contract.
+    expect(look.rows).toBe(2);
+    expect(look.cluster).toBe(look.rows * 5);
   });
 }

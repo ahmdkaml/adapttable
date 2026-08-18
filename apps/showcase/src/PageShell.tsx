@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, startTransition, useEffect, useState } from "react";
 
 import { DEMO_CONFIRM_EVENT, DEMO_NOTICE_EVENT, type DemoNotice } from "./data";
-import { AppNav, type DemoPage, Footer } from "./sections";
+import { AppNav, Footer } from "./sections";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +37,8 @@ export function PageShell({
   root,
   children,
 }: Readonly<{
-  active: DemoPage;
+  /** The page's own id — see the note on the nav's page ids in `sections.tsx`. */
+  active: string;
   root: string;
   children: (dark: boolean) => ReactNode;
 }>) {

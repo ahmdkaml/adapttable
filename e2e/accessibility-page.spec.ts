@@ -27,7 +27,7 @@ const transcript = (page: Page) => page.getByTestId("announcements");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await gotoFromNav(page, "Platform", "Accessibility");
+  await gotoFromNav(page, "More", "Accessibility");
   await expect(page).toHaveURL(/\/accessibility\/$/);
   await expect(page.getByRole("grid").first()).toBeVisible();
 });

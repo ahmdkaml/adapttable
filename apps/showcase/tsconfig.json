@@ -8,10 +8,12 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    // `pages.mjs` — the page manifest Vite and the docs sitemap share — is
-    // plain JS so Node can import it without a build step. Reading it here
-    // types the generated Rollup input, and checking it holds its JSDoc to
-    // the same bar as the TypeScript around it.
+    // `pages.mjs` and `matrix.mjs` — the page manifest and the adapter ×
+    // feature content the build scripts, the sitemap and the app all read —
+    // are plain JS so Node can import them without a build step. Reading them
+    // here types the generated Rollup input and the pages built from the
+    // matrix, and checking them holds their JSDoc to the same bar as the
+    // TypeScript around it.
     "allowJs": true,
     "checkJs": true,
     "resolveJsonModule": true,
@@ -20,5 +22,5 @@
       "@adapttable/core/pdf": ["../../packages/core/src/pdf.ts"]
     }
   },
-  "include": ["src", "vite.config.ts", "pages.mjs"]
+  "include": ["src", "vite.config.ts", "matrix.mjs", "pages.mjs"]
 }

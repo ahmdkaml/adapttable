@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 /**
  * The /saved-views/ page.
  *
@@ -10,16 +12,20 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
  * table still loading.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 const panel = (page: Page) =>
   page.locator('[data-adapttable-part="saved-views-panel"]');
@@ -30,10 +36,10 @@ const rowFor = (page: Page, name: string) =>
 
 /**
  * How far a row's controls miss their panel, in pixels: `spill` past their own
- * group, `past` the panel's edge, `clipped` off a caption. Six controls in a
- * narrow panel is the case every kit got wrong in its own way — truncated to
- * "Set a" in one, spilling into the next view's row in another — so the
- * question is measured rather than eyeballed.
+ * group, `past` the panel's edge, `clipped` off a caption. A view's name plus
+ * its five icon controls in a narrow panel is the case every kit got wrong in
+ * its own way — truncated to "Set a" in one, spilling into the next view's row
+ * in another — so the question is measured rather than eyeballed.
  */
 async function fitOf(target: Locator) {
   return target.evaluate((root) => {
@@ -60,7 +66,7 @@ async function fitOf(target: Locator) {
 }
 
 test("lists the seeded views", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   await expect(panel(page)).toBeVisible();
   await expect(rowFor(page, "Legacy view")).toBeVisible();
@@ -68,7 +74,7 @@ test("lists the seeded views", async ({ page }) => {
 });
 
 test("a view saved by an older table still loads", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   // The page reports what it upgraded on the way in — each view once. The
   // load runs twice under StrictMode, and a note naming one view twice reads
@@ -79,7 +85,7 @@ test("a view saved by an older table still loads", async ({ page }) => {
 });
 
 test("every column says what it holds", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   const headers = page.locator("thead th");
   await expect(headers).toHaveCount(5);
@@ -94,7 +100,7 @@ for (const width of [1440, 1024]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/saved-views/");
+    await page.goto(`/${KIT}/saved-views/`);
 
     await expect(
       panel(page)
@@ -112,7 +118,7 @@ for (const width of [1440, 1024]) {
 test("a shared view is visibly read-only, not silently inert", async ({
   page,
 }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
   const shared = rowFor(page, "Team: engineering");
 
   await expect(shared.getByText("Read-only")).toBeVisible();
@@ -122,14 +128,15 @@ test("a shared view is visibly read-only, not silently inert", async ({
   await expect(
     shared.getByRole("button", { name: "Delete view" })
   ).toBeDisabled();
-  // Applying someone else's view is the point of a shared one.
+  // Applying someone else's view is the point of a shared one — and applying
+  // is clicking its name, which is the one control a shared row keeps.
   await expect(
-    shared.getByRole("button", { name: "Apply view" })
+    shared.getByRole("button", { name: "Team: engineering" })
   ).toBeEnabled();
 });
 
 test("renames a view in place, with the keyboard", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   await rowFor(page, "Legacy view")
     .getByRole("button", { name: "Rename view" })
@@ -144,7 +151,7 @@ test("renames a view in place, with the keyboard", async ({ page }) => {
 });
 
 test("Escape abandons a rename", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   await rowFor(page, "Legacy view")
     .getByRole("button", { name: "Rename view" })
@@ -158,7 +165,7 @@ test("Escape abandons a rename", async ({ page }) => {
 });
 
 test("reorders the list with buttons alone", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   const names = () =>
     panel(page)
@@ -174,7 +181,7 @@ test("reorders the list with buttons alone", async ({ page }) => {
 });
 
 test("marks a default, and only one", async ({ page }) => {
-  await page.goto("/saved-views/");
+  await page.goto(`/${KIT}/saved-views/`);
 
   await rowFor(page, "Legacy view")
     .getByRole("button", { name: "Set as default" })
@@ -189,12 +196,7 @@ test("marks a default, and only one", async ({ page }) => {
 
 for (const kit of KITS) {
   test(`${kit}: manages the views with its own controls`, async ({ page }) => {
-    await page.goto("/saved-views/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/saved-views/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     const rows = root.locator('[data-adapttable-part="saved-view-row"]');
@@ -211,8 +213,9 @@ for (const kit of KITS) {
       })
     ).toBeDisabled();
 
-    // Six controls in a panel this narrow is where each kit used to fail in
-    // its own way, so every kit is measured, not only the one that opens.
+    // A name plus five icons in a panel this narrow is where each kit used to
+    // fail in its own way, so every kit is measured, not only the one that
+    // opens.
     const fit = await fitOf(
       root.locator('[data-adapttable-part="saved-views-panel"]')
     );
@@ -223,7 +226,7 @@ for (const kit of KITS) {
     // Applying a view drives the table beside it: the link carries the search.
     await rows
       .filter({ hasText: "Legacy view" })
-      .getByRole("button", { name: "Apply view" })
+      .getByRole("button", { name: "Legacy view" })
       .click();
     await expect(page).toHaveURL(/sv\.q=a/);
   });

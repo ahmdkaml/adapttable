@@ -16,6 +16,11 @@
  * accessibility, realtime, pivot, saved views and the Feature Lab — stayed out
  * of the sitemap while the docs linked to them as "see it working".
  *
+ * Most of the list is no longer written here. The demo is adapter-first: every
+ * built adapter gets a landing page and one page per feature, and those come
+ * from `matrix.mjs` by expansion. Adding a feature there adds it to the build,
+ * the sitemap, the nav and the checks at once.
+ *
  * @typedef {object} ShowcasePage
  * @property {string} key Rollup input name, and the basename Vite gives the
  *   page's chunk and CSS asset.
@@ -30,6 +35,8 @@
  *   whole content is "the page is elsewhere".
  */
 
+import { matrixPages } from "./matrix.mjs";
+
 /**
  * A demo whose directory name is also its key and its route segment — every
  * page except the landing page.
@@ -39,11 +46,37 @@
  * @returns {ShowcasePage}
  */
 const demo = (dir, { indexable = true } = {}) => ({
-  key: dir,
+  key: dir.replaceAll("/", "-"),
   html: `./${dir}/index.html`,
   route: `/demo/${dir}/`,
   indexable,
 });
+
+/**
+ * The addresses a feature page used to answer at, and where it answers now.
+ *
+ * These six were live and linked before the demo became adapter-first, so each
+ * keeps a static meta-refresh stub at its old address. A stub carries no bundle
+ * and stays out of the sitemap: asking a crawler to index a page whose whole
+ * content is "this is elsewhere" competes with the page it points at.
+ *
+ * The nine other feature pages this restructure replaced were never published,
+ * so they are simply gone — a redirect from an address nobody has is noise.
+ *
+ * @type {readonly [string, string][]}
+ */
+export const REPLACED_PAGES = [
+  ["columns", "mantine/columns"],
+  ["editing", "mantine/editing"],
+  ["export", "mantine/export"],
+  // The export demo's first address, which already forwarded to `/demo/export/`
+  // — pointed at the live page rather than at another stub, because a chain of
+  // two refreshes is two chances to lose the reader.
+  ["export-pdf", "mantine/export"],
+  ["grouping", "mantine/grouping"],
+  ["mobile", "mantine/mobile-cards"],
+  ["scale", "mantine/scale"],
+];
 
 /**
  * Alphabetical after the landing page, which is the section root.
@@ -52,26 +85,16 @@ const demo = (dir, { indexable = true } = {}) => ({
  */
 export const SHOWCASE_PAGES = [
   { key: "main", html: "./index.html", route: "/demo/", indexable: true },
+  // Shared pages: properties of every table rather than features of one, so
+  // they answer once for all eight kits instead of once per kit.
   demo("accessibility"),
   demo("all-options"),
-  demo("columns"),
-  demo("editing"),
-  demo("export"),
-  // The export demo's former address, kept as a static meta-refresh stub so no
-  // published link 404s. It carries no bundle — it is HTML only — and a
-  // redirect in a sitemap asks Google to index the page it sends readers away
-  // from, so it builds and stays unlisted.
-  demo("export-pdf", { indexable: false }),
-  demo("filtering"),
-  demo("formulas"),
-  demo("grouping"),
-  demo("mobile"),
   demo("pagination"),
-  demo("pivot"),
   demo("realtime"),
   demo("rtl"),
-  demo("saved-views"),
-  demo("scale"),
-  demo("selection"),
-  demo("tree"),
+  // The adapter × feature matrix — a landing plus twelve feature pages per
+  // built adapter, expanded from `matrix.mjs`.
+  ...matrixPages().map((page) => demo(page.dir)),
+  // The addresses those pages replaced.
+  ...REPLACED_PAGES.map(([from]) => demo(from, { indexable: false })),
 ];

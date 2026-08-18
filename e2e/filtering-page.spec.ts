@@ -1,5 +1,24 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import {
+  adapterByKey,
+  builtAdapters,
+  featureBySlug,
+  fillTemplate,
+} from "../apps/showcase/matrix.mjs";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+/** What the matrix says this page must serve, for the kit it is served for. */
+const ADAPTER = adapterByKey(KIT)!;
+const FEATURE = featureBySlug("filtering")!;
+const copy = (text: string) => fillTemplate(text, ADAPTER);
+
 import { gotoFromNav } from "./nav";
 
 /**
@@ -10,18 +29,16 @@ import { gotoFromNav } from "./nav";
  * the description and real copy, not an empty root.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
-const demo = (page: Page) => page.locator("#filtering");
+/** The box below the seam — everything inside it is the kit's. */
+const demo = (page: Page) => page.locator(".mx-demo");
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
@@ -33,22 +50,29 @@ test("is reachable from the demo nav", async ({ page }) => {
 test("answers the search phrase without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto("/filtering/");
-  await expect(page).toHaveTitle(/React data table filters/);
+  await page.goto(`/${KIT}/filtering/`);
+
+  // The served bytes are the matrix's words. Asserting the strings rather
+  // than a phrase inside them is what catches a page whose HTML was never
+  // regenerated after the copy changed.
+  await expect(page).toHaveTitle(copy(FEATURE.title));
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     "content",
-    /filter/i
+    copy(FEATURE.description)
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "React data table filters"
+    copy(FEATURE.h1)
   );
-  // Real copy a crawler can read, not a placeholder.
-  await expect(page.locator("main")).toContainText("operators");
+  // Real copy a crawler can read, not a placeholder — and the kit's own code.
+  await expect(page.locator("main")).toContainText(
+    copy(FEATURE.intro[0]!).slice(0, 60)
+  );
+  await expect(page.locator("main")).toContainText(ADAPTER.pkg);
   await context.close();
 });
 
 test("keeps other pages' subjects off it", async ({ page }) => {
-  await page.goto("/filtering/");
+  await page.goto(`/${KIT}/filtering/`);
   await expect(page.getByRole("table").first()).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Saved views", exact: true })
@@ -61,7 +85,7 @@ test("keeps other pages' subjects off it", async ({ page }) => {
 test("switches the filter layout between popover and header row", async ({
   page,
 }) => {
-  await page.goto("/filtering/");
+  await page.goto(`/${KIT}/filtering/`);
   await expect(
     demo(page).getByRole("button", { name: "Filters", exact: true })
   ).toBeVisible();
@@ -76,12 +100,7 @@ test("switches the filter layout between popover and header row", async ({
 
 for (const kit of KITS) {
   test(`${kit}: opens its own filters popover`, async ({ page }) => {
-    await page.goto("/filtering/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/filtering/`);
     const root = demo(page).locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
     await root.getByRole("button", { name: "Filters", exact: true }).click();

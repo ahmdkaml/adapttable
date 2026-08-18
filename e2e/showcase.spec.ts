@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 /**
  * E2E smoke suite over the real showcase — one describe block per adapter.
  * These assert the bug class jsdom can't see: filter-overlay stacking (no
@@ -114,9 +116,9 @@ test("mobile nav keeps every demo page reachable", async ({ page }) => {
   const pageSelect = page.getByRole("combobox", { name: "Demo page" });
   await expect(pageSelect).toBeVisible();
   await expect(pageSelect).toHaveValue("demo");
-  await pageSelect.selectOption("columns");
-  await expect(page).toHaveURL(/\/columns\/$/);
-  await expect(pageSelect).toHaveValue("columns");
+  await pageSelect.selectOption("mantine/columns");
+  await expect(page).toHaveURL(/\/mantine\/columns\/$/);
+  await expect(pageSelect).toHaveValue("mantine/columns");
 });
 
 test("install + StackBlitz CTAs sit under the kit switcher", async ({
@@ -165,11 +167,10 @@ for (const focused of [
 test("mobile page previews the native card layout for every adapter", async ({
   page,
 }) => {
-  await page.goto("/mobile/");
-  for (const adapter of ADAPTERS) {
-    if (adapter !== "mantine") {
-      await page.getByTestId(`adapter-${adapter}`).click();
-    }
+  // The page fixes its kit, so the loop is over the adapters whose pages are
+  // built — and widens to the whole grid as the rest arrive.
+  for (const adapter of builtAdapters().map((kit) => kit.key)) {
+    await page.goto(`/${adapter}/mobile-cards/`);
     const root = page.locator(`[data-adapter="${adapter}"]`);
     await expect(root.getByRole("list", { name: "Data table" })).toBeVisible();
     await expect(root.getByRole("columnheader")).toHaveCount(0);

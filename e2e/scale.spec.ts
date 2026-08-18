@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
 /**
  * The scale demo windows tens of thousands of rows through the real Mantine
  * adapter. jsdom has no layout, so only a real browser can prove the window
@@ -10,7 +19,7 @@ test.describe("scale — virtualization", () => {
   test("keeps the DOM row count bounded while windowing the full dataset", async ({
     page,
   }) => {
-    await page.goto("/scale/");
+    await page.goto(`/${KIT}/scale/`);
     const rows = page.getByRole("row");
     await expect(rows.first()).toBeVisible();
 
@@ -36,25 +45,17 @@ test.describe("scale — virtualization", () => {
  * single-kit until the provider registry existed — and virtualization is a
  * per-kit claim: the window is the shell's, but each kit renders the rows.
  */
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 for (const kit of KITS) {
   test(`${kit}: windows 50k rows down to a viewport`, async ({ page }) => {
-    await page.goto("/scale/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/scale/`);
     await expect(page.locator("table tbody tr").first()).toBeVisible();
     // The whole point: the DOM holds a window, not the dataset.
     await expect

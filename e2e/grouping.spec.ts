@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 import { gotoFromNav } from "./nav";
 
 /**
@@ -9,16 +11,13 @@ import { gotoFromNav } from "./nav";
  * renders with its own controls, so a kit that draws none of it fails silently
  * — the table still shows rows, just ungrouped.
  */
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
@@ -28,12 +27,7 @@ test("is reachable from the demo nav", async ({ page }) => {
 
 for (const kit of KITS) {
   test(`${kit}: groups rows under headers that collapse`, async ({ page }) => {
-    await page.goto("/grouping/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/grouping/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
 

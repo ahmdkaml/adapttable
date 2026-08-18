@@ -6,7 +6,6 @@ import {
 import { pdfWriter, printTable } from "@adapttable/core/pdf";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
-import { cssVars } from "./cssVars";
 import {
   budget,
   type Locale,
@@ -18,17 +17,9 @@ import {
   STATUS_LABELS,
   strings,
 } from "./data";
-import {
-  ADAPTERS,
-  Control,
-  DemoFallback,
-  KitSwitcher,
-  readKitFromUrl,
-  Segmented,
-} from "./kitDemos";
+import { ADAPTERS, Control, DemoFallback, Segmented } from "./kitDemos";
+import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
-import { SectionHead } from "./sections";
-import { ADAPTER_TOKENS } from "./themeTokens";
 
 /**
  * The font the Arabic download embeds.
@@ -129,13 +120,9 @@ function printPeople(locale: Locale, font: ArrayBuffer | undefined): void {
   });
 }
 
-export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const [adapter, setAdapter] = useState(readKitFromUrl);
+export function ExportPdfDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   const [locale, setLocale] = useState<Locale>("en");
   const font = useArabicFont(locale === "ar");
-  const token =
-    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
-    ADAPTER_TOKENS[0];
   const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
 
   /**
@@ -162,81 +149,58 @@ export function ExportPdfDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 
   return (
-    <section className="sec shell" id="export">
-      <SectionHead title="Download a PDF. Print a grouped view.">
-        Pass <code>pdfWriter</code> on <code>exportCsv</code> and the toolbar
-        says <strong>Export PDF</strong> — the same seam as CSV and XLSX,{" "}
-        <code>{'scope: "all"'}</code> so every grouped row leaves the file.
-        Print is a different verb, and the handler stays the host&apos;s:{" "}
-        <code>onPrint</code> here calls <code>printTable</code> (which loads{" "}
-        <code>openPrintLayout</code>) so the browser dialog sees column widths,
-        nested groups and page breaks, and <code>printButton</code> is what puts
-        the <strong>Print</strong> button in the toolbar beside Export. This one
-        builds its sample from the same rows and columns; in an app, pass the
-        table&apos;s current view when print must follow live collapse or filter
-        state. Switch to العربية and both paths take a <code>font</code>: the
-        download embeds a subset of it and draws joined, right-to-left Arabic,
-        and print carries the same face so the two match.
-      </SectionHead>
-      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
-      <div className="pad-surface">
-        <div
-          className="hint-row"
-          style={{ justifyContent: "space-between", alignItems: "center" }}
-        >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <span className="hint">
-              <Layers size={12} /> grouped by team, then status
-            </span>
-            <span className="hint">
-              <Check size={12} /> Export PDF writes the whole grouped sheet
-            </span>
-            <span className="hint">
-              <Check size={12} />{" "}
-              {locale === "ar"
-                ? "Amiri embedded as a subset — shaped, right to left"
-                : "Print is opt-in toolbar chrome — same view, browser dialog"}
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Control label="Language">
-              <Segmented
-                label="Language"
-                value={locale}
-                onChange={setLocale}
-                options={[
-                  { value: "en", label: "English" },
-                  { value: "ar", label: "العربية" },
-                ]}
-              />
-            </Control>
-          </div>
+    <div className="mx-demo">
+      <div
+        className="hint-row"
+        style={{ justifyContent: "space-between", alignItems: "center" }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <span className="hint">
+            <Layers size={12} /> grouped by team, then status
+          </span>
+          <span className="hint">
+            <Check size={12} /> Export PDF writes the whole grouped sheet
+          </span>
+          <span className="hint">
+            <Check size={12} />{" "}
+            {locale === "ar"
+              ? "Amiri embedded as a subset — shaped, right to left"
+              : "Print is opt-in toolbar chrome — same view, browser dialog"}
+          </span>
         </div>
-        <div
-          className="pad-surface__body"
-          style={cssVars({
-            "--c": dark ? token.accentDark : token.accentLight,
-          })}
-        >
-          <div key={adapter} data-adapter={adapter}>
-            <Suspense fallback={<DemoFallback />}>
-              <Demo
-                mode="frontend"
-                locale={locale}
-                dark={dark}
-                urlKey="pdf"
-                grouping
-                exportCsv={exportCsv}
-                onPrint={() => {
-                  printPeople(locale, font);
-                }}
-                printButton
-                focused
-              />
-            </Suspense>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Control label="Language">
+            <Segmented
+              label="Language"
+              value={locale}
+              onChange={setLocale}
+              options={[
+                { value: "en", label: "English" },
+                { value: "ar", label: "العربية" },
+              ]}
+            />
+          </Control>
         </div>
       </div>
-    </section>
+      <div className="mx-demo__body">
+        <div key={adapter} data-adapter={adapter}>
+          <Suspense fallback={<DemoFallback />}>
+            <Demo
+              mode="frontend"
+              locale={locale}
+              dark={dark}
+              urlKey="pdf"
+              grouping
+              exportCsv={exportCsv}
+              onPrint={() => {
+                printPeople(locale, font);
+              }}
+              printButton
+              focused
+            />
+          </Suspense>
+        </div>
+      </div>
+    </div>
   );
 }

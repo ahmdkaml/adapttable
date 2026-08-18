@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 import { gotoFromNav } from "./nav";
 
 /**
@@ -15,16 +17,20 @@ import { gotoFromNav } from "./nav";
  * and the cell alike, so the same assertions hold across the switcher.
  */
 
-const KITS = [
-  "mantine",
-  "mui",
-  "chakra",
-  "antd",
-  "radix",
-  "base-ui",
-  "shadcn",
-  "tailwind",
-] as const;
+/**
+ * The adapters whose own pages are built. Each feature page fixes its
+ * kit, so the loop is over URLs rather than over clicks on a switcher
+ * the page no longer needs — and it widens to the whole grid as the
+ * remaining adapters' pages arrive.
+ */
+/**
+ * The adapter the page-level checks run against — the first whose own pages
+ * are built. The per-kit block at the foot of this file loops every one of
+ * them, and widens to the whole grid as the rest arrive.
+ */
+const KIT = builtAdapters()[0]!.key;
+
+const KITS = builtAdapters().map((adapter) => adapter.key);
 
 /** Ada Lovelace is row 1, and her budget derives from her id: 25300. */
 const ADA_MARGIN = "3795";
@@ -38,12 +44,12 @@ async function columnText(root: Locator, key: string): Promise<string[]> {
 
 test("is reachable from the demo nav", async ({ page }) => {
   await page.goto("/");
-  await gotoFromNav(page, "Power", "Formulas");
+  await gotoFromNav(page, "Features", "Formulas");
   await expect(page).toHaveURL(/\/formulas\/$/);
 });
 
 test("opens with columns the page never declared", async ({ page }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
   // `=ROUND(budget * 0.15, 0)` and `=UPPER(team) & " · " & role`, computed per
   // row from fields the table already had.
   await expect(
@@ -60,7 +66,7 @@ test("opens with columns the page never declared", async ({ page }) => {
 test("a typed formula becomes a column of computed values", async ({
   page,
 }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
 
   await page.getByTestId("formula-name").fill("Doubled");
   await page.getByTestId("formula-text").fill("=budget * 2");
@@ -78,7 +84,7 @@ test("a typed formula becomes a column of computed values", async ({
 test("the URL carries the formulas, and a reload keeps them", async ({
   page,
 }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-name").fill("Doubled");
   await page.getByTestId("formula-text").fill("=budget * 2");
   await page.getByTestId("formula-add").click();
@@ -106,7 +112,7 @@ test("the URL carries the formulas, and a reload keeps them", async ({
 test("a formula that cannot compute shows its error in the cell", async ({
   page,
 }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-example-broken").click();
 
   await expect(
@@ -121,7 +127,7 @@ test("a formula that cannot compute shows its error in the cell", async ({
 test("two formulas in a loop read #CYCLE! instead of recursing", async ({
   page,
 }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-example-loop").click();
 
   await expect(
@@ -138,7 +144,7 @@ test("two formulas in a loop read #CYCLE! instead of recursing", async ({
 test("a text formula column sorts alphabetically from its header", async ({
   page,
 }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-example-shout").click();
 
   // The sort control is a button inside the header cell, in every kit.
@@ -170,7 +176,7 @@ test("a text formula column sorts alphabetically from its header", async ({
 test("removing a column takes it out of the table and the link", async ({
   page,
 }) => {
-  await page.goto("/formulas/");
+  await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-remove-tag").click();
 
   await expect(
@@ -181,12 +187,7 @@ test("removing a column takes it out of the table and the link", async ({
 
 for (const kit of KITS) {
   test(`${kit}: renders the computed columns`, async ({ page }) => {
-    await page.goto("/formulas/");
-    if (kit !== "mantine") {
-      const tab = page.getByTestId(`adapter-${kit}`);
-      await tab.scrollIntoViewIfNeeded();
-      await tab.click();
-    }
+    await page.goto(`/${kit}/formulas/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
 

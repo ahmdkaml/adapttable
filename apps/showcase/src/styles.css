@@ -1,8 +1,16 @@
 /* ============================================================
-   AdaptTable showcase — marketing chrome (recreated from the
-   design handoff). The chrome is constant; only the table area
-   swaps to the real adapter's components.
+   AdaptTable showcase — marketing chrome. The chrome is
+   constant; only the table area swaps to the real adapter's
+   components.
+
+   `tokens.css` holds the design system — the palette, the type
+   scale, the space grid and the adapter tint every rule below
+   reads from, with the reasoning behind each. `matrix.css`
+   holds the adapter-first pages built on it.
    ============================================================ */
+
+@import "./tokens.css";
+@import "./matrix.css";
 
 html {
   scroll-behavior: smooth;
@@ -26,35 +34,6 @@ a {
 }
 ::selection {
   background: color-mix(in oklch, var(--brand) 26%, transparent);
-}
-
-:root,
-[data-theme="light"] {
-  --page-bg: oklch(0.985 0.004 264);
-  --page-surface: oklch(1 0 0);
-  --page-surface-2: oklch(0.975 0.004 264);
-  --page-border: oklch(0.91 0.005 264);
-  --page-border-soft: oklch(0.945 0.004 264);
-  --ink: oklch(0.22 0.014 264);
-  --ink-2: oklch(0.46 0.012 264);
-  --ink-3: oklch(0.62 0.01 264);
-  --brand: oklch(0.55 0.19 274);
-  --brand-soft: oklch(0.95 0.04 274);
-  --shadow-card:
-    0 1px 2px oklch(0.2 0.02 264 / 0.04), 0 8px 28px oklch(0.2 0.02 264 / 0.06);
-}
-[data-theme="dark"] {
-  --page-bg: oklch(0.16 0.007 264);
-  --page-surface: oklch(0.2 0.008 264);
-  --page-surface-2: oklch(0.235 0.009 264);
-  --page-border: oklch(0.3 0.01 264);
-  --page-border-soft: oklch(0.26 0.009 264);
-  --ink: oklch(0.95 0.005 264);
-  --ink-2: oklch(0.72 0.01 264);
-  --ink-3: oklch(0.56 0.01 264);
-  --brand: oklch(0.72 0.15 274);
-  --brand-soft: oklch(0.3 0.06 274);
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 10px 34px oklch(0 0 0 / 0.4);
 }
 
 /* Sticky footer: short pages pin it to the viewport bottom, long pages
@@ -199,7 +178,8 @@ a {
     visibility 0s;
 }
 .nav__menu a {
-  display: block;
+  display: grid;
+  gap: 1px;
   padding: 7px 11px;
   border-radius: 8px;
   color: var(--ink-2);
@@ -209,6 +189,37 @@ a {
   transition:
     background 0.12s,
     color 0.12s;
+}
+/* The Adapters menu: eight kits read as a list of eight product names, so each
+   one carries its own mark and its own one-line description, in two columns.
+   The panel is measured and slid back from the viewport edge like every other
+   one — `nav-menu.spec.ts` holds it to that at 1024px. */
+.nav__menu--wide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  min-width: 26rem;
+}
+.nav__item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav__dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c, var(--brand));
+  box-shadow: 0 0 0 2px
+    color-mix(in oklch, var(--c, var(--brand)) 20%, transparent);
+}
+.nav__item-hint {
+  font-size: 11.5px;
+  font-weight: 450;
+  line-height: 1.3;
+  color: var(--ink-3);
+  padding-inline-start: 15px;
 }
 .nav__menu a:hover {
   background: var(--page-surface-2);

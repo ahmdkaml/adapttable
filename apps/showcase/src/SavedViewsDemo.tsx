@@ -3,17 +3,14 @@ import { useSavedViews } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
 import { Suspense, useMemo, useState } from "react";
 
-import { cssVars } from "./cssVars";
 import { BASE_COLUMNS, PEOPLE, type Person } from "./data";
-import { KitSwitcher, readKitFromUrl } from "./kitDemos";
 import {
   kitClassNames,
   KitProvider,
   kitSavedViewsPanel,
   kitTable,
 } from "./kitProviders";
-import { SectionHead } from "./sections";
-import { ADAPTER_TOKENS } from "./themeTokens";
+import type { FeatureBodyProps } from "./matrix/featureBodies";
 
 /**
  * A view this reader did not create, to show what a shared one looks like.
@@ -56,11 +53,7 @@ function useDemoStorage() {
  * own component as the table beside it. Only view controls: the point of the
  * page is what a view is worth, not the rest of the table.
  */
-export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const [adapter, setAdapter] = useState(readKitFromUrl);
-  const token =
-    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
-    ADAPTER_TOKENS[0];
+export function SavedViewsDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   const storage = useDemoStorage();
   const [migrated, setMigrated] = useState<string[]>([]);
   const views = useSavedViews({
@@ -86,60 +79,52 @@ export function SavedViewsDemo({ dark }: Readonly<{ dark: boolean }>) {
   const classNames = kitClassNames(adapter);
 
   return (
-    <section className="sec shell" id="saved-views">
-      <SectionHead title="Save the table you built. Send someone the link.">
-        A view captures everything the table can put in a URL — search, sort,
-        filters, grouping, the column layout, density and the pivot — under a
-        name. Rename them in place, reorder with buttons, choose the one the
-        table opens with. A shared view someone else owns arrives read-only and
-        says so.
-      </SectionHead>
-      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
-      <div className="pad-surface">
-        <KitProvider kit={adapter} dark={dark}>
-          <div
-            className="pivot-layout"
-            style={cssVars({
-              "--c": dark ? token.accentDark : token.accentLight,
-            })}
-            data-adapter={adapter}
-            key={adapter}
-          >
-            <div>
-              <Suspense fallback={null}>
-                <SavedViewsPanel
-                  views={views.views}
-                  onApply={views.apply}
-                  onRename={views.rename}
-                  onMove={views.move}
-                  onSetDefault={views.setDefault}
-                  onRemove={views.remove}
-                  labels={getLabels("en")}
-                  classNames={classNames}
-                />
-              </Suspense>
-              {migrated.length > 0 && (
-                <p className="hint" data-testid="migrated">
-                  Upgraded on load: {migrated.join(", ")}
-                </p>
-              )}
-            </div>
-            <div>
-              <Suspense fallback={null}>
-                <Table
-                  data={PEOPLE}
-                  columns={BASE_COLUMNS}
-                  rowKey={(row) => row.id}
-                  urlKey="sv"
-                  savedViews={{ storageKey: "showcase-views", storage }}
-                  labels={getLabels("en")}
-                  classNames={classNames}
-                />
-              </Suspense>
-            </div>
+    <div className="mx-demo">
+      <KitProvider kit={adapter} dark={dark}>
+        {/* The panel column hugs its card rather than reserving a third of the
+            width for it: a management list is as wide as its longest view
+            name, and the table is what the rest of the row is for. */}
+        <div
+          className="mx-demo__body panel-layout"
+          data-adapter={adapter}
+          key={adapter}
+        >
+          <div>
+            <Suspense fallback={null}>
+              <SavedViewsPanel
+                views={views.views}
+                onApply={views.apply}
+                onRename={views.rename}
+                onMove={views.move}
+                onSetDefault={views.setDefault}
+                onRemove={views.remove}
+                labels={getLabels("en")}
+                classNames={classNames}
+                footer={
+                  migrated.length > 0 ? (
+                    <span data-testid="migrated">
+                      Upgraded on load: {migrated.join(", ")}
+                    </span>
+                  ) : undefined
+                }
+              />
+            </Suspense>
           </div>
-        </KitProvider>
-      </div>
-    </section>
+          <div>
+            <Suspense fallback={null}>
+              <Table
+                data={PEOPLE}
+                columns={BASE_COLUMNS}
+                rowKey={(row) => row.id}
+                urlKey="sv"
+                savedViews={{ storageKey: "showcase-views", storage }}
+                labels={getLabels("en")}
+                classNames={classNames}
+              />
+            </Suspense>
+          </div>
+        </div>
+      </KitProvider>
+    </div>
   );
 }

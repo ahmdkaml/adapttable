@@ -5,17 +5,10 @@ import {
 } from "@adapttable/core/formula";
 import { Suspense, useMemo, useState } from "react";
 
-import { cssVars } from "./cssVars";
 import type { Person } from "./data";
-import {
-  ADAPTERS,
-  DemoFallback,
-  KitSwitcher,
-  readKitFromUrl,
-} from "./kitDemos";
+import { ADAPTERS, DemoFallback } from "./kitDemos";
+import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Warning } from "./sectionIcons";
-import { SectionHead } from "./sections";
-import { ADAPTER_TOKENS } from "./themeTokens";
 
 /**
  * Where the page starts: two columns nobody wrote code for. They are in the URL
@@ -209,11 +202,7 @@ function FormulaBar({
  * become — in whichever kit the reader picks. The formulas live in the URL, so
  * the page reloads into what was typed and the link carries it to someone else.
  */
-export function FormulasDemo({ dark }: Readonly<{ dark: boolean }>) {
-  const [adapter, setAdapter] = useState(readKitFromUrl);
-  const token =
-    ADAPTER_TOKENS.find((candidate) => candidate.key === adapter) ??
-    ADAPTER_TOKENS[0];
+export function FormulasDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   const { formulas, onFormulasChange } = useFormulaUrlState({
     urlKey: "fx",
@@ -227,47 +216,28 @@ export function FormulasDemo({ dark }: Readonly<{ dark: boolean }>) {
   );
 
   return (
-    <section className="sec shell" id="formulas">
-      <SectionHead title="Type a formula. Get a column.">
-        A column whose value is <code>=ROUND(budget * 0.15, 0)</code>, typed
-        here rather than written in code — and one that reads{" "}
-        <code>{'=UPPER(team) & " · " & role'}</code>, because a formula is text
-        as often as it is arithmetic. Every formula is <em>parsed</em>, never
-        evaluated as JavaScript, which is what makes it safe to put in a link
-        somebody sends you. Errors land in the cell that caused them —{" "}
-        <code>#DIV/0!</code>, <code>#NAME?</code> — and two formulas that
-        reference each other are reported as <code>#CYCLE!</code> rather than
-        recursed into.
-      </SectionHead>
-      <KitSwitcher adapter={adapter} dark={dark} onChange={setAdapter} />
-      <div className="pad-surface">
-        <FormulaBar
-          formulas={formulas}
-          errors={errors}
-          cycles={cycles}
-          onChange={onFormulasChange}
-        />
-        <div
-          className="pad-surface__body"
-          style={cssVars({
-            "--c": dark ? token.accentDark : token.accentLight,
-          })}
-        >
-          <div key={adapter} data-adapter={adapter}>
-            <Suspense fallback={<DemoFallback />}>
-              <Demo
-                mode="frontend"
-                locale="en"
-                dark={dark}
-                urlKey="fx"
-                formulaColumns={columns}
-                derivedFields
-                focused
-              />
-            </Suspense>
-          </div>
+    <div className="mx-demo">
+      <FormulaBar
+        formulas={formulas}
+        errors={errors}
+        cycles={cycles}
+        onChange={onFormulasChange}
+      />
+      <div className="mx-demo__body">
+        <div key={adapter} data-adapter={adapter}>
+          <Suspense fallback={<DemoFallback />}>
+            <Demo
+              mode="frontend"
+              locale="en"
+              dark={dark}
+              urlKey="fx"
+              formulaColumns={columns}
+              derivedFields
+              focused
+            />
+          </Suspense>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

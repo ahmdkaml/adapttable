@@ -19,7 +19,7 @@ const ZIP_LOCAL_FILE = [0x50, 0x4b, 0x03, 0x04];
 
 test.describe("xlsx export", () => {
   test("downloads a real OOXML workbook from /columns/", async ({ page }) => {
-    await page.goto("/columns/");
+    await page.goto("/mantine/columns/");
     await expect(
       page.getByRole("columnheader", { name: "Person" }).first()
     ).toBeVisible();
