@@ -94,7 +94,8 @@ export const SHOWCASE_ADAPTERS = [
     install: "pnpm add @adapttable/mui @adapttable/core @mui/material",
     provider: "ThemeProvider",
     tagline: "A Material data table, drawn by MUI's own components.",
-    surface: "MUI's Paper, Table, Popover, Drawer, Card, Checkbox and Select",
+    surface:
+      "MUI's Paper, Table, Popover, Drawer, Card, Checkbox and TextField",
     built: true,
   },
   {
@@ -109,7 +110,7 @@ export const SHOWCASE_ADAPTERS = [
       "pnpm add @adapttable/chakra @adapttable/core @chakra-ui/react @emotion/react",
     provider: "ChakraProvider",
     tagline: "A Chakra data table, with Chakra's controls throughout.",
-    surface: "Chakra's Table, Popover, Drawer, Card, Checkbox and Select",
+    surface: "Chakra's Table, Popover, Drawer, Card, Checkbox and NativeSelect",
     built: true,
   },
   {
@@ -151,7 +152,8 @@ export const SHOWCASE_ADAPTERS = [
     install: "pnpm add @adapttable/base-ui @adapttable/core @base-ui/react",
     provider: "",
     tagline: "A Base UI data table — their primitives, your tokens.",
-    surface: "Base UI's Popover, Dialog, Checkbox, Select and Menu primitives",
+    surface:
+      "Base UI's Popover, Drawer, Select, Checkbox, Input and Tooltip primitives",
     built: true,
   },
   {
@@ -165,7 +167,7 @@ export const SHOWCASE_ADAPTERS = [
     install: "pnpm add @adapttable/shadcn @adapttable/core",
     provider: "",
     tagline: "A shadcn/ui data table, styled by the classes you already own.",
-    surface: "the shadcn class conventions over the unstyled adapter's markup",
+    surface: "semantic markup wearing shadcn's own class conventions",
     landing: {
       title:
         "AdaptTable for shadcn/ui — a data table in your own design tokens",
@@ -185,7 +187,7 @@ export const SHOWCASE_ADAPTERS = [
     install: "pnpm add @adapttable/unstyled @adapttable/core",
     provider: "",
     tagline: "Native controls and no opinions — every class is yours.",
-    surface: "native HTML controls, every one addressable by class name",
+    surface: "a native HTML control you address by class name",
     landing: {
       title:
         "AdaptTable for Tailwind — a data table you style with your own classes",
