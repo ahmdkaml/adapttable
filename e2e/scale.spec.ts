@@ -56,10 +56,13 @@ const KITS = builtAdapters().map((adapter) => adapter.key);
 for (const kit of KITS) {
   test(`${kit}: windows 50k rows down to a viewport`, async ({ page }) => {
     await page.goto(`/${kit}/scale/`);
-    await expect(page.locator("table tbody tr").first()).toBeVisible();
+    // Counted by the row part rather than by `tbody tr`: antd virtualizes
+    // through its own Table, which draws the body and its rows as divs, so a
+    // tag-shaped count reads zero there while 50,000 rows are on screen. Every
+    // kit names its rows, whatever element it renders them as.
+    const rows = page.locator('[data-adapttable-part="row"]');
+    await expect(rows.first()).toBeVisible();
     // The whole point: the DOM holds a window, not the dataset.
-    await expect
-      .poll(async () => page.locator("table tbody tr").count())
-      .toBeLessThan(120);
+    await expect.poll(async () => rows.count()).toBeLessThan(120);
   });
 }

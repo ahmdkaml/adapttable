@@ -41,6 +41,21 @@ const rowFor = (page: Page, name: string) =>
  * its own way — truncated to "Set a" in one, spilling into the next view's row
  * in another — so the question is measured rather than eyeballed.
  */
+/**
+ * How far a kit's controls may paint outside their own layout box.
+ *
+ * Radix Themes gives a ghost IconButton `content-box` sizing with a -4px
+ * margin on every side, so its 22px painted square occupies 14px of the line —
+ * that is how a ghost control aligns optically with the text beside it. The
+ * cluster's paint therefore runs 4px wider than the box holding it, on a panel
+ * where nothing is squeezed or cut: `past` and `clipped` both stay at zero,
+ * and the five icons sit inside the card with 8px to spare.
+ *
+ * Listed per kit, with the cause, rather than loosened for everyone — the same
+ * shape `scripts/check-parts-parity.mjs` uses for a gap a kit genuinely has.
+ */
+const PAINT_OVERHANG: Record<string, number> = { radix: 4 };
+
 async function fitOf(target: Locator) {
   return target.evaluate((root) => {
     const edge = root.getBoundingClientRect().right;
@@ -219,7 +234,7 @@ for (const kit of KITS) {
     const fit = await fitOf(
       root.locator('[data-adapttable-part="saved-views-panel"]')
     );
-    expect(fit.spill).toBeLessThanOrEqual(1);
+    expect(fit.spill).toBeLessThanOrEqual(1 + (PAINT_OVERHANG[kit] ?? 0));
     expect(fit.past).toBeLessThanOrEqual(1);
     expect(fit.clipped).toBeLessThanOrEqual(1);
 

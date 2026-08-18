@@ -74,9 +74,18 @@ for (const adapter of builtAdapters()) {
 
     const look = await panel.evaluate((element) => {
       const style = getComputedStyle(element);
+      // A kit draws a card's edge with whatever it draws edges with. Radix
+      // Themes' Card paints a one-pixel ring as a box-shadow on `::after`
+      // rather than a border, so a border-only measure reads "no card" on a
+      // panel that plainly has one.
+      const ring = (value: string) => value !== "none" && value !== "";
+      const edged =
+        parseFloat(style.borderTopWidth) > 0 ||
+        ring(style.boxShadow) ||
+        ring(getComputedStyle(element, "::after").boxShadow);
       return {
         radius: parseFloat(style.borderTopLeftRadius),
-        borderWidth: parseFloat(style.borderTopWidth),
+        edged,
         title:
           element
             .querySelector('[data-adapttable-part="saved-views-title"]')
@@ -95,7 +104,7 @@ for (const adapter of builtAdapters()) {
     expect(look.radius, `the ${adapter.key} panel has no card`).toBeGreaterThan(
       0
     );
-    expect(look.borderWidth).toBeGreaterThan(0);
+    expect(look.edged, `the ${adapter.key} panel has no edge`).toBe(true);
     expect(look.title.toLowerCase()).toContain("saved views");
     // Two seeded views, each with the same five-icon cluster — a kit that
     // renders four of them, or none, is a kit that did not get the contract.

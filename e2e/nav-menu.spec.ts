@@ -235,19 +235,20 @@ test("every menu link is in the DOM with the menus closed", async ({
       links.map((link) => link.getAttribute("href") ?? "")
     );
   // Adapters first, then the twelve pages of the kit this page belongs to,
-  // then the four that belong to every kit. A kit whose own pages are not
-  // built yet points at the live demo pinned to it — a page that exists and
-  // shows that kit — rather than at an address that would 404.
+  // then the four that belong to every kit. Every adapter's own pages are
+  // built, so every kit in the menu goes to its own landing — spelled out
+  // rather than mapped from the matrix, because a list generated from the
+  // same source it checks agrees with itself however wrong it is.
   const kit = builtAdapters()[0]!.key;
   expect(hrefs).toEqual([
     "./mantine/",
-    "./?kit=mui",
-    "./?kit=chakra",
-    "./?kit=antd",
-    "./?kit=radix",
-    "./?kit=base-ui",
-    "./?kit=shadcn",
-    "./?kit=tailwind",
+    "./mui/",
+    "./chakra/",
+    "./antd/",
+    "./radix/",
+    "./base-ui/",
+    "./shadcn/",
+    "./tailwind/",
     ...MATRIX_FEATURES.map((feature) => `./${kit}/${feature.slug}/`),
     "./pagination/",
     "./realtime/",
