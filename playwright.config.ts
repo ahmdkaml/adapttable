@@ -14,10 +14,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  // Each GitHub-hosted ubuntu-latest is 4 vCPU. CI shards the suite across
-  // five of those boxes (`--shard=i/5` in e2e.yml), and each box runs 4
-  // Chromiums — 20 tests in flight. 10–20 workers on one runner contend.
-  workers: process.env.CI ? 4 : undefined,
+  // Five GitHub-hosted boxes (`--shard=i/5` in e2e.yml) × 1 Chromium.
+  // Four workers on one runner contended and stalled; one per box is enough.
+  workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? "line" : "list",
   use: {
     baseURL: `http://localhost:${PORT}`,
