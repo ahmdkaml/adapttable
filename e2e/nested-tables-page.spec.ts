@@ -43,20 +43,20 @@ test("answers the search phrase without JavaScript", async ({ browser }) => {
 });
 
 for (const kit of KITS) {
-  test(`${kit}: expanding a row mounts a nested table of orders`, async ({
+  test(`${kit}: the first row mounts a nested table of orders`, async ({
     page,
   }) => {
     await page.goto(`/${kit}/nested-tables/`);
     const root = demo(page).locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
-    const expand = root.getByRole("button", { name: "Expand row" }).first();
-    await expect(expand).toBeVisible();
-    await expand.click();
     const nested = root.locator('[data-adapttable-part="nested-table"]');
     await expect(nested).toBeVisible();
     await expect(nested.getByRole("table").first()).toBeVisible();
     await expect(nested).toContainText(
       /Analytical engine|Punch cards|Compiler|Support retainer/
     );
+    await expect(
+      root.getByRole("button", { name: "Collapse row" }).first()
+    ).toBeVisible();
   });
 }

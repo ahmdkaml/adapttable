@@ -199,7 +199,8 @@ anything after.
 Return `undefined` for a row with no nested table. With `renderRowDetail` also
 set, those rows fall back to it, so master/detail and nested tables can live in
 one table. The region carries `data-adapttable-part="nested-table"` and is
-announced with the label you gave it.
+announced with the label you gave it. `defaultExpandedRowIds` opens those rows
+on the first render so the inner table is visible without a click.
 
 ## Headless pieces
 

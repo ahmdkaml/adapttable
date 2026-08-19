@@ -32,6 +32,7 @@ import {
   makeColumns,
   makeWideColumns,
   nameHue,
+  nestedOpenIds,
   type Person,
   type StatusCellProps,
   statusTone,
@@ -279,6 +280,7 @@ export function MuiDemo({
             }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
+            defaultExpandedRowIds={nestedOpenIds(nested, source.rows)}
             cellNavigation={cellNavigation ?? editing}
             columnSelectionCheckbox={columnSelectionCheckbox}
             statusBar={statusBar}

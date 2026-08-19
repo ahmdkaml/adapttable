@@ -67,6 +67,19 @@ export interface Person {
 export const PEOPLE = people as Person[];
 
 /**
+ * Nested-tables starts with the first row on screen open. The dedicated
+ * page does not use {@link PEOPLE} (Ada is `"1"`); landing ids start at
+ * `"101"`. Key off the source so Feature Lab and that page both match.
+ */
+export function nestedOpenIds(
+  nested: boolean | undefined,
+  rows: readonly { id: string }[]
+): readonly string[] | undefined {
+  const first = rows[0]?.id;
+  return nested && first ? [first] : undefined;
+}
+
+/**
  * The org chart already inside the seed: the first person on each team leads
  * it, everyone else on that team reports to them. Derived rather than stored,
  * so the tree demo and every other demo read the identical thirty rows.

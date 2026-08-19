@@ -14,10 +14,14 @@ export interface RowExpansionState {
  * Headless row-expansion state for `renderRowDetail`: multiple rows may be
  * open at once, keyed by row id so expansion survives sorting and paging
  * (a row that leaves the page simply re-opens when it returns).
+ *
+ * @param defaultExpandedIds - Row ids whose panel starts open.
  */
-export function useRowExpansion(): RowExpansionState {
+export function useRowExpansion(
+  defaultExpandedIds?: readonly string[]
+): RowExpansionState {
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(
-    () => new Set()
+    () => new Set(defaultExpandedIds)
   );
 
   const isExpanded = useCallback(

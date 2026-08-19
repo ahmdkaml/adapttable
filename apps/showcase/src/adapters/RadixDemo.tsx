@@ -24,6 +24,7 @@ import {
   makeBulkActions,
   makeColumns,
   makeWideColumns,
+  nestedOpenIds,
   type Person,
   type StatusCellProps,
   statusTone,
@@ -265,6 +266,7 @@ export function RadixDemo({
             }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
+            defaultExpandedRowIds={nestedOpenIds(nested, source.rows)}
             cellNavigation={cellNavigation ?? editing}
             columnSelectionCheckbox={columnSelectionCheckbox}
             statusBar={statusBar}

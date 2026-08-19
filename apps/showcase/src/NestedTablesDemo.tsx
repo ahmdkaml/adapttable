@@ -21,7 +21,8 @@ export function NestedTablesDemo({
     <div className="mx-demo">
       <div className="hint-row">
         <span className="hint">
-          <Nested size={12} /> open a row — the panel is another table, same kit
+          <Nested size={12} /> first row is open — the panel is another table,
+          same kit
         </span>
         <span className="hint">
           <Check size={12} /> orders have their own columns and row keys

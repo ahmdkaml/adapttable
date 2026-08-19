@@ -732,7 +732,7 @@ export function useTableChrome<TRow>(
 
   // Hooks run unconditionally; the state is simply unused (and unexposed)
   // when the caller renders no row details.
-  const expansionState = useRowExpansion();
+  const expansionState = useRowExpansion(props.defaultExpandedRowIds);
   // A declared nested table IS the detail panel; a row without one falls back
   // to whatever the host builds itself.
   const { nestedTable, density, labels: hostLabels } = props;

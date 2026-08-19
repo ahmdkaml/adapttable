@@ -285,6 +285,12 @@ export interface BaseDataTableProps<TRow> {
    */
   renderRowDetail?: (row: TRow) => ReactNode;
   /**
+   * Row ids whose detail panel (or nested table) starts open. Uncontrolled
+   * initial state — later toggles own the set. Omit and every row starts
+   * closed.
+   */
+  defaultExpandedRowIds?: readonly string[];
+  /**
    * A real table under a row instead of a blank panel. Name it after the row
    * and mount the kit's own `<DataTable>` with the defaults handed in:
    *
