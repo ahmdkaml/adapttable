@@ -28,9 +28,9 @@ export interface GetCellSpanArgs<TRow> {
   /** Index in the full visible column list. */
   columnIndex: number;
   /**
-   * Rows in this tbody (pinned top, scroll, or pinned bottom). Walk this
-   * list for a consecutive merge — a pin section and the scroll body do
-   * not share a span, so leftover teammates here start a new origin.
+   * Rows in visual body order (pinned top, then scroll, then pinned
+   * bottom). Walk this list for a consecutive merge so pinning a teammate
+   * does not split one Team run into two cells.
    */
   sectionRows: readonly TRow[];
   /** Index of `row` in {@link GetCellSpanArgs.sectionRows}. */
@@ -66,6 +66,18 @@ export interface BodyCell<TRow> {
   columnIndex: number;
   colSpan: number;
   rowSpan: number;
+}
+
+/** True when any origin cell is taller than one row. */
+export function bodyCellsHaveRowSpan(
+  cellsByRow: ReadonlyMap<string, readonly { rowSpan: number }[]>
+): boolean {
+  for (const cells of cellsByRow.values()) {
+    for (const cell of cells) {
+      if (cell.rowSpan > 1) return true;
+    }
+  }
+  return false;
 }
 
 /** True when the host asked for any span. */
@@ -340,9 +352,10 @@ function emitRowCells<TRow>(
 }
 
 /**
- * Per-row body cells for one rendered section (pinned top, scroll, or
- * pinned bottom). Row spans stay inside the section — they cannot cross a
- * tbody.
+ * Per-row body cells for the visual body (pinned top, scroll, then pinned
+ * bottom). A consecutive merge walks that whole list so pinning a teammate
+ * does not split one Team run. HTML `rowSpan` still needs those rows in
+ * one tbody.
  */
 export function buildBodyCells<TRow>(options: {
   rows: readonly TRow[];

@@ -27,6 +27,7 @@ import {
 } from "@adapttable/core";
 import {
   type BodyCell,
+  bodyCellsHaveRowSpan,
   cellHighlightStyle,
   cellsForRow,
   cellSpanMark,
@@ -35,6 +36,9 @@ import {
   columnSizeStyle,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
+  EXTRA_OVER_SPAN_ROW_STYLE,
+  EXTRA_OVER_SPAN_STYLE,
+  extraHostFillStyle,
   fittedTableStyle,
   groupedHeaderCellStyle,
   type HtmlGroupedHeaderCell,
@@ -112,20 +116,26 @@ function ExtraSlotRow({
   colSpan,
   render,
   labels,
+  fillStyle,
 }: Readonly<{
   kind: "separator" | "fullWidth";
   colSpan: number;
   render?: () => ReactNode;
   labels: TableLabels;
+  fillStyle?: CSSProperties;
 }>) {
   const parts = EXTRA_ROW_PARTS[kind];
   return (
-    <TableRow data-adapttable-part={parts.row}>
+    <TableRow
+      data-adapttable-part={parts.row}
+      style={EXTRA_OVER_SPAN_ROW_STYLE}
+    >
       <TableCell
         colSpan={colSpan}
         data-adapttable-part={parts.cell}
         role={kind === "separator" ? "separator" : undefined}
         aria-label={kind === "separator" ? labels.rowSeparator : undefined}
+        style={{ ...EXTRA_OVER_SPAN_STYLE, ...fillStyle }}
       >
         {kind === "fullWidth" ? render?.() : null}
       </TableCell>
@@ -335,6 +345,8 @@ interface DesktopRowProps<TRow> {
   reorderSignature: string | null;
   /** Which edge this row is pinned to, if any. */
   rowPinSide?: RowPinSide;
+  /** Sticky pin chrome — off when a cell span would overlay the next rows. */
+  pinRowSticky: boolean;
   /** Sticky header offset for a pinned row's cells. */
   rowPinOffset: number;
   /** Memo digest from {@link rowPinSignature}. */
@@ -416,6 +428,7 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "reorderSignature",
   "rowPinSignature",
   "rowPinSide",
+  "pinRowSticky",
   "rowPinOffset",
   "sourceIndex",
   "reorderPinned",
@@ -464,6 +477,7 @@ function DesktopRowImpl<TRow>({
   showReorder,
   rowReorder,
   rowPinSide,
+  pinRowSticky,
   rowPinOffset,
   sourceIndex,
   windowStart,
@@ -511,10 +525,23 @@ function DesktopRowImpl<TRow>({
         className={className}
         style={{
           ...rowVisualStyle,
+          ...(pinRowSticky && rowPinSide
+            ? pinnedRowStickyStyle(
+                rowPinSide,
+                rowPinSide === "bottom" ? 0 : rowPinOffset
+              )
+            : {}),
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         data-stagger=""
         data-row-pin={rowPinSide}
+        data-adapttable-part={
+          rowPinSide === "top"
+            ? PINNED_TOP_PART
+            : rowPinSide === "bottom"
+              ? PINNED_BOTTOM_PART
+              : undefined
+        }
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={rowMeasureRef}
         hover
@@ -768,7 +795,11 @@ export function DesktopTable<TRow>({
     pinOffset,
     tree,
     grouping,
+    extraRows,
   });
+  const pinRowSticky = !bodyCellsHaveRowSpan(cellsByRow);
+  const extraFill = (key: string) =>
+    extraHostFillStyle(key, extraRows, rows, getRowId, rowStyle);
   const [theadRef, headerHeight] = useOffsetHeight();
   const [headerRowRef] = useOffsetHeight();
   // Nested like Ant: ungrouped leaves rowspan through the group band so they
@@ -978,6 +1009,7 @@ export function DesktopTable<TRow>({
         reorderPinned={reorderPinned}
         reorderSignature={rowReorderSignature(rowReorder, id, sourceIndex)}
         rowPinSide={side}
+        pinRowSticky={pinRowSticky}
         rowPinOffset={rowPinOffset}
         rowPinSignature={rowPinSignature(rowPinning, id)}
         sourceIndex={sourceIndex}
@@ -1251,28 +1283,22 @@ export function DesktopTable<TRow>({
             </TableRow>
           )}
         </TableHead>
-        {pinnedTopRows.length > 0 && (
-          <TableBody
-            data-adapttable-part={PINNED_TOP_PART}
-            style={pinnedRowStickyStyle("top", rowPinOffset)}
-          >
-            {insertExtrasBeforeRows(pinnedTopRows, extraRows, getRowId).map(
-              (slot) =>
-                isExtraEntry(slot) ? (
-                  <ExtraSlotRow
-                    key={slot.key}
-                    kind={slot.kind}
-                    colSpan={columnSpan}
-                    render={slot.kind === "fullWidth" ? slot.render : undefined}
-                    labels={labels}
-                  />
-                ) : (
-                  renderPinnedRow(slot.row, "top")
-                )
-            )}
-          </TableBody>
-        )}
         <TableBody data-adapttable-part="tbody">
+          {insertExtrasBeforeRows(pinnedTopRows, extraRows, getRowId).map(
+            (slot) =>
+              isExtraEntry(slot) ? (
+                <ExtraSlotRow
+                  key={slot.key}
+                  kind={slot.kind}
+                  colSpan={columnSpan}
+                  render={slot.kind === "fullWidth" ? slot.render : undefined}
+                  labels={labels}
+                  fillStyle={extraFill(slot.key)}
+                />
+              ) : (
+                renderPinnedRow(slot.row, "top")
+              )
+          )}
           {paddingTop > 0 && (
             <TableRow aria-hidden>
               <TableCell
@@ -1293,6 +1319,7 @@ export function DesktopTable<TRow>({
                         entry.kind === "fullWidth" ? entry.render : undefined
                       }
                       labels={labels}
+                      fillStyle={extraFill(entry.key)}
                     />
                   );
                 }
@@ -1364,6 +1391,7 @@ export function DesktopTable<TRow>({
                       entry.index
                     )}
                     rowPinSide={undefined}
+                    pinRowSticky={pinRowSticky}
                     rowPinOffset={rowPinOffset}
                     rowPinSignature={rowPinSignature(rowPinning, id)}
                     sourceIndex={entry.index}
@@ -1413,6 +1441,7 @@ export function DesktopTable<TRow>({
                         slot.kind === "fullWidth" ? slot.render : undefined
                       }
                       labels={labels}
+                      fillStyle={extraFill(slot.key)}
                     />
                   );
                 }
@@ -1461,6 +1490,7 @@ export function DesktopTable<TRow>({
                       index
                     )}
                     rowPinSide={undefined}
+                    pinRowSticky={pinRowSticky}
                     rowPinOffset={rowPinOffset}
                     rowPinSignature={rowPinSignature(rowPinning, id)}
                     sourceIndex={focusIndex}
@@ -1504,28 +1534,22 @@ export function DesktopTable<TRow>({
               />
             </TableRow>
           )}
+          {insertExtrasBeforeRows(pinnedBottomRows, extraRows, getRowId).map(
+            (slot) =>
+              isExtraEntry(slot) ? (
+                <ExtraSlotRow
+                  key={slot.key}
+                  kind={slot.kind}
+                  colSpan={columnSpan}
+                  render={slot.kind === "fullWidth" ? slot.render : undefined}
+                  labels={labels}
+                  fillStyle={extraFill(slot.key)}
+                />
+              ) : (
+                renderPinnedRow(slot.row, "bottom")
+              )
+          )}
         </TableBody>
-        {pinnedBottomRows.length > 0 && (
-          <TableBody
-            data-adapttable-part={PINNED_BOTTOM_PART}
-            style={pinnedRowStickyStyle("bottom", 0)}
-          >
-            {insertExtrasBeforeRows(pinnedBottomRows, extraRows, getRowId).map(
-              (slot) =>
-                isExtraEntry(slot) ? (
-                  <ExtraSlotRow
-                    key={slot.key}
-                    kind={slot.kind}
-                    colSpan={columnSpan}
-                    render={slot.kind === "fullWidth" ? slot.render : undefined}
-                    labels={labels}
-                  />
-                ) : (
-                  renderPinnedRow(slot.row, "bottom")
-                )
-            )}
-          </TableBody>
-        )}
         {showColumnFooter && (
           <TableFooter>
             <TableRow>

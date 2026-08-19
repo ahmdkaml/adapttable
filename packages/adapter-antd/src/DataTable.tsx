@@ -17,6 +17,7 @@ import {
   makeExportCsvHandler,
   pageSizeOptions,
   partitionPinnedRows,
+  bodyCellsHaveRowSpan,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowStickyStyle,
@@ -58,6 +59,7 @@ import {
 import {
   DEFAULT_CARD_SIZE_PX,
   EXTRA_ROW_PARTS,
+  EXTRA_OVER_SPAN_ROW_STYLE,
   fillSlot,
   GridFocusAnnouncer,
   insertExtraRows,
@@ -280,22 +282,6 @@ type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
   "data-collapsed"?: string;
 };
 
-/**
- * A `rowSpan` taller than one row and a sticky `<tr>` in the same tbody
- * paint on top of each other — the pinned row sits on the next people.
- * Reorder-to-top still happens; only the sticky offset is skipped.
- */
-function bodyCellsHaveRowSpan(
-  cellsByRow: ReadonlyMap<string, readonly { rowSpan: number }[]>
-): boolean {
-  for (const cells of cellsByRow.values()) {
-    for (const cell of cells) {
-      if (cell.rowSpan > 1) return true;
-    }
-  }
-  return false;
-}
-
 function antdPinnedRowAttrs(
   pinSide: RowPinSide | undefined,
   headerOffset: number,
@@ -347,6 +333,7 @@ function antdOnRow<TRow>(options: {
     return {
       "data-adapttable-part": EXTRA_ROW_PARTS[record.extraKind].row,
       role: record.extraKind === "separator" ? "separator" : undefined,
+      style: EXTRA_OVER_SPAN_ROW_STYLE,
     };
   }
   if (isAdaptTableGroupRow(record)) {

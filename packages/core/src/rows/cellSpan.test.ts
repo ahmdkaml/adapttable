@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
 import {
+  bodyCellsHaveRowSpan,
   buildBodyCells,
   cellsForRow,
   cellSpanMark,
@@ -38,6 +39,29 @@ describe("spanningArmed", () => {
     expect(spanningArmed(COLUMNS, () => undefined)).toBe(true);
     expect(
       spanningArmed([{ ...COLUMNS[0]!, colSpan: 2 }, COLUMNS[1]!], undefined)
+    ).toBe(true);
+  });
+});
+
+describe("bodyCellsHaveRowSpan", () => {
+  it("is false until an origin is taller than one row", () => {
+    expect(
+      bodyCellsHaveRowSpan(
+        buildBodyCells({ rows: ROWS, columns: COLUMNS, getRowId: id })
+      )
+    ).toBe(false);
+    expect(
+      bodyCellsHaveRowSpan(
+        buildBodyCells({
+          rows: ROWS,
+          columns: COLUMNS,
+          getRowId: id,
+          getCellSpan: ({ column, row }) =>
+            column.key === "team" && row.id === "a"
+              ? { rowSpan: 2 }
+              : undefined,
+        })
+      )
     ).toBe(true);
   });
 });

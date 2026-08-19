@@ -471,8 +471,8 @@ export function orderPeopleByTeam(rows: readonly Person[]): Person[] {
 /**
  * How many following rows share this row's team. 1 when this row is not
  * the start of the run in this list — the origin already covers them.
- * Pass the tbody's `sectionRows`, not the whole dataset, so a pin can
- * restart the merge among leftover teammates.
+ * Pass visual body order (`sectionRows`), so pinning a teammate keeps
+ * one merge instead of splitting Core into two cells.
  */
 export function consecutiveTeamSpan(
   rows: readonly Person[],

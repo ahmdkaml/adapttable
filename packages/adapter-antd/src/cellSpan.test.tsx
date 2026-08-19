@@ -74,13 +74,11 @@ describe("cell spanning (antd)", () => {
     expect(pinned).toHaveAttribute("data-row-pin", "top");
     expect(pinned).not.toHaveStyle({ position: "sticky" });
     const pinnedTeam = pinned?.querySelector('[data-column-key="team"]');
-    expect(pinnedTeam?.getAttribute("rowspan")).toBeNull();
+    expect(pinnedTeam?.getAttribute("rowspan")).toBe("3");
     const fatima = [...container.querySelectorAll("tbody tr")].find((tr) =>
       tr.textContent?.includes("Fatima")
     );
-    expect(
-      fatima?.querySelector('[data-column-key="team"]')?.getAttribute("rowspan")
-    ).toBe("2");
+    expect(fatima?.querySelector('[data-column-key="team"]')).toBeNull();
     const sefa = [...container.querySelectorAll("tbody tr")].find((tr) =>
       tr.textContent?.includes("Sefa")
     );

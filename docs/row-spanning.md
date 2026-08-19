@@ -55,9 +55,10 @@ Cards are a list of fields, not a grid — they ignore geometry and still
 show every column. Spans are derived from data, so there is nothing to
 put in the URL or a saved view.
 
-Row spans stay inside one tbody. A pin section and the scroll body do not
-share a span — walk `sectionRows` / `sectionRowIndex` so leftover teammates
-in the scroll body start a new origin instead of each drawing their own
-Team. antd owns one tbody, so a sticky pin and a `rowSpan` in that same
-body paint on top of each other — the row still moves to the top or floor;
-the sticky offset is skipped while any body cell spans more than one row.
+Row spans stay inside one tbody. Consecutive teammates in visual order
+(pinned top, then scroll, then pinned bottom) stay one merge — pinning a
+Core person to the floor does not split Core into two cells. Kits render
+those rows in the same tbody so HTML can express the span; a sticky pin
+and a `rowSpan` taller than one row paint on top of each other, so the
+sticky offset is skipped while any body cell spans more than one row.
+The row still moves to the top or floor.

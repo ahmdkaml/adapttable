@@ -90,8 +90,8 @@ describe("extra rows (mantine)", () => {
         />
       )
     );
+    expect(screen.getByText("Attached to Ship")).toBeTruthy();
     const pin = document.querySelector('[data-adapttable-part="pinned-top"]');
-    expect(pin?.textContent).toContain("Attached to Ship");
     expect(pin?.textContent).toContain("Ship");
   });
 });

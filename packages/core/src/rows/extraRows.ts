@@ -13,7 +13,10 @@
  * Extras are content, not table state — nothing goes in the URL. Mobile
  * cards keep the same slots: a rule between cards, or a full-width note.
  */
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+
+import { PIN_Z } from "../columns/useColumnLayout";
+import { resolveRowStyle, type RowStyle } from "./rowStyle";
 
 /** What the host may inject. */
 export type ExtraRowKind = "separator" | "fullWidth";
@@ -129,8 +132,197 @@ export function insertExtrasBeforeRows<TRow>(
   );
 }
 
+/**
+ * Lift an extra row above a continuing Team span so the note is not hidden
+ * under it. Padding is the extra's own height — it is not folded into the
+ * person below. Fill comes from that person's `rowStyle` (see
+ * {@link extraHostFillStyle}); AdaptTable does not pick a colour.
+ */
+export const EXTRA_OVER_SPAN_ROW_STYLE: CSSProperties = {
+  position: "relative",
+  zIndex: PIN_Z.rowPinned,
+};
+
+/** Cell paint for an extra: RTL-safe align, and room for a line of text. */
+export const EXTRA_OVER_SPAN_STYLE: CSSProperties = {
+  textAlign: "start",
+  paddingBlock: "0.75rem",
+  paddingInline: "0.75rem",
+};
+
+/**
+ * The fill the host already passed for this extra's person. Height is not
+ * copied — extras size from their own padding, not `rowHeight`.
+ */
+export function extraHostFillStyle<TRow>(
+  extraKey: string,
+  extraRows: readonly ExtraRow[] | undefined,
+  rows: readonly TRow[],
+  getRowId: (row: TRow) => string,
+  rowStyle: RowStyle<TRow> | undefined
+): CSSProperties | undefined {
+  const extra = extraRows?.find((item) => item.key === extraKey);
+  if (!extra?.beforeRowId) return undefined;
+  const index = rows.findIndex((row) => getRowId(row) === extra.beforeRowId);
+  if (index < 0) return undefined;
+  const visual = resolveRowStyle(rowStyle, undefined, rows[index]!, index);
+  if (!visual) return undefined;
+  const fill: CSSProperties = {};
+  if (visual.backgroundColor !== undefined) {
+    fill.backgroundColor = visual.backgroundColor;
+  }
+  if (visual.background !== undefined) fill.background = visual.background;
+  return Object.keys(fill).length > 0 ? fill : undefined;
+}
+
 /** Part names every kit stamps on an extra row. */
 export const EXTRA_ROW_PARTS = {
   separator: { row: "separator-row", cell: "separator-cell" },
   fullWidth: { row: "full-width-row", cell: "full-width-cell" },
 } as const;
+
+/** How many extras sit immediately in front of any of these data-row ids. */
+export function extraCountBeforeRowIds(
+  extraRows: readonly ExtraRow[] | undefined,
+  ids: ReadonlySet<string>
+): number {
+  if (!extraRows || extraRows.length === 0 || ids.size === 0) return 0;
+  let count = 0;
+  for (const extra of extraRows) {
+    if (extra.beforeRowId !== undefined && ids.has(extra.beforeRowId)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+/**
+ * Grow a data-row `rowSpan` so it still reaches the last covered person
+ * after extras in front of those people take `<tr>` slots.
+ */
+export function inflateBodyCellRowSpans<
+  TCell extends { columnIndex: number; colSpan: number; rowSpan: number },
+>(
+  cellsByRow: ReadonlyMap<string, readonly TCell[]>,
+  visualIds: readonly string[],
+  extraRows: readonly ExtraRow[] | undefined
+): ReadonlyMap<string, readonly TCell[]> {
+  if (!extraRows?.length) return cellsByRow;
+  const indexOf = new Map(visualIds.map((id, index) => [id, index] as const));
+  const next = new Map<string, readonly TCell[]>();
+  for (const [id, cells] of cellsByRow) {
+    const origin = indexOf.get(id);
+    if (origin === undefined) {
+      next.set(id, cells);
+      continue;
+    }
+    let changed = false;
+    const updated = cells.map((cell) => {
+      if (cell.rowSpan <= 1) return cell;
+      const extraCount = extraCountBeforeRowIds(
+        extraRows,
+        new Set(visualIds.slice(origin + 1, origin + cell.rowSpan))
+      );
+      if (extraCount === 0) return cell;
+      changed = true;
+      return { ...cell, rowSpan: cell.rowSpan + extraCount };
+    });
+    next.set(id, changed ? updated : cells);
+  }
+  return next;
+}
+
+type VisualSlot =
+  | { kind: "extra"; beforeId: string }
+  | { kind: "row"; id: string };
+
+function visualBodySlots(
+  visualIds: readonly string[],
+  extraRows: readonly ExtraRow[] | undefined
+): readonly VisualSlot[] {
+  const buckets = new Map<string, ExtraRow[]>();
+  for (const extra of extraRows ?? []) {
+    if (extra.beforeRowId === undefined) continue;
+    const list = buckets.get(extra.beforeRowId) ?? [];
+    list.push(extra);
+    buckets.set(extra.beforeRowId, list);
+  }
+  const slots: VisualSlot[] = [];
+  for (const id of visualIds) {
+    for (const extra of buckets.get(id) ?? []) {
+      slots.push({ kind: "extra", beforeId: extra.beforeRowId ?? id });
+    }
+    slots.push({ kind: "row", id });
+  }
+  return slots;
+}
+
+/**
+ * Table-slot indexes (leading chrome + data columns) a continuing row span
+ * already owns on extras in front of this person — those extras omit a `<td>`
+ * there so the merge can keep going.
+ */
+export function extraCoveredTableSlots(
+  beforeRowId: string,
+  options: {
+    visualIds: readonly string[];
+    cellsByRow: ReadonlyMap<
+      string,
+      readonly { columnIndex: number; colSpan: number; rowSpan: number }[]
+    >;
+    extraRows?: readonly ExtraRow[];
+    leadingCells: number;
+  }
+): ReadonlySet<number> {
+  const { visualIds, cellsByRow, extraRows, leadingCells } = options;
+  const covered = new Set<number>();
+  const slots = visualBodySlots(visualIds, extraRows);
+  const extraIndexes: number[] = [];
+  const rowSlotIndex = new Map<string, number>();
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index]!;
+    if (slot.kind === "extra" && slot.beforeId === beforeRowId) {
+      extraIndexes.push(index);
+    }
+    if (slot.kind === "row") rowSlotIndex.set(slot.id, index);
+  }
+  if (extraIndexes.length === 0) return covered;
+  for (const [id, cells] of cellsByRow) {
+    const start = rowSlotIndex.get(id);
+    if (start === undefined) continue;
+    for (const cell of cells) {
+      if (cell.rowSpan <= 1) continue;
+      const end = start + cell.rowSpan;
+      for (const extraIndex of extraIndexes) {
+        if (extraIndex <= start || extraIndex >= end) continue;
+        for (let offset = 0; offset < cell.colSpan; offset += 1) {
+          covered.add(leadingCells + cell.columnIndex + offset);
+        }
+      }
+    }
+  }
+  return covered;
+}
+
+/** Uncovered colSpans for an extra row that has to leave holes for a row span. */
+export function extraUncoveredColSpans(
+  columnSpan: number,
+  coveredSlots: ReadonlySet<number> | undefined
+): readonly number[] {
+  if (!coveredSlots || coveredSlots.size === 0) return [columnSpan];
+  const spans: number[] = [];
+  let index = 0;
+  while (index < columnSpan) {
+    if (coveredSlots.has(index)) {
+      index += 1;
+      continue;
+    }
+    let span = 1;
+    while (index + span < columnSpan && !coveredSlots.has(index + span)) {
+      span += 1;
+    }
+    spans.push(span);
+    index += span;
+  }
+  return spans.length === 0 ? [columnSpan] : spans;
+}

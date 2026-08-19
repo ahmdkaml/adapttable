@@ -30,7 +30,11 @@ import {
   type CellSpanAppearance,
   type GetCellSpan,
 } from "./rows/cellSpan";
-import type { ExtraRow } from "./rows/extraRows";
+import {
+  extraCoveredTableSlots,
+  type ExtraRow,
+  inflateBodyCellRowSpans,
+} from "./rows/extraRows";
 import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import { incrementalViewOf } from "./rows/incremental";
 import type { MobileCardRenderer } from "./rows/mobileCard";
@@ -265,6 +269,11 @@ export interface TableRenderModel<TRow> {
    * one `<td>` and covered neighbours are already gone.
    */
   cellsByRow: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
+  /**
+   * Table-slot indexes a continuing row span already owns on extras in
+   * front of this person (`beforeRowId`). Extra rows omit a `<td>` there.
+   */
+  extraCoveredSlots: ReadonlyMap<string, ReadonlySet<number>>;
 }
 
 /**
@@ -293,6 +302,7 @@ export function tableRenderModel<TRow>(
     | "pinOffset"
     | "tree"
     | "grouping"
+    | "extraRows"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -344,18 +354,17 @@ export function tableRenderModel<TRow>(
   const merge = (map: ReadonlyMap<string, readonly BodyCell<TRow>[]>) => {
     for (const [key, cells] of map) cellsByRow.set(key, cells);
   };
-  merge(
-    buildBodyCells({
-      ...cellOptions,
-      rows: props.pinnedTopRows ?? [],
-    })
-  );
   const scrollRows = bodyRowEntries(entries, props.tree);
+  const visualRows = [
+    ...(props.pinnedTopRows ?? []),
+    ...scrollRows.map((entry) => entry.row),
+    ...(props.pinnedBottomRows ?? []),
+  ];
+  const visualIds = visualRows.map((row) => props.getRowId(row));
   merge(
     buildBodyCells({
       ...cellOptions,
-      rows: scrollRows.map((entry) => entry.row),
-      firstRowIndex: scrollRows[0]?.sourceIndex ?? scrollRows[0]?.index ?? 0,
+      rows: visualRows,
     })
   );
   // A grouped body renders `grouping.entries`, not the row list above — its
@@ -374,12 +383,29 @@ export function tableRenderModel<TRow>(
       })
     );
   }
-  merge(
-    buildBodyCells({
-      ...cellOptions,
-      rows: props.pinnedBottomRows ?? [],
-    })
+  const spannedCells = inflateBodyCellRowSpans(
+    cellsByRow,
+    visualIds,
+    props.extraRows
   );
+  if (spannedCells !== cellsByRow) {
+    cellsByRow.clear();
+    merge(spannedCells);
+  }
+  const extraCoveredSlots = new Map<string, ReadonlySet<number>>();
+  for (const extra of props.extraRows ?? []) {
+    if (extra.beforeRowId === undefined) continue;
+    if (extraCoveredSlots.has(extra.beforeRowId)) continue;
+    extraCoveredSlots.set(
+      extra.beforeRowId,
+      extraCoveredTableSlots(extra.beforeRowId, {
+        visualIds,
+        cellsByRow,
+        extraRows: props.extraRows,
+        leadingCells,
+      })
+    );
+  }
   return {
     columns,
     selection,
@@ -403,6 +429,7 @@ export function tableRenderModel<TRow>(
         }
       : undefined,
     cellsByRow,
+    extraCoveredSlots,
   };
 }
 

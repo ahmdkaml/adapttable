@@ -2,6 +2,6 @@
 "@adapttable/core": patch
 ---
 
-`getCellSpan` now receives the rows in this tbody (`sectionRows` /
-`sectionRowIndex`) so a consecutive merge can restart after a pin. A pin
-section and the scroll body still do not share one span.
+`getCellSpan` receives the visual body order (`sectionRows` /
+`sectionRowIndex`) — pinned top, then scroll, then pinned bottom — so a
+consecutive merge stays one cell when a teammate is pinned.

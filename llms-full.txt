@@ -2743,7 +2743,7 @@ Each adapter mounts `RowReorderHandle` (`RowReorderHandleProps`) and
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onPinnedRowIdsChange` and pin actions appear. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [pin, reorder and merge rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — sticky pins, a drag grip, Team written once down consecutive teammates, and a 3-dot menu. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+▶ **See it working:** [pin, reorder and merge rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — sticky pins, a drag grip, Team written once down consecutive teammates (pin keeps that one merge), and a 3-dot menu. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains icon-only
 Pin to top / Pin to bottom / Unpin (labels on hover and as the accessible name).
@@ -2781,9 +2781,9 @@ URL itself. Saved views capture `rowPin` with the rest of the table.
 
 ## Outside the virtual window
 
-A pinned row is **removed** from the scroll list and rendered in a sticky
-section above or below it (`data-adapttable-part="pinned-top"` /
-`"pinned-bottom"`). Leave it in the window and it draws twice. The
+A pinned row is **removed** from the scroll list and rendered first or last
+in the body (`data-adapttable-part="pinned-top"` /
+`"pinned-bottom"` on the row). Leave it in the window and it draws twice. The
 virtualizer windows only the unpinned rows; ARIA `rowCount` and
 `windowStart` still describe the whole dataset.
 
@@ -2881,12 +2881,13 @@ Cards are a list of fields, not a grid — they ignore geometry and still
 show every column. Spans are derived from data, so there is nothing to
 put in the URL or a saved view.
 
-Row spans stay inside one tbody. A pin section and the scroll body do not
-share a span — walk `sectionRows` / `sectionRowIndex` so leftover teammates
-in the scroll body start a new origin instead of each drawing their own
-Team. antd owns one tbody, so a sticky pin and a `rowSpan` in that same
-body paint on top of each other — the row still moves to the top or floor;
-the sticky offset is skipped while any body cell spans more than one row.
+Row spans stay inside one tbody. Consecutive teammates in visual order
+(pinned top, then scroll, then pinned bottom) stay one merge — pinning a
+Core person to the floor does not split Core into two cells. Kits render
+those rows in the same tbody so HTML can express the span; a sticky pin
+and a `rowSpan` taller than one row paint on top of each other, so the
+sticky offset is skipped while any body cell spans more than one row.
+The row still moves to the top or floor.
 
 ---
 
@@ -7272,7 +7273,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `onRowReorder`              | `RowReorderHandler<TRow>`                                       | —               | Drag handle in a reserved column. `from` / `to` are dataset-relative; the table never mutates rows. Keyboard: Space lifts, arrows move, Space drops, Escape cancels. Grouping or a tree refuses with a `devWarn`. See [row reordering](./row-reordering.md).                                                                                                                     |
 | `pinnedRowIds`              | `RowPinState`                                                   | —               | Controlled `{ top, bottom }` row-id lists. Pinned rows leave the virtual window and stick above or below the scroll box. See [row pinning](./row-pinning.md).                                                                                                                                                                                                                    |
 | `onPinnedRowIdsChange`      | `(next: RowPinState) => void`                                   | —               | Pin-list channel. Setting this (or `pinnedRowIds`) arms the feature. Uncontrolled lists also write `rowPin` to the URL. Grouping or a tree refuses with a `devWarn`.                                                                                                                                                                                                             |
-| `getCellSpan`               | `GetCellSpan<TRow>`                                             | —               | Per-cell `{ colSpan, rowSpan }`. Covered cells are omitted from the row's cell list. Receives `sectionRows` / `sectionRowIndex` for the current tbody so a consecutive merge can restart after a pin. Clips at pin boundaries and the column window. Mobile cards ignore geometry. See [row and column spanning](./row-spanning.md).                                             |
+| `getCellSpan`               | `GetCellSpan<TRow>`                                             | —               | Per-cell `{ colSpan, rowSpan }`. Covered cells are omitted from the row's cell list. Receives `sectionRows` / `sectionRowIndex` in visual body order (pinned top, scroll, pinned bottom) so a consecutive merge stays one cell across a pin. Clips at pin boundaries and the column window. Mobile cards ignore geometry. See [row and column spanning](./row-spanning.md).      |
 | `cellSpanAppearance`        | `"merged" \| "plain"`                                           | `"merged"`      | How a spanned cell is painted. `"merged"` is centered content and one fill; `"plain"` is geometry only. See [row and column spanning](./row-spanning.md).                                                                                                                                                                                                                        |
 | `extraRows`                 | `readonly ExtraRow[]`                                           | —               | Host-injected separator and full-width slots, spliced in by `beforeRowId`. Omit and nothing is inserted. See [full-width and separator rows](./full-width-rows.md).                                                                                                                                                                                                              |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
@@ -7773,7 +7774,7 @@ array to the snapshot (`incrementalViewConfig` reads it back);
 `RowReorderAnnouncer` stays on `@adapttable/core/adapter`. See
 [row reordering](./row-reordering.md).
 
-**Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`, `cellSpanMark`). `cellSpanAppearance` (`"merged"` / `"plain"`) is how the origin cell is painted. Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `CellSpanAppearance`, `BodyCell`. See [row and column spanning](./row-spanning.md).
+**Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`, `bodyCellsHaveRowSpan`, `cellSpanMark`). `cellSpanAppearance` (`"merged"` / `"plain"`) is how the origin cell is painted. Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `CellSpanAppearance`, `BodyCell`. See [row and column spanning](./row-spanning.md).
 
 **Full-width and separator rows.** `extraRows` is a list of `ExtraRow` (`kind: "separator" | "fullWidth"`, `beforeRowId`, `render`). `insertExtraRows` splices them into a `kind`-tagged list; `extraRowsForSection` / `insertExtrasBeforeRows` keep a named extra in front of a pinned person; `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` are the kit helpers. Label: `rowSeparator`. See [full-width and separator rows](./full-width-rows.md).
 

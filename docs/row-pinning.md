@@ -2,7 +2,7 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onPinnedRowIdsChange` and pin actions appear. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [pin, reorder and merge rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — sticky pins, a drag grip, Team written once down consecutive teammates, and a 3-dot menu. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+▶ **See it working:** [pin, reorder and merge rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — sticky pins, a drag grip, Team written once down consecutive teammates (pin keeps that one merge), and a 3-dot menu. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains icon-only
 Pin to top / Pin to bottom / Unpin (labels on hover and as the accessible name).
@@ -40,9 +40,9 @@ URL itself. Saved views capture `rowPin` with the rest of the table.
 
 ## Outside the virtual window
 
-A pinned row is **removed** from the scroll list and rendered in a sticky
-section above or below it (`data-adapttable-part="pinned-top"` /
-`"pinned-bottom"`). Leave it in the window and it draws twice. The
+A pinned row is **removed** from the scroll list and rendered first or last
+in the body (`data-adapttable-part="pinned-top"` /
+`"pinned-bottom"` on the row). Leave it in the window and it draws twice. The
 virtualizer windows only the unpinned rows; ARIA `rowCount` and
 `windowStart` still describe the whole dataset.
 

@@ -13,9 +13,9 @@ import type { VirtualTableRow } from "../virtual/useTableVirtualization";
 import { resolveVirtualRows } from "../virtual/useTableVirtualization";
 import type { RowPinSide } from "./rowPinning";
 
-/** `data-adapttable-part` on the sticky tbodies. */
+/** `data-adapttable-part` on a pinned row in the shared tbody. */
 export const PINNED_TOP_PART = "pinned-top";
-/** Bottom sticky section. */
+/** Bottom pin marker on that row. */
 export const PINNED_BOTTOM_PART = "pinned-bottom";
 
 /** Sticky style for a pinned-row section (tbody or the row itself). */

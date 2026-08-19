@@ -728,9 +728,10 @@ function frontendColumnProps(
   }
   if (flags.cellSpan) {
     Object.assign(next, {
-      // Team is the same fact on consecutive rows in this tbody — merge
+      // Team is the same fact on consecutive rows in visual order — merge
       // it, leave Person and Email alone. Reorder can break a run; that
-      // is the point. Pin restarts the merge among leftover teammates.
+      // is the point. Pin keeps the run: the person moves, Core stays one
+      // cell.
       getCellSpan: ({
         column,
         sectionRows,
@@ -752,11 +753,6 @@ function frontendColumnProps(
     Object.assign(next, {
       extraRows: [
         {
-          key: "sep",
-          kind: "separator" as const,
-          beforeRowId: flags.extraAnchorId,
-        },
-        {
           key: "note",
           kind: "fullWidth" as const,
           beforeRowId: flags.extraAnchorId,
@@ -767,10 +763,14 @@ function frontendColumnProps(
     });
   }
   if (flags.rowStyle) {
+    const accentId = flags.data[0]?.id;
     Object.assign(next, {
-      rowStyle: (_row: Person, index: number) =>
-        index === 0
-          ? { backgroundColor: "rgba(255, 193, 7, 0.22)" }
+      rowStyle: (row: Person) =>
+        row.id === accentId
+          ? {
+              backgroundColor:
+                "light-dark(oklch(0.93 0.08 95), oklch(0.38 0.07 85))",
+            }
           : undefined,
       rowHeight: 48,
     });

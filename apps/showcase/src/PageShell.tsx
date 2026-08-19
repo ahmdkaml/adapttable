@@ -52,6 +52,7 @@ export function PageShell({
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
     storeTheme(dark);
   }, [dark]);
 

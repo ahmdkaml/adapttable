@@ -33,6 +33,7 @@ import {
   columnSelectLabel,
   columnSizeStyle,
   EXTRA_ROW_PARTS,
+  EXTRA_OVER_SPAN_STYLE,
   groupedHeaderAlign,
   groupedHeaderChildRule,
   type HeaderGroupCell,
@@ -753,6 +754,7 @@ export function buildColumns<TRow>({
                   record.extraKind === "separator"
                     ? labels.rowSeparator
                     : undefined,
+                style: EXTRA_OVER_SPAN_STYLE,
               };
             }
             return { colSpan: 0 };

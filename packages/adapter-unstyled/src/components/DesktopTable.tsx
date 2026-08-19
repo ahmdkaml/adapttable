@@ -27,10 +27,14 @@ import {
 } from "@adapttable/core";
 import {
   type BodyCell,
+  bodyCellsHaveRowSpan,
   cellsForRow,
   columnSelectLabel,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
+  EXTRA_OVER_SPAN_ROW_STYLE,
+  EXTRA_OVER_SPAN_STYLE,
+  extraHostFillStyle,
   fittedTableStyle,
   groupedHeaderCellStyle,
   type HtmlGroupedHeaderCell,
@@ -91,12 +95,14 @@ function ExtraSlotRow({
   render,
   labels,
   classNames,
+  fillStyle,
 }: Readonly<{
   kind: "separator" | "fullWidth";
   colSpan: number;
   render?: () => ReactNode;
   labels: TableLabels;
   classNames: DataTableClassNames;
+  fillStyle?: CSSProperties;
 }>): ReactElement {
   const parts = EXTRA_ROW_PARTS[kind];
   return (
@@ -105,6 +111,7 @@ function ExtraSlotRow({
       className={
         kind === "separator" ? classNames.separatorRow : classNames.fullWidthRow
       }
+      style={EXTRA_OVER_SPAN_ROW_STYLE}
     >
       <td
         colSpan={colSpan}
@@ -116,6 +123,7 @@ function ExtraSlotRow({
             ? classNames.separatorCell
             : classNames.fullWidthCell
         }
+        style={{ ...EXTRA_OVER_SPAN_STYLE, ...fillStyle }}
       >
         {kind === "fullWidth" ? render?.() : null}
       </td>
@@ -207,6 +215,8 @@ interface DesktopRowProps<TRow> {
   reorderSignature: string | null;
   /** Which edge this row is pinned to, if any. */
   rowPinSide?: RowPinSide;
+  /** Sticky pin chrome — off when a cell span would overlay the next rows. */
+  pinRowSticky: boolean;
   /** Sticky header offset for a pinned row's cells. */
   rowPinOffset: number;
   /** Memo digest from {@link rowPinSignature}. */
@@ -297,6 +307,7 @@ function desktopRowPropsEqual<TRow>(
     prev.reorderSignature === next.reorderSignature &&
     prev.rowPinSignature === next.rowPinSignature &&
     prev.rowPinSide === next.rowPinSide &&
+    prev.pinRowSticky === next.pinRowSticky &&
     prev.rowPinOffset === next.rowPinOffset &&
     prev.sourceIndex === next.sourceIndex &&
     prev.reorderPinned === next.reorderPinned &&
@@ -354,6 +365,7 @@ function DesktopRowBase<TRow>(
     showReorder,
     rowReorder,
     rowPinSide,
+    pinRowSticky,
     rowPinOffset,
     sourceIndex,
     windowStart,
@@ -417,6 +429,13 @@ function DesktopRowBase<TRow>(
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowMeasureRef(rowPinSide, measureRowPair, index, measureElement)}
         data-row-pin={rowPinSide}
+        data-adapttable-part={
+          rowPinSide === "top"
+            ? PINNED_TOP_PART
+            : rowPinSide === "bottom"
+              ? PINNED_BOTTOM_PART
+              : undefined
+        }
         data-stagger=""
         data-selected={selected ? "" : undefined}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
@@ -424,6 +443,12 @@ function DesktopRowBase<TRow>(
         className={cx(classNames.row, rowClass)}
         style={{
           ...rowVisualStyle,
+          ...(pinRowSticky && rowPinSide
+            ? pinnedRowStickyStyle(
+                rowPinSide,
+                rowPinSide === "bottom" ? 0 : rowPinOffset
+              )
+            : {}),
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         onMouseEnter={hasPrefetch ? () => onPrefetch(row) : undefined}
@@ -751,7 +776,11 @@ export function DesktopTable<TRow>({
     pinOffset,
     tree,
     grouping,
+    extraRows,
   });
+  const pinRowSticky = !bodyCellsHaveRowSpan(cellsByRow);
+  const extraFill = (key: string) =>
+    extraHostFillStyle(key, extraRows, rows, getRowId, rowStyle);
   const [theadRef, headerHeight] = useOffsetHeight();
   const [headerRowRef] = useOffsetHeight();
   // The actions column sticks when the user end-pins IT in the Columns menu —
@@ -947,6 +976,7 @@ export function DesktopTable<TRow>({
         reorderPinned={reorderPinned}
         reorderSignature={rowReorderSignature(rowReorder, id, sourceIndex)}
         rowPinSide={side}
+        pinRowSticky={pinRowSticky}
         rowPinOffset={rowPinOffset}
         rowPinSignature={rowPinSignature(rowPinning, id)}
         sourceIndex={sourceIndex}
@@ -1254,32 +1284,25 @@ export function DesktopTable<TRow>({
           </tr>
         )}
       </thead>
-      {pinnedTopRows.length > 0 && (
-        <tbody
-          data-adapttable-part={PINNED_TOP_PART}
-          className={classNames.tbody}
-          style={pinnedRowStickyStyle("top", rowPinOffset)}
-        >
-          {insertExtrasBeforeRows(pinnedTopRows, extraRows, getRowId).map(
-            (slot) =>
-              isExtraEntry(slot) ? (
-                <ExtraSlotRow
-                  key={slot.key}
-                  kind={slot.kind}
-                  colSpan={columnSpan}
-                  render={slot.kind === "fullWidth" ? slot.render : undefined}
-                  labels={labels}
-                  classNames={classNames}
-                />
-              ) : (
-                <Fragment key={slot.key}>
-                  {renderPinnedRow(slot.row, "top")}
-                </Fragment>
-              )
-          )}
-        </tbody>
-      )}
       <tbody data-adapttable-part="tbody" className={classNames.tbody}>
+        {insertExtrasBeforeRows(pinnedTopRows, extraRows, getRowId).map(
+          (slot) =>
+            isExtraEntry(slot) ? (
+              <ExtraSlotRow
+                key={slot.key}
+                kind={slot.kind}
+                colSpan={columnSpan}
+                render={slot.kind === "fullWidth" ? slot.render : undefined}
+                labels={labels}
+                classNames={classNames}
+                fillStyle={extraFill(slot.key)}
+              />
+            ) : (
+              <Fragment key={slot.key}>
+                {renderPinnedRow(slot.row, "top")}
+              </Fragment>
+            )
+        )}
         {paddingTop > 0 && (
           <tr
             data-adapttable-part="virtual-spacer"
@@ -1304,6 +1327,7 @@ export function DesktopTable<TRow>({
                     }
                     labels={labels}
                     classNames={classNames}
+                    fillStyle={extraFill(entry.key)}
                   />
                 );
               }
@@ -1358,6 +1382,7 @@ export function DesktopTable<TRow>({
                     entry.index
                   )}
                   rowPinSide={undefined}
+                  pinRowSticky={pinRowSticky}
                   rowPinOffset={rowPinOffset}
                   rowPinSignature={rowPinSignature(rowPinning, id)}
                   sourceIndex={entry.index}
@@ -1415,6 +1440,7 @@ export function DesktopTable<TRow>({
                     render={slot.kind === "fullWidth" ? slot.render : undefined}
                     labels={labels}
                     classNames={classNames}
+                    fillStyle={extraFill(slot.key)}
                   />
                 );
               }
@@ -1445,6 +1471,7 @@ export function DesktopTable<TRow>({
                   reorderPinned={reorderPinned}
                   reorderSignature={rowReorderSignature(rowReorder, id, index)}
                   rowPinSide={undefined}
+                  pinRowSticky={pinRowSticky}
                   rowPinOffset={rowPinOffset}
                   rowPinSignature={rowPinSignature(rowPinning, id)}
                   sourceIndex={sourceIndex ?? index}
@@ -1505,32 +1532,25 @@ export function DesktopTable<TRow>({
             />
           </tr>
         )}
+        {insertExtrasBeforeRows(pinnedBottomRows, extraRows, getRowId).map(
+          (slot) =>
+            isExtraEntry(slot) ? (
+              <ExtraSlotRow
+                key={slot.key}
+                kind={slot.kind}
+                colSpan={columnSpan}
+                render={slot.kind === "fullWidth" ? slot.render : undefined}
+                labels={labels}
+                classNames={classNames}
+                fillStyle={extraFill(slot.key)}
+              />
+            ) : (
+              <Fragment key={slot.key}>
+                {renderPinnedRow(slot.row, "bottom")}
+              </Fragment>
+            )
+        )}
       </tbody>
-      {pinnedBottomRows.length > 0 && (
-        <tbody
-          data-adapttable-part={PINNED_BOTTOM_PART}
-          className={classNames.tbody}
-          style={pinnedRowStickyStyle("bottom", 0)}
-        >
-          {insertExtrasBeforeRows(pinnedBottomRows, extraRows, getRowId).map(
-            (slot) =>
-              isExtraEntry(slot) ? (
-                <ExtraSlotRow
-                  key={slot.key}
-                  kind={slot.kind}
-                  colSpan={columnSpan}
-                  render={slot.kind === "fullWidth" ? slot.render : undefined}
-                  labels={labels}
-                  classNames={classNames}
-                />
-              ) : (
-                <Fragment key={slot.key}>
-                  {renderPinnedRow(slot.row, "bottom")}
-                </Fragment>
-              )
-          )}
-        </tbody>
-      )}
       {showColumnFooter && (
         <tfoot data-adapttable-part="summary" className={classNames.summary}>
           <tr

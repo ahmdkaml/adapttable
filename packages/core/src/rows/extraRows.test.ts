@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   extraRowsArmed,
   extraRowsForSection,
+  extraCoveredTableSlots,
+  extraHostFillStyle,
+  extraUncoveredColSpans,
+  inflateBodyCellRowSpans,
   insertExtraRows,
   insertExtrasBeforeRows,
   isExtraEntry,
@@ -128,5 +132,98 @@ describe("insertExtrasBeforeRows", () => {
       (row) => row.id
     );
     expect(next.map((entry) => entry.key)).toEqual(["s", "a"]);
+  });
+});
+
+describe("inflateBodyCellRowSpans", () => {
+  it("grows a data-row span by extras sitting in front of the covered people", () => {
+    const cells = new Map([
+      [
+        "a",
+        [{ columnIndex: 1, colSpan: 1, rowSpan: 3, column: { key: "team" } }],
+      ],
+      ["b", []],
+      ["c", []],
+    ]);
+    const next = inflateBodyCellRowSpans(
+      cells,
+      ["a", "b", "c"],
+      [
+        { key: "s", kind: "separator", beforeRowId: "c" },
+        { key: "n", kind: "fullWidth", beforeRowId: "c" },
+      ]
+    );
+    expect(next.get("a")?.[0]?.rowSpan).toBe(5);
+  });
+
+  it("does not count extras in front of the origin", () => {
+    const cells = new Map([
+      ["a", [{ columnIndex: 1, colSpan: 1, rowSpan: 2 }]],
+      ["b", []],
+    ]);
+    const next = inflateBodyCellRowSpans(
+      cells,
+      ["a", "b"],
+      [{ key: "n", kind: "fullWidth", beforeRowId: "a" }]
+    );
+    expect(next.get("a")?.[0]?.rowSpan).toBe(2);
+  });
+});
+
+describe("extraCoveredTableSlots", () => {
+  it("names the table slots a continuing span owns on extras in front of the last person", () => {
+    const cellsByRow = inflateBodyCellRowSpans(
+      new Map([
+        ["a", [{ columnIndex: 1, colSpan: 1, rowSpan: 3 }]],
+        ["b", []],
+        ["c", []],
+      ]),
+      ["a", "b", "c"],
+      [{ key: "n", kind: "fullWidth", beforeRowId: "c" }]
+    );
+    const slots = extraCoveredTableSlots("c", {
+      visualIds: ["a", "b", "c"],
+      cellsByRow,
+      extraRows: [{ key: "n", kind: "fullWidth", beforeRowId: "c" }],
+      leadingCells: 2,
+    });
+    expect([...slots]).toEqual([3]);
+  });
+});
+
+describe("extraUncoveredColSpans", () => {
+  it("is the full width until a hole is needed", () => {
+    expect(extraUncoveredColSpans(8, undefined)).toEqual([8]);
+    expect(extraUncoveredColSpans(8, new Set([3]))).toEqual([3, 4]);
+  });
+});
+
+describe("extraHostFillStyle", () => {
+  it("copies the host person's background, not their height", () => {
+    const fill = extraHostFillStyle(
+      "n",
+      [{ key: "n", kind: "fullWidth", beforeRowId: "b" }],
+      [{ id: "a" }, { id: "b" }],
+      (row) => row.id,
+      (row) =>
+        row.id === "b"
+          ? { backgroundColor: "light-dark(#ffe, #432)", height: 48 }
+          : undefined
+    );
+    expect(fill).toEqual({
+      backgroundColor: "light-dark(#ffe, #432)",
+    });
+  });
+
+  it("is empty when the extra has no person", () => {
+    expect(
+      extraHostFillStyle(
+        "n",
+        [{ key: "n", kind: "fullWidth" }],
+        [{ id: "a" }],
+        (row) => row.id,
+        () => ({ backgroundColor: "red" })
+      )
+    ).toBeUndefined();
   });
 });
