@@ -87,6 +87,10 @@ const ACTIVATE_STYLE = {
   textAlign: "inherit",
 } as const;
 
+function keepPopupOpen(event: { preventDefault: () => void }): void {
+  event.preventDefault();
+}
+
 function HeaderSearch({
   label,
   placeholder,
@@ -272,8 +276,8 @@ export function FilterHeaderTrigger<TRow>(
             {...sessionProps}
             data-adapttable-part="filter-header-cell"
             style={{ minWidth: "20rem", padding: 8 }}
-            onPointerDownOutside={(event) => event.preventDefault()}
-            onFocusOutside={(event) => event.preventDefault()}
+            onPointerDownOutside={keepPopupOpen}
+            onFocusOutside={keepPopupOpen}
           >
             <AutoFilterForm
               defs={[props.def]}

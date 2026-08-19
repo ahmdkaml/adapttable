@@ -2,10 +2,10 @@ import { showSimpleFilterFields } from "@adapttable/core";
 import {
   fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
   SidePanelLayout,
   type TableBodyRegion,
-  resolveStickyToolbar,
   useCommandPalette,
   useDataTableShell,
   useMountStagger,
