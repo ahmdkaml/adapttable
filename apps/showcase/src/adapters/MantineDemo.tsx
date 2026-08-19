@@ -248,7 +248,10 @@ export function MantineDemo({
               wide
                 ? makeWideColumns(locale, MANTINE_CELLS, {
                     editable: Boolean(
-                      editing || rowMode || batch || editorShowcase
+                      editing === true ||
+                      rowMode === true ||
+                      batch === true ||
+                      editorShowcase === true
                     ),
                   })
                 : makeColumns(locale, MANTINE_CELLS, {
@@ -257,7 +260,10 @@ export function MantineDemo({
                     editors: editorShowcase,
                     formulas: formulaColumns,
                     editable: Boolean(
-                      editing || rowMode || batch || editorShowcase
+                      editing === true ||
+                      rowMode === true ||
+                      batch === true ||
+                      editorShowcase === true
                     ),
                   })
             }

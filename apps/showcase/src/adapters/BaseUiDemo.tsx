@@ -280,7 +280,10 @@ export function BaseUiDemo({
             wide
               ? makeWideColumns(locale, BASE_UI_CELLS, {
                   editable: Boolean(
-                    editing || rowMode || batch || editorShowcase
+                    editing === true ||
+                    rowMode === true ||
+                    batch === true ||
+                    editorShowcase === true
                   ),
                 })
               : makeColumns(locale, BASE_UI_CELLS, {
@@ -289,7 +292,10 @@ export function BaseUiDemo({
                   editors: editorShowcase,
                   formulas: formulaColumns,
                   editable: Boolean(
-                    editing || rowMode || batch || editorShowcase
+                    editing === true ||
+                    rowMode === true ||
+                    batch === true ||
+                    editorShowcase === true
                   ),
                 })
           }
