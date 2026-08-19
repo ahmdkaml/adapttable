@@ -56,7 +56,7 @@ server-paginated `useInfiniteQuery` — nothing else changes.
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via accessible header controls.
-- **Filtering** — a `Drawer` or anchored `Popover` of filters plus removable chips (`filters` + `filterLabels`), with a filter count on the trigger.
+- **Filtering** — a `Drawer` or anchored `Popover` of filters plus removable chips (`filters` + `filterLabels`), with a filter count on the trigger. Nested AND/OR filter tree in the same panel.
 - **Selection + bulk actions** using Mantine `Checkbox`es, with confirm dialogs (`bulkActions`).
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — inline detail panels via `renderRowDetail`.

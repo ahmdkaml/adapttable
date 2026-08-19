@@ -34,6 +34,7 @@ const FEATURES = {
   "column-groups": /column group/i,
   "column-management": /column management/i,
   filtering: /filtering/i,
+  "filter-tree": /AND\/OR filter tree|filter tree/i,
   "i18n-rtl": /\bRTL\b/i,
   pagination: /paginat/i,
   "row-expansion": /row expansion/i,

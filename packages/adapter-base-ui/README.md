@@ -54,7 +54,7 @@ Behavior lives in `@adapttable/core`; this package only renders Base UI primitiv
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via sortable headers.
-- **Filtering** — a `Popover` or `Dialog` of filters plus removable chips, with a filter count on the trigger.
+- **Filtering** — a `Popover` or `Dialog` of filters plus removable chips, with a filter count on the trigger. Nested AND/OR filter tree in the same panel.
 - **Selection + bulk actions** using Base UI `Checkbox`es, with confirm dialogs (`bulkActions`).
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — inline detail panels via `renderRowDetail`.

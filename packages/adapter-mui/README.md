@@ -47,7 +47,7 @@ from a server-paginated query — the component doesn't change.
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via `TableSortLabel` headers.
-- **Filtering** — a `Drawer` or `Popover` of filters plus removable `Chip`s, with a filter count on the trigger.
+- **Filtering** — a `Drawer` or `Popover` of filters plus removable `Chip`s, with a filter count on the trigger. Nested AND/OR filter tree in the same panel.
 - **Selection + bulk actions** using MUI `Checkbox`es, with confirm dialogs (`bulkActions`).
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — inline detail panels via `renderRowDetail`.

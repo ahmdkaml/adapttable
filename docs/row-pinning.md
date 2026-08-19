@@ -73,7 +73,9 @@ digest so a virtualized row repaints when it is pinned or unpinned.
 `EMPTY_ROW_PIN_STATE` is `{ top: [], bottom: [] }`.
 
 From `@adapttable/core/adapter`: `pinnedRowStickyStyle` / `pinnedRowCellStyle`
-are the sticky CSS kits spread; `orderedCardEntries` is the card-list order;
+are the sticky CSS kits spread; `pinnedRowPart` names the row's
+`data-adapttable-part`; `pinnedRowSticky` is the sticky style when the
+kit asked for sticky pins; `orderedCardEntries` is the card-list order;
 `useOffsetHeight` measures the header so top pins sit under it;
 `PINNED_TOP_PART` / `PINNED_BOTTOM_PART` name the sections.
 `rowSourceIndex(entry)` is the dataset index when pinning remapped the

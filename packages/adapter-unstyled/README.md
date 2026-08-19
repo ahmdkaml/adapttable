@@ -51,7 +51,7 @@ export function People({ data }: { data: Person[] }) {
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via sortable headers.
-- **Filtering** — a drawer or popover of filters plus removable removable chips, with a filter count on the trigger.
+- **Filtering** — a drawer or popover of filters plus removable removable chips, with a filter count on the trigger. Nested AND/OR filter tree in the same panel.
 - **Selection + bulk actions** using plain `<input type="checkbox">`, with confirm dialogs (`bulkActions`).
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — inline detail panels via `renderRowDetail`.

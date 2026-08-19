@@ -33,7 +33,7 @@ control via prop-getters.
   URL codecs on their own, so a route handler can decode a shared link in a
   process with no React installed.
 - **Sorting** — comparator resolution, multi-key `sortValue`, accessible header state.
-- **Filtering** — filter model, operators, chips and counts; bring your own predicate.
+- **Filtering** — filter model, operators, chips and counts; bring your own predicate. Nested AND/OR filter tree.
 - **Selection + bulk actions** — ids, tri-state select-all, and the bulk-action contract.
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — detail-panel state via `renderRowDetail`.
