@@ -22,6 +22,7 @@ function TreeSelect({
   return (
     <Select
       size="xs"
+      comboboxProps={{ withinPortal: true, zIndex: 10051 }}
       aria-label={label}
       data-adapttable-part={part}
       className={className}

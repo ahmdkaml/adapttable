@@ -36,7 +36,7 @@ function TreeSelect({
       className={className}
       slotProps={{
         htmlInput: { "aria-label": label },
-        select: { native: false },
+        select: { native: false, MenuProps: { sx: { zIndex: 10051 } } },
       }}
       sx={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}
     >
