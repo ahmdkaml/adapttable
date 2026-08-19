@@ -1139,6 +1139,9 @@ export function DesktopTable<TRow>({
                 <Table.Row
                   key={row.map((cell) => cell.key).join("|")}
                   ref={last ? headerRowRef : undefined}
+                  data-adapttable-part={
+                    last ? "header-row" : "header-group-row"
+                  }
                 >
                   {rowIndex === 0 ? (
                     <>
@@ -1231,7 +1234,7 @@ export function DesktopTable<TRow>({
               );
             })
           ) : (
-            <Table.Row ref={headerRowRef}>
+            <Table.Row ref={headerRowRef} data-adapttable-part="header-row">
               {expandable && (
                 <Table.ColumnHeaderCell
                   aria-label={labels.expandRow}

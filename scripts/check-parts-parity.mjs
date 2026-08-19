@@ -85,7 +85,12 @@ const SHELL_KITS = [
  * Parts a kit genuinely cannot render, with the reason. An entry here is a
  * claim about that kit's own component model — not a way to quiet the check.
  */
-const EXPECTED_GAPS = {};
+const EXPECTED_GAPS = {
+  "adapter-antd": {
+    "header-group-row":
+      "antd nests group columns as `children` on the column def; it exposes one `header.row` seam, not a separate group-row element.",
+  },
+};
 
 /**
  * The structural contract: the seven names an app is entitled to find in EVERY
@@ -233,13 +238,10 @@ const FALLBACK_ONLY = {
  */
 const UNNAMED_IN_KITS = {
   "table structure": [
-    "header-row",
     "footer",
     "summary",
     "summary-row",
     "summary-cell",
-    "header-group-cell",
-    "header-group-row",
     "resize-handle",
   ],
   "row extras": [

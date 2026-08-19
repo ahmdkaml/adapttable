@@ -316,6 +316,7 @@ function nestGroupLevel<TRow>(
       title: titleFor(cell),
       children,
       onHeaderCell: () => ({
+        "data-adapttable-part": "header-group-cell",
         style: {
           textAlign: groupedHeaderAlign(cell.align),
           ...groupedHeaderChildRule(

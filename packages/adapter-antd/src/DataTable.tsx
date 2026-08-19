@@ -1153,6 +1153,7 @@ function DesktopTableBody<TRow>({
         // The header height is measured only for pinned rows, so the ref stays
         // conditional; the name does not.
         wrapper: theadComponent(pinArmed ? theadRef : undefined),
+        row: TheadRow,
       },
       body: { wrapper: virtualBody ? VirtualTbodyWrapper : TbodyWrapper },
     }),
@@ -1251,6 +1252,10 @@ function theadComponent(
   ) {
     return <thead data-adapttable-part="thead" ref={theadRef} {...props} />;
   };
+}
+
+function TheadRow(props: Readonly<HTMLAttributes<HTMLTableRowElement>>) {
+  return <tr data-adapttable-part="header-row" {...props} />;
 }
 
 /**
