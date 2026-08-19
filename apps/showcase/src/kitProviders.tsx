@@ -58,7 +58,7 @@ function MantineKitProvider({ dark, children }: Readonly<KitProviderProps>) {
 const PROVIDERS: Record<string, Provider> = {
   mantine: MantineKitProvider,
   mui: lazy(async () => {
-    const { createTheme, ThemeProvider } = await import("@mui/material");
+    const { createTheme, ThemeProvider } = await import("@mui/material/styles");
     return {
       default: ({ dark, children }: KitProviderProps) => (
         <ThemeProvider
