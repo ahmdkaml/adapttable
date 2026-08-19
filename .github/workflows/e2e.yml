@@ -16,7 +16,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: e2e-${{ github.ref }}
+  # Include the SHA so a hung run (Playwright ignoring SIGINT) cannot
+  # queue the next push behind GitHub's 6-hour job default.
+  group: e2e-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -64,6 +66,7 @@ jobs:
     needs: detect
     if: needs.detect.outputs.run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
