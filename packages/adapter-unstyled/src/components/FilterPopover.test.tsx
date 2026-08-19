@@ -26,20 +26,55 @@ function renderPopover(props?: Partial<Parameters<typeof FilterPopover>[0]>) {
 }
 
 describe("FilterPopover", () => {
+  function stubTrigger(rect: {
+    left: number;
+    right: number;
+    top?: number;
+    bottom?: number;
+  }) {
+    const root = document.querySelector<HTMLElement>(
+      '[data-adapttable-part="filters-anchor"]'
+    )!;
+    const top = rect.top ?? 10;
+    const bottom = rect.bottom ?? 40;
+    vi.spyOn(root, "getBoundingClientRect").mockReturnValue({
+      left: rect.left,
+      right: rect.right,
+      top,
+      bottom,
+      width: rect.right - rect.left,
+      height: bottom - top,
+      x: rect.left,
+      y: top,
+      toJSON: () => ({}),
+    });
+  }
+
   it("anchors to the inline-end edge in LTR", () => {
+    vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(
+      1280
+    );
     renderPopover({ dir: "ltr" });
+    stubTrigger({ left: 520, right: 900 });
+    fireEvent.resize(window);
     const card = document.querySelector(
       '[data-adapttable-part="filters-popover"]'
     )!;
-    expect(card).toHaveStyle({ right: "0px" });
+    expect(card.parentElement).toBe(document.body);
+    expect(card).toHaveStyle({ position: "fixed", left: "520px" });
   });
 
   it("anchors to the inline-start edge in RTL", () => {
+    vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(
+      1280
+    );
     renderPopover({ dir: "rtl" });
+    stubTrigger({ left: 100, right: 240 });
+    fireEvent.resize(window);
     const card = document.querySelector(
       '[data-adapttable-part="filters-popover"]'
     )!;
-    expect(card).toHaveStyle({ left: "0px" });
+    expect(card).toHaveStyle({ left: "100px" });
     expect(card).toHaveAttribute("data-dir", "rtl");
     expect(card).toHaveAttribute("dir", "rtl");
   });
@@ -56,11 +91,15 @@ describe("FilterPopover", () => {
     expect(
       document.querySelector('[data-adapttable-part="filters-backdrop"]')
     ).toBeNull();
-    // The card itself must not be a fixed full-screen scrim.
-    const card = document.querySelector(
+    // Portalled + fixed so sticky thead cannot cover it — not a scrim:
+    // it does not claim the viewport.
+    const card = document.querySelector<HTMLElement>(
       '[data-adapttable-part="filters-popover"]'
     )!;
-    expect(card).toHaveStyle({ position: "absolute" });
+    expect(card).toHaveStyle({ position: "fixed" });
+    expect(card.style.inset).not.toBe("0px");
+    expect(card.style.width).not.toBe("100%");
+    expect(card.parentElement).toBe(document.body);
   });
 
   it("disables Clear all when no filters are active", () => {

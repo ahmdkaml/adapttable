@@ -48,6 +48,7 @@ export function FilterPopover({
         aria-label={labels.filters}
         align={dir === "rtl" ? "start" : "end"}
         side="bottom"
+        avoidCollisions={false}
         width="380px"
         maxWidth="90vw"
         dir={dir}
@@ -66,7 +67,7 @@ export function FilterPopover({
         // it measured under the trigger; take the smaller of that and our own
         // cap, minus a little breathing room at the bottom.
         maxHeight="min(70vh, 560px, calc(var(--radix-popper-available-height) - 8px))"
-        style={{ overflowY: "auto" }}
+        style={{ overflowY: "auto", zIndex: 10050 }}
       >
         <Flex direction="column" gap="3">
           <Flex justify="between" align="center">

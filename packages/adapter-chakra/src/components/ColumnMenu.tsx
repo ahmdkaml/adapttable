@@ -289,7 +289,10 @@ export function ColumnMenu<TRow>({
   const reorderHidden = layout.isHidden(REORDER_COLUMN_KEY);
   const reorderPinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
   return (
-    <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
+    <Popover.Root
+      positioning={{ placement: "bottom-end", flip: false }}
+      lazyMount
+    >
       <Popover.Trigger asChild>
         <Button
           size="sm"

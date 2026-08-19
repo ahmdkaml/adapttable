@@ -68,7 +68,7 @@ export function SavedViewsMenu({
     <Popover.Root
       open={open}
       onOpenChange={(e) => setOpen(e.open)}
-      positioning={{ placement: "bottom-end" }}
+      positioning={{ placement: "bottom-end", flip: false }}
       lazyMount
     >
       <Popover.Trigger asChild>

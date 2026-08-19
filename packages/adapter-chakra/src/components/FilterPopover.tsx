@@ -59,6 +59,7 @@ export function FilterPopover({
       }}
       positioning={{
         placement: dir === "rtl" ? "bottom-start" : "bottom-end",
+        flip: false,
       }}
       closeOnInteractOutside
       closeOnEscape={false}

@@ -111,6 +111,7 @@ export function FilterPopover({
       // the trigger keeps antd's own shift-into-view behaviour, and needs no
       // RTL variant because it is direction-agnostic.
       placement="bottom"
+      autoAdjustOverflow={{ adjustX: true, adjustY: false }}
       content={content}
       styles={{ content: { padding: 12 } }}
     >

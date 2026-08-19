@@ -74,6 +74,11 @@ export function SavedViewsMenu({
           side="bottom"
           align="end"
           sideOffset={8}
+          collisionAvoidance={{
+            side: "none",
+            align: "shift",
+            fallbackAxisSide: "none",
+          }}
         >
           <Popover.Popup
             className="adapttable-popup"

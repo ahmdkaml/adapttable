@@ -1,20 +1,21 @@
 import type { CSSProperties, Dispatch, RefObject, SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { OVERLAY_Z, placeOverlayBelowTrigger } from "./overlayPlacement";
+
 /**
- * Inline style for an absolutely-positioned toolbar menu panel. The extra
- * `margin`/`border`/`padding`/`minInlineSize` zeros neutralise `<fieldset>`
- * defaults so the same style works for any panel element.
+ * Inline style for a toolbar menu panel portalled to `document.body`.
+ * `position: fixed` + a high z-index so sticky thead / pinned cells cannot
+ * paint over it. Placement (`top` / `left` / `maxHeight`) is applied by
+ * {@link useMenuPopover} after mount.
  */
 export const MENU_PANEL_STYLE: CSSProperties = {
-  position: "absolute",
-  zIndex: 200,
-  insetInlineEnd: 0,
+  position: "fixed",
+  zIndex: OVERLAY_Z,
   margin: 0,
   border: 0,
   padding: 0,
   minInlineSize: 0,
-  maxHeight: "min(70vh, 480px)",
   overflowY: "auto",
 };
 
@@ -26,28 +27,33 @@ export interface MenuPopoverState {
   rootRef: RefObject<HTMLDivElement | null>;
   /** Attach to the trigger — Escape hands keyboard focus back to it. */
   triggerRef: RefObject<HTMLButtonElement | null>;
+  /** Attach to the portalled panel — clicks inside it must not count as outside. */
+  panelRef: RefObject<HTMLElement | null>;
 }
 
 /**
  * Disclosure behaviour for the toolbar menus (ColumnMenu, SavedViewsMenu):
  * open/close state that also closes on outside mousedown or Escape, with
- * Escape restoring focus to the trigger.
+ * Escape restoring focus to the trigger. The panel is portalled, so outside
+ * detection has to include `panelRef` as well as the trigger wrapper.
  */
 export function useMenuPopover(): MenuPopoverState {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setOpen(false);
-      // Escape strands keyboard focus inside the removed panel — hand it
-      // back to the trigger (outside clicks keep their own focus target).
       triggerRef.current?.focus();
     };
     document.addEventListener("mousedown", onDown);
@@ -58,5 +64,21 @@ export function useMenuPopover(): MenuPopoverState {
     };
   }, [open]);
 
-  return { open, setOpen, rootRef, triggerRef };
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    const trigger = triggerRef.current;
+    if (!panel || !trigger) return;
+    const dir = getComputedStyle(trigger).direction === "rtl" ? "rtl" : "ltr";
+    const place = () => placeOverlayBelowTrigger(panel, trigger, dir);
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
+
+  return { open, setOpen, rootRef, triggerRef, panelRef };
 }

@@ -404,10 +404,10 @@ for (const adapter of ADAPTERS) {
 
     test("columns menu opens on top of the table", async ({ page }) => {
       await openDemo(page, adapter);
-      await demo(page)
+      const trigger = demo(page)
         .getByRole("button", { name: "Columns", exact: true })
-        .first()
-        .click();
+        .first();
+      await trigger.click();
       // A column visibility toggle is visible and hittable — the column overlay
       // stacks above the sticky header / pinned cells, same as the filter one.
       const toggle = page
@@ -415,6 +415,67 @@ for (const adapter of ADAPTERS) {
         .first();
       await expect(toggle).toBeVisible();
       await toggle.hover();
+      const stacked = await page.evaluate(() => {
+        const btn = document.querySelector(
+          '[data-adapttable-part="column-menu-button"]'
+        );
+        const item = document.querySelector(
+          '[data-adapttable-part="column-menu-item"]'
+        );
+        if (!btn || !item) return { found: false };
+        const br = btn.getBoundingClientRect();
+        const ir = item.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          ir.left + Math.min(24, ir.width / 2),
+          ir.top + 8
+        );
+        return {
+          found: true,
+          belowTrigger: ir.top >= br.bottom - 2,
+          headerOnTop: Boolean(
+            hit?.closest("th, [data-adapttable-part='header-cell']")
+          ),
+        };
+      });
+      expect(stacked.found).toBe(true);
+      expect(stacked.belowTrigger).toBe(true);
+      expect(stacked.headerOnTop).toBe(false);
+    });
+
+    test("saved views menu opens below the trigger", async ({ page }) => {
+      await openDemo(page, adapter);
+      const trigger = demo(page)
+        .getByRole("button", { name: "Saved views", exact: true })
+        .first();
+      await trigger.click();
+      const save = page.getByRole("button", { name: "Save view", exact: true });
+      await expect(save).toBeVisible();
+      await save.hover();
+      const stacked = await page.evaluate(() => {
+        const btn = [...document.querySelectorAll("button")].find(
+          (el) => el.textContent?.trim() === "Saved views"
+        );
+        const save = [...document.querySelectorAll("button")].find(
+          (el) => el.textContent?.trim() === "Save view"
+        );
+        if (!btn || !save) return { found: false };
+        const br = btn.getBoundingClientRect();
+        const sr = save.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          sr.left + Math.min(24, sr.width / 2),
+          sr.top + 8
+        );
+        return {
+          found: true,
+          belowTrigger: sr.top >= br.bottom - 2,
+          headerOnTop: Boolean(
+            hit?.closest("th, [data-adapttable-part='header-cell']")
+          ),
+        };
+      });
+      expect(stacked.found).toBe(true);
+      expect(stacked.belowTrigger).toBe(true);
+      expect(stacked.headerOnTop).toBe(false);
     });
 
     test("mirrors to RTL in Arabic", async ({ page }) => {
