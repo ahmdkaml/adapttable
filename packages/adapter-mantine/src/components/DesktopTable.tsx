@@ -632,7 +632,7 @@ function DesktopRowBase<TRow>({
         {...getRowProps(row, focusIndex)}
         {...gridFocus?.getRowPropsAt(focusIndex)}
         data-row-pin={rowPinSide}
-        data-adapttable-part={pinPart}
+        data-adapttable-part={pinPart ?? "row"}
         {...rowClickProps(row, onRowClick, focusIndex)}
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}

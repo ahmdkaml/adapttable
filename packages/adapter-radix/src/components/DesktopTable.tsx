@@ -511,7 +511,7 @@ function DesktopRowBase<TRow>({
         {...(live.rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowPinSide ? undefined : measureRef}
         data-row-pin={rowPinSide}
-        data-adapttable-part={pinPart}
+        data-adapttable-part={pinPart ?? "row"}
         data-stagger=""
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         className={className}

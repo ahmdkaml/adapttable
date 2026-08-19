@@ -131,6 +131,7 @@ export const shadcnClassNames = {
   row: "border-b border-border last:border-0 hover:bg-muted/50 data-[selected]:bg-accent data-[dragging]:opacity-60 data-[drop=before]:shadow-[inset_0_2px_0_0_hsl(var(--primary))] data-[drop=after]:shadow-[inset_0_-2px_0_0_hsl(var(--primary))]",
   // Pinned cells must be opaque so scrolled content never shows through.
   cell: "px-3 py-2.5 [&[data-pinned]]:bg-card [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
+  cellSpan: "bg-muted/40 text-center",
   actionButton:
     "h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50",
   rowActionsTrigger:

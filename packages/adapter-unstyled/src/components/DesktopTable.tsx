@@ -447,7 +447,7 @@ function DesktopRowBase<TRow>(
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowMeasureRef(rowPinSide, measureRowPair, index, measureElement)}
         data-row-pin={rowPinSide}
-        data-adapttable-part={pinPart}
+        data-adapttable-part={pinPart ?? "row"}
         data-stagger=""
         data-selected={selected ? "" : undefined}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}

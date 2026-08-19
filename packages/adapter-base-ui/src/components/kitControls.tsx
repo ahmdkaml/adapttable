@@ -87,10 +87,6 @@ const ACTIVATE_STYLE = {
   textAlign: "inherit",
 } as const;
 
-function keepPopupOpen(event: { preventDefault: () => void }): void {
-  event.preventDefault();
-}
-
 function HeaderSearch({
   label,
   placeholder,
@@ -254,7 +250,20 @@ export function FilterHeaderTrigger<TRow>(
   const active = headerFilterActive(props);
   const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(props);
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root
+      open={open}
+      onOpenChange={(next, eventDetails) => {
+        if (
+          !next &&
+          (eventDetails.reason === "outside-press" ||
+            eventDetails.reason === "focus-out")
+        ) {
+          eventDetails.cancel();
+          return;
+        }
+        setOpen(next);
+      }}
+    >
       <Popover.Trigger
         render={
           <IconButton
@@ -276,8 +285,6 @@ export function FilterHeaderTrigger<TRow>(
             {...sessionProps}
             data-adapttable-part="filter-header-cell"
             style={{ minWidth: "20rem", padding: 8 }}
-            onPointerDownOutside={keepPopupOpen}
-            onFocusOutside={keepPopupOpen}
           >
             <AutoFilterForm
               defs={[props.def]}

@@ -531,7 +531,7 @@ function DesktopRowImpl<TRow>({
         }}
         data-stagger=""
         data-row-pin={rowPinSide}
-        data-adapttable-part={pinPart}
+        data-adapttable-part={pinPart ?? "row"}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={rowMeasureRef}
         hover

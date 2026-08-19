@@ -55,9 +55,9 @@ export function FilterDrawer({
               </Flex>
               <Flex
                 justify="between"
-                pt="4"
                 style={{
                   flexShrink: 0,
+                  paddingTop: "1rem",
                   borderTop: "1px solid var(--adapttable-border)",
                 }}
               >

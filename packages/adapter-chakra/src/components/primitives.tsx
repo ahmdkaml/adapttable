@@ -137,6 +137,7 @@ export function NativeSelect({
   flex,
   w,
   minW,
+  maxW,
   className,
   "aria-label": ariaLabel,
   "data-adapttable-part": dataPart,
@@ -155,6 +156,7 @@ export function NativeSelect({
   flex?: string;
   w?: string;
   minW?: string;
+  maxW?: string;
   className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
@@ -166,7 +168,13 @@ export function NativeSelect({
   "data-conflict"?: "";
 }>) {
   return (
-    <ChakraNativeSelect.Root size={size} flex={flex} w={w} minW={minW}>
+    <ChakraNativeSelect.Root
+      size={size}
+      flex={flex}
+      w={w}
+      minW={minW}
+      maxW={maxW}
+    >
       <ChakraNativeSelect.Field
         className={className}
         ref={fieldRef}

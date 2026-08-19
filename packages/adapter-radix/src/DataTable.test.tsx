@@ -105,7 +105,7 @@ describe("<DataTable> (Radix)", () => {
     const { container } = renderHarness({
       override: { classNames: { root: "my-root" } },
     });
-    const root = container.querySelector(".my-root")!;
+    const root = container.querySelector<HTMLElement>(".my-root")!;
     expect(root.style.border).toBe("");
     expect(container.querySelector(".rt-TableRoot")?.className).not.toContain(
       "rt-variant-surface"
@@ -135,6 +135,48 @@ describe("<DataTable> (Radix)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
     expect(onAction).toHaveBeenCalled();
     expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("collapses row actions into a 3-dot menu when layout is menu", async () => {
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+        rowActionsLayout: "menu",
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="row-actions-trigger"]'
+    );
+    expect(trigger).toHaveAttribute("aria-label", "Row actions");
+    fireEvent.pointerDown(trigger!, { button: 0 });
+    fireEvent.pointerUp(trigger!, { button: 0 });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    expect(onAction).toHaveBeenCalled();
+  });
+
+  it("lets renderRowActions replace the actions cell", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+        renderRowActions: ({ row }) => (
+          <button
+            type="button"
+            aria-label="custom-e"
+            onClick={() => onEdit(row)}
+          >
+            Custom
+          </button>
+        ),
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-trigger"]')
+    ).toBeNull();
+    fireEvent.click(screen.getAllByLabelText("custom-e")[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
   });
 
   it("renders rows with values", () => {
