@@ -134,6 +134,10 @@ describe("filter overlay a11y (axe) — Ant Design", () => {
     fireEvent.click(trigger());
     await screen.findByLabelText("Status");
     expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    expect(
+      document.querySelector(".ant-popover-placement-bottomLeft")
+    ).not.toBeNull();
+    expect(document.querySelector(".ant-popover-placement-top")).toBeNull();
 
     // Re-clicking the open trigger closes it (useFilterTriggerToggle owns the
     // toggle; the trigger is excluded from the outside-click listener).

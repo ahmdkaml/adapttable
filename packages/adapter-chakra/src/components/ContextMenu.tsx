@@ -8,9 +8,10 @@ import {
 import {
   Button,
   Popover,
-  Portal,
   Separator as ChakraSeparator,
 } from "@chakra-ui/react";
+
+import { KitPortal } from "./kitPortal";
 
 /**
  * The kit's own overlay, opened at the point the pointer was.
@@ -52,7 +53,7 @@ function Surface({
       <Popover.Trigger asChild>
         <span aria-hidden="true" style={anchorStyle(at)} />
       </Popover.Trigger>
-      <Portal>
+      <KitPortal>
         <Popover.Positioner>
           <Popover.Content
             role="menu"
@@ -65,7 +66,7 @@ function Surface({
             {children}
           </Popover.Content>
         </Popover.Positioner>
-      </Portal>
+      </KitPortal>
     </Popover.Root>
   );
 }

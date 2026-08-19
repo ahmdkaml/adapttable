@@ -11,9 +11,8 @@ export interface FilterPopoverProps {
   onClearFilters: () => void;
   labels: Required<TableLabels>;
   /**
-   * Placement is centred and needs no RTL variant. Direction still has to
-   * land on the card itself — antd portals it to the body, so it would
-   * otherwise keep a left-to-right header and form.
+   * Text direction. The card portals to the body, so it would otherwise keep
+   * a left-to-right header and form. Also picks bottomLeft vs bottomRight.
    */
   dir?: Direction;
   /** The Filters trigger button — becomes the popover anchor. */
@@ -104,14 +103,14 @@ export function FilterPopover({
     <Popover
       open={open}
       trigger={[]}
-      // `bottom` (not the bottomLeft/bottomRight corners): antd only grants a
-      // horizontal shift to the edge-centred placements, so a corner placement
-      // can only flip — which cannot rescue a card wider than the space beside
-      // the trigger, and left it ~80px off-screen on a phone. Centring under
-      // the trigger keeps antd's own shift-into-view behaviour, and needs no
-      // RTL variant because it is direction-agnostic.
-      placement="bottom"
+      // Same corner as Columns / Saved views: the centred `bottom` placement
+      // still flipped above the trigger even with adjustY off. Width is capped
+      // to the viewport so a start-edge card does not need that slide. Arrow
+      // off and a 4px offset match the other kits' gap under the button.
+      placement={dir === "rtl" ? "bottomRight" : "bottomLeft"}
+      arrow={false}
       autoAdjustOverflow={{ adjustX: true, adjustY: false }}
+      align={{ offset: [0, 4] }}
       content={content}
       styles={{ content: { padding: 12 } }}
     >

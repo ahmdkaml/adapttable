@@ -1,5 +1,6 @@
 import type { ColumnDef, UseColumnLayoutResult } from "@adapttable/core";
-import { fireEvent, screen } from "@testing-library/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ColumnMenu } from "./components/ColumnMenu";
@@ -233,5 +234,25 @@ describe("chakra ColumnMenu", () => {
     );
     expect(screen.getByText("Bravo")).toBeInTheDocument();
     expect(screen.queryByText("Alpha")).toBeNull();
+  });
+
+  it("copies the host dark class onto the portalled columns card", async () => {
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <div className="dark">
+          <ColumnMenu
+            allColumns={cols}
+            onAutoSize={() => undefined}
+            layout={fakeLayout()}
+            labels={labels}
+          />
+        </div>
+      </ChakraProvider>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    await screen.findByText("Reset columns");
+    expect(
+      document.querySelector('[data-adapttable-color-mode="dark"]')
+    ).not.toBeNull();
   });
 });

@@ -6,10 +6,11 @@ import {
   IconButton,
   Input,
   Popover,
-  Portal,
   Separator,
 } from "@chakra-ui/react";
 import { useState } from "react";
+
+import { KitPortal } from "./kitPortal";
 
 /** Small × glyph for the per-view delete button. */
 function CrossIcon() {
@@ -76,7 +77,7 @@ export function SavedViewsMenu({
           {labels.savedViews}
         </Button>
       </Popover.Trigger>
-      <Portal>
+      <KitPortal>
         <Popover.Positioner>
           <Popover.Content
             minW="240px"
@@ -132,7 +133,7 @@ export function SavedViewsMenu({
             </Popover.Body>
           </Popover.Content>
         </Popover.Positioner>
-      </Portal>
+      </KitPortal>
     </Popover.Root>
   );
 }

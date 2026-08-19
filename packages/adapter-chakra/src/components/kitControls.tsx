@@ -51,17 +51,11 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
-import {
-  Button,
-  IconButton,
-  Input,
-  Popover,
-  Portal,
-  Stack,
-} from "@chakra-ui/react";
+import { Button, IconButton, Input, Popover, Stack } from "@chakra-ui/react";
 
 import { FiltersIcon } from "../icons";
 import { AutoFilterForm } from "./AutoFilterForm";
+import { KitPortal } from "./kitPortal";
 import { Checkbox, NativeSelect } from "./primitives";
 
 export type {
@@ -187,7 +181,7 @@ function HeaderMulti({
           <span aria-hidden>▾</span>
         </Button>
       </Popover.Trigger>
-      <Portal>
+      <KitPortal>
         <Popover.Positioner>
           <Popover.Content
             width="max-content"
@@ -212,7 +206,7 @@ function HeaderMulti({
             </Stack>
           </Popover.Content>
         </Popover.Positioner>
-      </Portal>
+      </KitPortal>
     </Popover.Root>
   );
 }
@@ -276,7 +270,7 @@ export function FilterHeaderTrigger<TRow>(
           <FiltersIcon size={14} />
         </IconButton>
       </Popover.Trigger>
-      <Portal>
+      <KitPortal>
         <Popover.Positioner>
           <Popover.Content
             {...sessionProps}
@@ -293,7 +287,7 @@ export function FilterHeaderTrigger<TRow>(
             />
           </Popover.Content>
         </Popover.Positioner>
-      </Portal>
+      </KitPortal>
     </Popover.Root>
   );
 }

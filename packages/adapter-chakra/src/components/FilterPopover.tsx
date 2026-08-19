@@ -1,6 +1,8 @@
 import type { Direction, TableLabels } from "@adapttable/core";
-import { Button, HStack, Popover, Portal, Stack, Text } from "@chakra-ui/react";
+import { Button, HStack, Popover, Stack, Text } from "@chakra-ui/react";
 import { type ReactNode, useEffect, useRef } from "react";
+
+import { KitPortal } from "./kitPortal";
 
 /** Props for {@link FilterPopover}. */
 export interface FilterPopoverProps {
@@ -71,7 +73,7 @@ export function FilterPopover({
           {children}
         </span>
       </Popover.Anchor>
-      <Portal>
+      <KitPortal>
         <Popover.Positioner>
           <Popover.Content
             data-testid="adapttable-filter-popover"
@@ -106,7 +108,7 @@ export function FilterPopover({
             </Popover.Body>
           </Popover.Content>
         </Popover.Positioner>
-      </Portal>
+      </KitPortal>
     </Popover.Root>
   );
 }

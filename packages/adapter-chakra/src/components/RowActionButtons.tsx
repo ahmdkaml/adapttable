@@ -9,10 +9,11 @@ import {
   visibleRowActions,
 } from "@adapttable/core";
 import { resolveDisabledReason } from "@adapttable/core/adapter";
-import { Button, HStack, IconButton, Menu, Portal } from "@chakra-ui/react";
+import { Button, HStack, IconButton, Menu } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
 import { iconForRowAction, MoreVerticalIcon } from "../icons";
+import { KitPortal } from "./kitPortal";
 import { Tooltip } from "./primitives";
 
 interface RowActionButtonsProps<TRow> {
@@ -111,7 +112,7 @@ function ActionMenu<TRow>({
           <MoreVerticalIcon />
         </IconButton>
       </Menu.Trigger>
-      <Portal>
+      <KitPortal>
         <Menu.Positioner>
           <Menu.Content
             data-adapttable-part="row-actions-menu"
@@ -142,7 +143,7 @@ function ActionMenu<TRow>({
             })}
           </Menu.Content>
         </Menu.Positioner>
-      </Portal>
+      </KitPortal>
     </Menu.Root>
   );
 }
