@@ -882,9 +882,11 @@ function resolveFiltersNode<TRow>(
   header: boolean,
   filterFields?: boolean
 ): ReactNode {
-  let node: ReactNode = filters;
+  let node: ReactNode;
   if (isDeclarativeFilters(filters) || filters === undefined) {
     node = autoFilterForm(runtime, source, labels, header, filterFields);
+  } else {
+    node = filters;
   }
   return node;
 }
