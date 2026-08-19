@@ -17,7 +17,10 @@ import { ChipLabelResolver } from '@adapttable/core';
 import { ColorScheme } from '@adapttable/core';
 import { ColumnDef } from '@adapttable/core';
 import { ColumnFilter } from '@adapttable/core';
+import { ColumnGroupDef } from '@adapttable/core';
+import { ColumnGroupShow } from '@adapttable/core';
 import { ColumnGroupToggleProps } from '@adapttable/core/adapter';
+import { ColumnInput } from '@adapttable/core';
 import { ColumnLayoutState } from '@adapttable/core';
 import { ConfirmHandler } from '@adapttable/core';
 import { ConfirmRequest } from '@adapttable/core';
@@ -148,10 +151,16 @@ export { ColumnDef }
 
 export { ColumnFilter }
 
+export { ColumnGroupDef }
+
+export { ColumnGroupShow }
+
 // @public (undocumented)
 export function ColumnGroupToggle(props: Readonly<ColumnGroupToggleProps>): JSX.Element;
 
 export { ColumnGroupToggleProps }
+
+export { ColumnInput }
 
 export { ColumnLayoutState }
 
@@ -208,6 +217,7 @@ export interface DataTableClassNames {
     cellMatch?: string;
     cellMatchCurrent?: string;
     cellSelected?: string;
+    cellSpan?: string;
     checkbox?: string;
     // (undocumented)
     chip?: string;
@@ -284,6 +294,7 @@ export interface DataTableClassNames {
     filterHeaderInput?: string;
     filterHeaderMenu?: string;
     filterHeaderRow?: string;
+    filterHeaderTrigger?: string;
     filterInput?: string;
     filterLabel?: string;
     filterOperator?: string;
@@ -378,6 +389,8 @@ export interface DataTableClassNames {
     root?: string;
     // (undocumented)
     row?: string;
+    rowActionsMenu?: string;
+    rowActionsTrigger?: string;
     rowReorderButtons?: string;
     rowReorderDown?: string;
     rowReorderHandle?: string;
@@ -625,7 +638,9 @@ export interface SavedViewsMenuProps {
 }
 
 // @public
-export function SavedViewsPanel(props: Readonly<Omit<SavedViewsPanelChromeProps, "slots">>): JSX.Element;
+export function SavedViewsPanel(props: Readonly<Omit<SavedViewsPanelChromeProps, "slots"> & {
+    classNames?: DataTableClassNames;
+}>): JSX.Element;
 
 // @public
 export const SearchIcon: (p: Readonly<IconProps>) => JSX.Element;

@@ -10,8 +10,10 @@ import { CellEditor } from '@adapttable/core';
 import { ChipLabelResolver } from '@adapttable/core';
 import { ColumnFilter } from '@adapttable/core';
 import { ColumnLayoutState } from '@adapttable/core';
+import { CSSProperties } from 'react';
 import { CustomCellEditorCtrl } from '@adapttable/core';
 import { CustomCellEditorRender } from '@adapttable/core';
+import { DataTableClassNames } from '@adapttable/unstyled';
 import { DataTableProps } from '@adapttable/unstyled';
 import { EditConflict } from '@adapttable/core';
 import { EditConflictChoice } from '@adapttable/core';
@@ -26,7 +28,7 @@ import { ExportCsvOptions } from '@adapttable/core';
 import { FILTER_TYPES } from '@adapttable/core';
 import { JSX } from 'react';
 import { PivotPanel } from '@adapttable/unstyled';
-import { SavedViewsPanel } from '@adapttable/unstyled';
+import { ReactNode } from 'react';
 import { TableQuery } from '@adapttable/core';
 import { UseServerDataOptions } from '@adapttable/core';
 import { UseTableDataOptions } from '@adapttable/core';
@@ -83,7 +85,10 @@ export { FILTER_TYPES }
 
 export { PivotPanel }
 
-export { SavedViewsPanel }
+// @public
+export function SavedViewsPanel(props: Readonly<Omit<SavedViewsPanelChromeProps, "slots"> & {
+    classNames?: DataTableClassNames;
+}>): JSX.Element;
 
 // @public
 export const shadcnClassNames: {
@@ -153,7 +158,10 @@ export const shadcnClassNames: {
     sortButton: string;
     row: string;
     cell: string;
+    cellSpan: string;
     actionButton: string;
+    rowActionsTrigger: string;
+    rowActionsMenu: string;
     footer: string;
     pager: string;
     pagePrev: string;
@@ -194,6 +202,7 @@ export const shadcnClassNames: {
     thead: string;
     headerRow: string;
     filterHeaderRow: string;
+    filterHeaderTrigger: string;
     filterHeaderCell: string;
     filterHeaderInput: string;
     filterHeaderMenu: string;

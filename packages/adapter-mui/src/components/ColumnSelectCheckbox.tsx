@@ -4,7 +4,7 @@ import {
   type ColumnSelectCheckboxProps,
   type ColumnSelectSlots,
 } from "@adapttable/core/adapter";
-import Checkbox from "@mui/material/Checkbox";
+import { Checkbox } from "@mui/material";
 
 function ColumnSelectBox({
   label,

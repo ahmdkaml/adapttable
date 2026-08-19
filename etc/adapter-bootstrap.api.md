@@ -4,18 +4,145 @@
 
 ```ts
 
+import { ActiveFilterChip } from '@adapttable/core';
 import { BaseDataTableProps } from '@adapttable/core';
+import { BulkAction } from '@adapttable/core';
+import { CellProps } from '@adapttable/core';
+import { ColorScheme } from '@adapttable/core';
+import { ColumnDef } from '@adapttable/core';
+import { ColumnFilter } from '@adapttable/core';
+import { ConfirmHandler } from '@adapttable/core';
+import { ConfirmRequest } from '@adapttable/core';
+import { createFilterRegistry } from '@adapttable/core';
 import { DataModeProps } from '@adapttable/core/adapter';
+import { defaultConfirm } from '@adapttable/core';
+import { defaultFilterRegistry } from '@adapttable/core';
+import { defaultLabels } from '@adapttable/core';
+import { Direction } from '@adapttable/core';
+import { ExtraFilters } from '@adapttable/core';
+import { FILTER_TYPES } from '@adapttable/core';
+import { FilterDef } from '@adapttable/core';
+import { FilterOption } from '@adapttable/core';
+import { FilterType } from '@adapttable/core';
+import { FilterTypeRegistry } from '@adapttable/core';
+import { FilterTypeSpec } from '@adapttable/core';
+import { FilterValue } from '@adapttable/core';
+import { PaginatedResponse } from '@adapttable/core';
+import { PaginationMode } from '@adapttable/core';
 import { ReactNode } from 'react';
+import { resolveFilterRegistry } from '@adapttable/core';
+import { RowAction } from '@adapttable/core';
+import { SavedView } from '@adapttable/core';
+import { SortByOption } from '@adapttable/core';
+import { SortDirection } from '@adapttable/core';
+import { TableLabels } from '@adapttable/core';
+import { TableQuery } from '@adapttable/core';
 import { TableSource } from '@adapttable/core';
 import { UrlStateAdapter } from '@adapttable/core';
+import { useDataTable } from '@adapttable/core';
+import { UseDataTableResult } from '@adapttable/core';
+import { useFrontendData } from '@adapttable/core';
+import { UseFrontendDataOptions } from '@adapttable/core';
+import { useQuerySource } from '@adapttable/core';
+import { UseQuerySourceOptions } from '@adapttable/core';
+import { useSavedViews } from '@adapttable/core';
 import { UseSavedViewsOptions } from '@adapttable/core';
+import { UseSavedViewsResult } from '@adapttable/core';
+import { useServerData } from '@adapttable/core';
+import { UseServerDataOptions } from '@adapttable/core';
+import { useTableUrlState } from '@adapttable/core';
+
+export { ActiveFilterChip }
+
+export { BulkAction }
+
+export { CellProps }
+
+export { ColorScheme }
+
+export { ColumnDef }
+
+export { ColumnFilter }
+
+export { ConfirmHandler }
+
+export { ConfirmRequest }
+
+export { createFilterRegistry }
 
 // @public (undocumented)
 export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>): ReactNode;
 
 // @public
 export type DataTableProps<TRow> = DataTablePropsBase<TRow> & DataModeProps<TRow>;
+
+export { defaultConfirm }
+
+export { defaultFilterRegistry }
+
+export { defaultLabels }
+
+export { Direction }
+
+export { ExtraFilters }
+
+export { FILTER_TYPES }
+
+export { FilterDef }
+
+export { FilterOption }
+
+export { FilterType }
+
+export { FilterTypeRegistry }
+
+export { FilterTypeSpec }
+
+export { FilterValue }
+
+export { PaginatedResponse }
+
+export { PaginationMode }
+
+export { resolveFilterRegistry }
+
+export { RowAction }
+
+export { SavedView }
+
+export { SortByOption }
+
+export { SortDirection }
+
+export { TableLabels }
+
+export { TableQuery }
+
+export { TableSource }
+
+export { useDataTable }
+
+export { UseDataTableResult }
+
+export { useFrontendData }
+
+export { UseFrontendDataOptions }
+
+export { useQuerySource }
+
+export { UseQuerySourceOptions }
+
+export { useSavedViews }
+
+export { UseSavedViewsOptions }
+
+export { UseSavedViewsResult }
+
+export { useServerData }
+
+export { UseServerDataOptions }
+
+export { useTableUrlState }
 
 // (No @packageDocumentation comment for this package)
 

@@ -65,7 +65,7 @@ export type AggregateSpec = Partial<Record<string, AggregateName | Aggregator>>;
 export type Aggregator<TValue = SortableValue> = (values: readonly TValue[]) => ReactNode;
 
 // @public
-export function applyCollapsedColumnGroups<TRow>(columns: readonly ColumnDef<TRow>[], collapsedIds: readonly string[]): readonly ColumnDef<TRow>[];
+export function applyCollapsedColumnGroups<TRow>(columns: readonly ColumnDef<TRow>[], collapsedIds: readonly string[], groups?: ReadonlyMap<string, ColumnGroupRecord<TRow>>): readonly ColumnDef<TRow>[];
 
 // @public
 export function applyRowPatches<TRow>(rows: readonly TRow[], patches: readonly RowPatch<TRow>[], getRowId: (row: TRow) => string): readonly TRow[];
@@ -104,16 +104,19 @@ export interface BaseDataTableProps<TRow> {
     batchEditing?: boolean;
     bulkActions?: BulkAction[];
     cellNavigation?: boolean;
+    cellSpanAppearance?: CellSpanAppearance;
+    closeHeaderFilterOnSelect?: boolean;
     collapsedGroupIds?: readonly string[];
     collapsibleColumnGroups?: boolean;
     columnLayout?: ColumnLayoutState;
-    columns: ColumnDef<TRow>[];
+    columns: ColumnInput<TRow>[];
     columnSelectionCheckbox?: boolean;
     commandPalette?: boolean | CommandPaletteOptions;
     confirm?: ConfirmHandler;
     confirmDeleteRow?: boolean;
     contextMenu?: boolean | ContextMenuOptions<TRow>;
     defaultColumnLayout?: Partial<ColumnLayoutState>;
+    defaultExpandedRowIds?: readonly string[];
     defaults?: Partial<TableQueryParams> & {
         extra?: ExtraFilters;
     };
@@ -133,6 +136,7 @@ export interface BaseDataTableProps<TRow> {
     extraChips?: readonly ActiveFilterChip[];
     extraRows?: readonly ExtraRow[];
     filterDefs?: readonly FilterDef<TRow>[];
+    filterFields?: boolean;
     filterLabels?: Readonly<Record<string, ChipLabelResolver>>;
     filters?: readonly FilterDef<TRow>[] | ReactNode;
     filtersMode?: "popover" | "drawer" | "header";
@@ -199,9 +203,11 @@ export interface BaseDataTableProps<TRow> {
     prefetch?: (row: TRow) => void;
     printButton?: boolean;
     renderCard?: MobileCardRenderer<TRow>;
+    renderRowActions?: RowActionsRenderer<TRow>;
     renderRowDetail?: (row: TRow) => ReactNode;
     resizableColumns?: boolean;
     rowActions?: RowAction<TRow>[];
+    rowActionsLayout?: RowActionsLayout;
     rowClassName?: (row: TRow, index: number) => string | undefined;
     rowEditing?: boolean;
     rowHeight?: RowHeight<TRow>;
@@ -222,6 +228,7 @@ export interface BaseDataTableProps<TRow> {
     source: TableSource<TRow>;
     statusBar?: boolean;
     stickyHeader?: boolean;
+    stickyToolbar?: boolean;
     stickyTop?: number;
     summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
     tableFooter?: ReactNode;
@@ -262,6 +269,14 @@ export interface BatchRowEdit<TRow> {
 }
 
 // @public
+export function bindHeaderFilterDismiss<TRow>(source: FilterFormSource<TRow>, options: {
+    def: FilterDef<TRow>;
+    closeOnSelect?: boolean;
+    dismiss: () => void;
+    registry?: FilterTypeRegistry;
+}): FilterFormSource<TRow>;
+
+// @public
 export interface BodyCell<TRow> {
     // (undocumented)
     colSpan: number;
@@ -271,6 +286,11 @@ export interface BodyCell<TRow> {
     // (undocumented)
     rowSpan: number;
 }
+
+// @public
+export function bodyCellsHaveRowSpan(cellsByRow: ReadonlyMap<string, readonly {
+    rowSpan: number;
+}[]>): boolean;
 
 // @public
 export function bodyRowEntries<TRow>(rows: readonly {
@@ -562,6 +582,12 @@ export type CellSaveStatus = "saving" | "failed";
 export function cellsForRow<TRow>(cellsByRow: ReadonlyMap<string, readonly BodyCell<TRow>[]> | undefined, rowKey: string): readonly BodyCell<TRow>[];
 
 // @public
+export type CellSpanAppearance = "merged" | "plain";
+
+// @public
+export function cellSpanMark(colSpan: number, rowSpan: number): string | undefined;
+
+// @public
 export interface CellSpanRequest {
     // (undocumented)
     colSpan?: number;
@@ -652,6 +678,15 @@ export type ColorScheme = "light" | "dark" | "auto";
 export const COLUMN_GROUP_ID_SEP = "\u001F";
 
 // @public
+export const COLUMN_GROUP_RENDER_PREFIX = "__groupRender:";
+
+// @public
+export const COLUMN_GROUP_STUB_PREFIX = "__groupStub:";
+
+// @public
+export const COLUMN_GROUP_STUB_WIDTH = 36;
+
+// @public
 export interface ColumnDef<TRow> {
     accessor?: (row: TRow) => ReactNode;
     align?: "start" | "center" | "end";
@@ -665,6 +700,7 @@ export interface ColumnDef<TRow> {
     flex?: number;
     formatValue?: (row: TRow) => string;
     group?: string | readonly string[];
+    groupShow?: ColumnGroupShow;
     header?: ReactNode;
     headerActions?: ReactNode;
     headerTooltip?: string;
@@ -708,10 +744,50 @@ export interface ColumnFooterContext<TRow> {
 }
 
 // @public
+export interface ColumnGroupDef<TRow> {
+    readonly align?: GroupedHeaderAlign;
+    readonly children: readonly ColumnInput<TRow>[];
+    readonly collapsedKey?: string;
+    readonly collapsedRender?: (row: TRow) => ReactNode;
+    readonly header: string;
+    readonly headerTooltip?: string;
+    readonly marryChildren?: boolean;
+}
+
+// @public
+export function columnGroupHeaderCaption(cell: HeaderGroupCell): string | null;
+
+// @public
 export function columnGroupId(path: readonly string[]): string;
 
 // @public
 export function columnGroupPath<TRow>(column: Pick<ColumnDef<TRow>, "group">): readonly string[];
+
+// @public
+export interface ColumnGroupRecord<TRow> {
+    // (undocumented)
+    readonly align?: GroupedHeaderAlign;
+    // (undocumented)
+    readonly childKeys: readonly string[];
+    // (undocumented)
+    readonly collapsedKey?: string;
+    // (undocumented)
+    readonly collapsedRender?: (row: TRow) => ReactNode;
+    // (undocumented)
+    readonly headerTooltip?: string;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly label: string;
+    // (undocumented)
+    readonly marryChildren: boolean;
+}
+
+// @public
+export type ColumnGroupShow = "open" | "closed" | "always";
+
+// @public
+export function columnGroupStubStyle(): CSSProperties;
 
 // @public
 export interface ColumnHeaderContext<TRow> {
@@ -744,6 +820,9 @@ export function columnHeaderController<TRow>(column: ColumnDef<TRow>, extras?: {
 
 // @public
 export function columnHeaderLabel<TRow>(column: ColumnDef<TRow>): ReactNode;
+
+// @public
+export type ColumnInput<TRow> = ColumnDef<TRow> | ColumnGroupDef<TRow>;
 
 // @public
 export interface ColumnLayoutState {
@@ -1519,6 +1598,12 @@ export interface ExportWriter {
 export function extendCellRange(range: CellRange | null, head: GridCell, fallbackAnchor: GridCell): CellRange;
 
 // @public
+export const EXTRA_OVER_SPAN_ROW_STYLE: CSSProperties;
+
+// @public
+export const EXTRA_OVER_SPAN_STYLE: CSSProperties;
+
+// @public
 export const EXTRA_ROW_PARTS: {
     readonly separator: {
         readonly row: "separator-row";
@@ -1529,6 +1614,21 @@ export const EXTRA_ROW_PARTS: {
         readonly cell: "full-width-cell";
     };
 };
+
+// @public
+export function extraCountBeforeRowIds(extraRows: readonly ExtraRow[] | undefined, ids: ReadonlySet<string>): number;
+
+// @public
+export function extraCoveredTableSlots(beforeRowId: string, options: {
+    visualIds: readonly string[];
+    cellsByRow: ReadonlyMap<string, readonly {
+        columnIndex: number;
+        colSpan: number;
+        rowSpan: number;
+    }[]>;
+    extraRows?: readonly ExtraRow[];
+    leadingCells: number;
+}): ReadonlySet<number>;
 
 // @public
 export type ExtraEntry = {
@@ -1542,6 +1642,9 @@ export type ExtraEntry = {
 
 // @public
 export type ExtraFilters = Record<string, FilterValue>;
+
+// @public
+export function extraHostFillStyle<TRow>(extraKey: string, extraRows: readonly ExtraRow[] | undefined, rows: readonly TRow[], getRowId: (row: TRow) => string, rowStyle: RowStyle<TRow> | undefined): CSSProperties | undefined;
 
 // @public
 export interface ExtraRow {
@@ -1560,6 +1663,9 @@ export function extraRowsArmed(extraRows: readonly ExtraRow[] | undefined): bool
 
 // @public
 export function extraRowsForSection(extraRows: readonly ExtraRow[] | undefined, rowIds: ReadonlySet<string>, appendUntargeted?: boolean): readonly ExtraRow[] | undefined;
+
+// @public
+export function extraUncoveredColSpans(columnSpan: number, coveredSlots: ReadonlySet<number> | undefined): readonly number[];
 
 // @public
 export type FacetCounts = readonly ChecklistValue[];
@@ -1859,6 +1965,17 @@ export interface FindMatchesOptions<TRow> {
 }
 
 // @public
+export function flattenColumnTree<TRow>(columns: readonly ColumnInput<TRow>[]): FlattenedColumns<TRow>;
+
+// @public
+export interface FlattenedColumns<TRow> {
+    // (undocumented)
+    readonly groups: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
+    // (undocumented)
+    readonly leaves: ColumnDef<TRow>[];
+}
+
+// @public
 export function formatFilterChip(fieldLabel: string, opWord: string, value?: string): string;
 
 // @public
@@ -2026,6 +2143,24 @@ export type GroupedFlatEntry<TRow> = {
 } | ExtraEntry;
 
 // @public
+export function groupedHeaderAlign(align?: GroupedHeaderAlign): GroupedHeaderAlign;
+
+// @public
+export function groupedHeaderCellStyle(cell: Readonly<{
+    rowSpan: number;
+    cell: HeaderGroupCell;
+}>, hairline: string): CSSProperties;
+
+// @public
+export function groupedHeaderChildRule(hairline: string): {
+    readonly borderBottom: string;
+    readonly backgroundImage: string;
+    readonly backgroundPosition: string;
+    readonly backgroundRepeat: string;
+    readonly backgroundSize: string;
+};
+
+// @public
 export function groupLeafCount(entry: {
     leafIds: readonly string[];
     serverCount?: number;
@@ -2082,12 +2217,23 @@ export function groupValueKey(value: unknown): string;
 export function hasEditableColumns(columns: readonly EditableColumnLike[]): boolean;
 
 // @public
+export function headerFilterFieldIsComplete<TRow>(def: FilterDef<TRow>, extra: ExtraFilters, registry?: FilterTypeRegistry): boolean;
+
+// @public (undocumented)
+export interface HeaderFilterSessionProps {
+    // (undocumented)
+    readonly [SESSION_ATTR]: string;
+}
+
+// @public
 export function headerFilterStickTop(sticky: boolean, base: CSSProperties | undefined, top: number, stickyExtras?: CSSProperties): CSSProperties | undefined;
 
 // @public
 export interface HeaderGroupCell {
+    align?: GroupedHeaderAlign;
     collapsed: boolean;
     collapsible: boolean;
+    hideLabel: boolean;
     id: string | null;
     key: string;
     label: string | null;
@@ -2098,7 +2244,9 @@ export interface HeaderGroupCell {
 export function headerGroupRow<TRow>(columns: readonly ColumnDef<TRow>[]): HeaderGroupCell[] | null;
 
 // @public
-export function headerGroupRows<TRow>(columns: readonly ColumnDef<TRow>[], collapsedIds?: readonly string[], collapsible?: boolean): HeaderGroupCell[][] | null;
+export function headerGroupRows<TRow>(columns: readonly ColumnDef<TRow>[], collapsedIds?: readonly string[], collapsible?: boolean, groups?: ReadonlyMap<string, {
+    readonly align?: GroupedHeaderAlign;
+}>): HeaderGroupCell[][] | null;
 
 // @public
 export type HeaderSelectionState = "all" | "some" | "none";
@@ -2123,6 +2271,25 @@ export interface HighlightState {
     isCellHighlighted: (rowId: string, columnKey: string) => boolean;
     isRowHighlighted: (rowId: string) => boolean;
 }
+
+// @public
+export type HtmlGroupedHeaderCell = {
+    readonly kind: "group";
+    readonly key: string;
+    readonly colSpan: number;
+    readonly rowSpan: number;
+    readonly cell: HeaderGroupCell;
+} | {
+    readonly kind: "leaf";
+    readonly key: string;
+    readonly columnIndex: number;
+    readonly rowSpan: number;
+};
+
+// @public
+export function htmlGroupedHeaderPlan<TRow>(columns: readonly ColumnDef<TRow>[], collapsedIds?: readonly string[], collapsible?: boolean, groups?: ReadonlyMap<string, {
+    readonly align?: GroupedHeaderAlign;
+}>): HtmlGroupedHeaderCell[][] | null;
 
 // @public
 export function humanizeKey(key: string): string;
@@ -2198,6 +2365,13 @@ export interface InfiniteQueryLike<TPage> {
 }
 
 // @public
+export function inflateBodyCellRowSpans<TCell extends {
+    columnIndex: number;
+    colSpan: number;
+    rowSpan: number;
+}>(cellsByRow: ReadonlyMap<string, readonly TCell[]>, visualIds: readonly string[], extraRows: readonly ExtraRow[] | undefined): ReadonlyMap<string, readonly TCell[]>;
+
+// @public
 export function insertExtraRows<T extends {
     key: string;
 }>(entries: readonly T[], extraRows: readonly ExtraRow[] | undefined, dataKey: (entry: T) => string | undefined): readonly (T | ExtraEntry)[];
@@ -2231,6 +2405,18 @@ export function isBooleanEditor(editor: CellEditor | null): boolean;
 
 // @public
 export function isCellEditable<TRow>(column: EditableColumnLike<TRow>, row: TRow): boolean;
+
+// @public
+export function isColumnGroup<TRow>(column: ColumnInput<TRow>): column is ColumnGroupDef<TRow>;
+
+// @public
+export function isColumnGroupRenderKey(key: string): boolean;
+
+// @public
+export function isColumnGroupStubKey(key: string): boolean;
+
+// @public
+export function isColumnGroupSummaryKey(key: string): boolean;
 
 // @public
 export function isCountFilterComplete(state: CountFilterState): boolean;
@@ -2315,6 +2501,9 @@ export function localizedColumnPath(column: Pick<ColumnDef<unknown>, "key" | "i1
 
 // @public
 export function makeExportCsvHandler<TRow>(exportCsv: boolean | ExportCsvOptions<TRow> | undefined, source: TableSource<TRow>, columns: readonly ColumnDef<TRow>[], context?: ExportContext<TRow>): (() => void | Promise<void>) | undefined;
+
+// @public
+export function marriedOrderHolds<TRow>(nextOrder: readonly string[], groups: ReadonlyMap<string, ColumnGroupRecord<TRow>>): boolean;
 
 // @public
 export function matchKey(cell: GridCell): string;
@@ -2566,6 +2755,12 @@ export function pinnedRowCellStyle(side: RowPinSide | undefined, headerOffsetPx:
     bottom?: number;
     zIndex?: number;
 };
+
+// @public
+export function pinnedRowPart(side: RowPinSide | undefined): typeof PINNED_TOP_PART | typeof PINNED_BOTTOM_PART | undefined;
+
+// @public
+export function pinnedRowSticky(side: RowPinSide | undefined, sticky: boolean, headerOffsetPx: number): ReturnType<typeof pinnedRowStickyStyle> | undefined;
 
 // @public
 export function pinnedRowStickyStyle(side: RowPinSide, headerOffsetPx: number): {
@@ -2899,6 +3094,24 @@ export interface RowAction<TRow> {
 }
 
 // @public
+export type RowActionsLayout = "buttons" | "menu";
+
+// @public
+export interface RowActionsRenderContext<TRow> {
+    // (undocumented)
+    actions: readonly RowAction<TRow>[];
+    // (undocumented)
+    confirm: ConfirmHandler;
+    // (undocumented)
+    labels: Required<TableLabels>;
+    // (undocumented)
+    row: TRow;
+}
+
+// @public
+export type RowActionsRenderer<TRow> = (ctx: RowActionsRenderContext<TRow>) => ReactNode;
+
+// @public
 export type RowEditDrafts = Readonly<Record<string, string>>;
 
 // @public
@@ -3227,6 +3440,9 @@ export interface Shortcut {
 export function showAllColumns<TRow>(rows: readonly ColumnMenuRow<TRow>[], layout: UseColumnLayoutResult<TRow>): void;
 
 // @public
+export function showSimpleFilterFields(headerFiltersOn: boolean, filterFields?: boolean): boolean;
+
+// @public
 export interface SidePanelEntry {
     content: ReactNode;
     key: string;
@@ -3315,6 +3531,7 @@ export interface TableChrome<TRow> {
     allColumns: ColumnDef<TRow>[];
     body: TableBodyRegion;
     clearFilters: () => void;
+    columnGroups: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
     columnLayout: UseColumnLayoutResult<TRow>;
     confirm: ConfirmHandler;
     detail?: {
@@ -3570,6 +3787,7 @@ export interface TableLabels {
     resizeColumn?: string;
     // (undocumented)
     retry?: string;
+    rowActionsMenu?: string;
     rowLifted?: (position: number) => string;
     rowMoved?: (from: number, to: number) => string;
     rowReorderCancelled?: string;
@@ -3758,6 +3976,9 @@ export type TextOp = (typeof TEXT_OPS)[number];
 export function toggleCollapsedColumnGroup(collapsedIds: readonly string[], id: string): string[];
 
 // @public
+export function toolbarShowsFilters(mode: FilterChromeMode, hasForm: boolean, hasFilterTree: boolean): boolean;
+
+// @public
 export interface ToolbarSlots {
     end?: ReactNode;
     start?: ReactNode;
@@ -3920,6 +4141,7 @@ export function useColumnLayout<TRow>(input: UseColumnLayoutOptions<TRow>): UseC
 // @public
 export interface UseColumnLayoutOptions<TRow> {
     collapsibleColumnGroups?: boolean;
+    columnGroups?: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
     columns: readonly ColumnDef<TRow>[];
     defaultColumnLayout?: Partial<ColumnLayoutState>;
     layout?: ColumnLayoutState;
@@ -4206,6 +4428,23 @@ export interface UseGroupCollapseUrlStateResult {
 export function useGroupPaging(): GroupPagingState;
 
 // @public
+export function useHeaderFilterOverlay<TRow>(props: {
+    source: FilterFormSource<TRow>;
+    def: FilterDef<TRow>;
+    closeOnSelect?: boolean;
+    registry?: FilterTypeRegistry;
+}, options?: {
+    nestedSelector?: string;
+    pointerDismiss?: boolean;
+}): {
+    open: boolean;
+    setOpen: (open: boolean) => void;
+    source: FilterFormSource<TRow>;
+    sessionProps: HeaderFilterSessionProps;
+    resetKey: number;
+};
+
+// @public
 export function useHighlight(enabled: boolean): HighlightState;
 
 // @public
@@ -4242,6 +4481,9 @@ export function useMediaQuery(query: string, defaultValue?: boolean): boolean;
 
 // @public
 export function useOffsetHeight(): [(node: HTMLElement | null) => void, number];
+
+// @public
+export function usePointerDismiss(open: boolean, dismiss: () => void, insideSelector: string): void;
 
 // @public
 export function usePrefersReducedMotion(): boolean;
@@ -4281,7 +4523,7 @@ export interface UseRowEditingOptions<TRow> {
 }
 
 // @public
-export function useRowExpansion(): RowExpansionState;
+export function useRowExpansion(defaultExpandedIds?: readonly string[]): RowExpansionState;
 
 // @public
 export function useRowMutations<TRow>(options: UseRowMutationsOptions<TRow>): RowMutationsState<TRow>;
@@ -4505,6 +4747,9 @@ export function viewFromTreeEntries<TRow>(entries: readonly TreeEntry<TRow>[]): 
 
 // @public
 export function visibleColumns<TRow>(columns: readonly ColumnDef<TRow>[], layout: TableLayout, mobileIdentityColumns?: number): ColumnDef<TRow>[];
+
+// @public
+export function visibleRowActions<TRow>(actions: readonly RowAction<TRow>[], row: TRow): RowAction<TRow>[];
 
 // @public
 export function walkFilterTreeConditions(tree: QueryFilterGroup | undefined, path?: readonly number[]): {
