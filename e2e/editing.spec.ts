@@ -117,6 +117,15 @@ test.describe("editing demo page", () => {
     ).toHaveCount(0);
     await expect(cell.filter({ hasText: original })).toHaveCount(1);
   });
+
+  test("cleared cell still opens on double-click", async ({ page }) => {
+    await page.goto(`/${KIT}/editing/`);
+    const editor = await openEditor(page, "Email");
+    await expect(editor).toBeVisible();
+    await editor.fill("");
+    await editor.press("Enter");
+    await expect(await openEditor(page, "Email")).toBeVisible();
+  });
 });
 
 /**

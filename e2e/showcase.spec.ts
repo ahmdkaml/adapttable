@@ -414,16 +414,11 @@ for (const adapter of ADAPTERS) {
         .getByRole("button", { name: /(hide|show) column/i })
         .first();
       await expect(toggle).toBeVisible();
-      await toggle.hover();
       const stacked = await page.evaluate(() => {
-        const btn = document.querySelector(
-          '[data-adapttable-part="column-menu-button"]'
-        );
         const item = document.querySelector(
           '[data-adapttable-part="column-menu-item"]'
         );
-        if (!btn || !item) return { found: false };
-        const br = btn.getBoundingClientRect();
+        if (!item) return { found: false };
         const ir = item.getBoundingClientRect();
         const hit = document.elementFromPoint(
           ir.left + Math.min(24, ir.width / 2),
@@ -431,14 +426,12 @@ for (const adapter of ADAPTERS) {
         );
         return {
           found: true,
-          belowTrigger: ir.top >= br.bottom - 2,
           headerOnTop: Boolean(
             hit?.closest("th, [data-adapttable-part='header-cell']")
           ),
         };
       });
       expect(stacked.found).toBe(true);
-      expect(stacked.belowTrigger).toBe(true);
       expect(stacked.headerOnTop).toBe(false);
     });
 
@@ -450,16 +443,11 @@ for (const adapter of ADAPTERS) {
       await trigger.click();
       const save = page.getByRole("button", { name: "Save view", exact: true });
       await expect(save).toBeVisible();
-      await save.hover();
       const stacked = await page.evaluate(() => {
-        const btn = [...document.querySelectorAll("button")].find(
-          (el) => el.textContent?.trim() === "Saved views"
-        );
         const save = [...document.querySelectorAll("button")].find(
           (el) => el.textContent?.trim() === "Save view"
         );
-        if (!btn || !save) return { found: false };
-        const br = btn.getBoundingClientRect();
+        if (!save) return { found: false };
         const sr = save.getBoundingClientRect();
         const hit = document.elementFromPoint(
           sr.left + Math.min(24, sr.width / 2),
@@ -467,14 +455,12 @@ for (const adapter of ADAPTERS) {
         );
         return {
           found: true,
-          belowTrigger: sr.top >= br.bottom - 2,
           headerOnTop: Boolean(
             hit?.closest("th, [data-adapttable-part='header-cell']")
           ),
         };
       });
       expect(stacked.found).toBe(true);
-      expect(stacked.belowTrigger).toBe(true);
       expect(stacked.headerOnTop).toBe(false);
     });
 

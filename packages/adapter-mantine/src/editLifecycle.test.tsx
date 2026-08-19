@@ -1,5 +1,6 @@
 import { MantineProvider } from "@mantine/core";
 import { fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -55,5 +56,39 @@ describe("edit lifecycle (mantine)", () => {
     fireEvent.doubleClick(part("edit-cell-activate")!);
     fireEvent.keyDown(part("edit-cell-editor")!, { key: "Escape" });
     expect(onEditCancel).toHaveBeenCalledOnce();
+  });
+
+  it("keeps a hit area after the host commits an empty value", () => {
+    function Live() {
+      const [data, setData] = useState(ROWS);
+      return (
+        <MantineProvider>
+          <DataTable
+            data={data}
+            columns={COLS}
+            rowKey={(r) => r.id}
+            urlSync={false}
+            onCellEdit={(row, _key, value) => {
+              setData((prev) =>
+                prev.map((item) =>
+                  item.id === row.id
+                    ? { ...item, title: String(value ?? "") }
+                    : item
+                )
+              );
+            }}
+          />
+        </MantineProvider>
+      );
+    }
+    render(<Live />);
+    fireEvent.doubleClick(part("edit-cell-activate")!);
+    fireEvent.change(part("edit-cell-editor")!, { target: { value: "" } });
+    fireEvent.keyDown(part("edit-cell-editor")!, { key: "Enter" });
+    const activate = part("edit-cell-activate")!;
+    expect(activate.style.height).toBe("100%");
+    expect(activate.style.minHeight).toBe("1.25em");
+    fireEvent.doubleClick(activate);
+    expect(part("edit-cell-editor")).not.toBeNull();
   });
 });
