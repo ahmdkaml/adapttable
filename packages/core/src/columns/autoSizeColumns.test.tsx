@@ -12,7 +12,10 @@ import { autoSizeColumns, measureColumnWidth } from "./autoSizeColumns";
 import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from "./columnResize";
 
 /** jsdom lays nothing out, so each cell is told how wide its content is. */
-function table(widths: Record<string, number[]>) {
+function table(
+  widths: Record<string, number[]>,
+  clientWidths?: Record<string, number[]>
+) {
   const { container } = render(
     <table>
       <tbody>
@@ -31,7 +34,17 @@ function table(widths: Record<string, number[]>) {
       `[data-column-key="${key}"]`
     );
     cells.forEach((cell, index) => {
-      Object.defineProperty(cell, "scrollWidth", { value: perRow[index] ?? 0 });
+      Object.defineProperty(cell, "scrollWidth", {
+        value: perRow[index] ?? 0,
+        configurable: true,
+      });
+      const client = clientWidths?.[key]?.[index];
+      if (client !== undefined) {
+        Object.defineProperty(cell, "clientWidth", {
+          value: client,
+          configurable: true,
+        });
+      }
     });
   }
   return container.querySelector("table")!;
@@ -71,6 +84,14 @@ describe("measureColumnWidth", () => {
   it("escapes a key that would otherwise break the selector", () => {
     const root = table({ "user.name": [120] });
     expect(measureColumnWidth(root, "user.name")).toBe(144);
+  });
+
+  it("does not grow a column that already fits its content", () => {
+    // scrollWidth equals the box once padding is already in the width —
+    // adding another 24px on every click is how a column ate the screen.
+    const root = table({ name: [224] }, { name: [224] });
+    expect(measureColumnWidth(root, "name")).toBe(224);
+    expect(measureColumnWidth(root, "name")).toBe(224);
   });
 });
 

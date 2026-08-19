@@ -765,8 +765,9 @@ percentages to mean anything. See
 **Column auto-sizing.** `measureColumnWidth(root, key)` returns the width a
 column needs for its widest rendered cell — measured from the DOM by the
 `data-column-key` every cell carries — and `autoSizeColumns(root, keys,
-setWidth)` sizes a whole set, returning how many it could measure. A resize
-handle sizes its own column on double-click, and the column menu's action calls
+setWidth)` sizes a whole set, returning how many it could measure. A cell that
+already fits is not grown again on a later click. A resize handle sizes its
+own column on double-click, and the column menu's action calls
 `shell.autoSizeColumns`. See [column management](./column-management.md).
 
 **Column virtualization.** `useColumnWindow(options)` windows the horizontal

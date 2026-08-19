@@ -164,7 +164,9 @@ and a name, and the only honest answer to "how wide is this column" is what the
 browser laid out. It measures the **rendered** rows — the page, or the window
 under virtualization — which is the set the reader is looking at, and it reads
 each cell's content width, so a column that is currently clipping its text is
-sized to fit it rather than to its clipped width.
+sized to fit it rather than to its clipped width. Running it again does not
+keep adding width: once a cell already fits, the box is not treated as new
+content.
 
 The result is an ordinary width in the column layout: it persists, serializes to
 the URL and to saved views, and a later drag overrides it exactly as it
