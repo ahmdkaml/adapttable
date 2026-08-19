@@ -101,8 +101,10 @@ jobs:
       # Five free ubuntu-latest machines × 4 Chromiums (playwright.config.ts)
       # = 20 tests in flight. Playwright splits the 1200 cases; each box stays
       # at 4 vCPU so 10–20 browsers on one runner never happen.
+      # `pnpm test:e2e -- --shard=…` does not reach Playwright — each job then
+      # runs the full 1207. `pnpm exec` forwards the flag (same as the docs).
       - name: Run E2E smoke suite
-        run: pnpm test:e2e -- --shard=${{ matrix.shard }}/5
+        run: pnpm exec playwright test --shard=${{ matrix.shard }}/5
 
       - name: Upload report on failure
         if: ${{ failure() }}
