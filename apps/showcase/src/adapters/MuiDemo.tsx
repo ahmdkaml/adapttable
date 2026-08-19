@@ -263,12 +263,19 @@ export function MuiDemo({
             source={source}
             columns={
               wide
-                ? makeWideColumns(locale, MUI_CELLS)
+                ? makeWideColumns(locale, MUI_CELLS, {
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
+                  })
                 : makeColumns(locale, MUI_CELLS, {
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
                     formulas: formulaColumns,
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
                   })
             }
             rowKey={(r) => r.id}

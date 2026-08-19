@@ -44,6 +44,7 @@ import {
   fittedTableStyle,
   groupedHeaderAlign,
   groupedHeaderCellStyle,
+  groupedHeaderLabelStyle,
   type HtmlGroupedHeaderCell,
   htmlGroupedHeaderPlan,
   insertExtraRows,
@@ -1087,14 +1088,16 @@ export function DesktopTable<TRow>({
           "var(--color-gray-6, color-mix(in srgb, currentColor 22%, transparent))"
         )}
       >
-        {onToggleColumnGroup ? (
-          <ColumnGroupToggle
-            cell={cell.cell}
-            labels={labels}
-            onToggle={onToggleColumnGroup}
-          />
-        ) : null}
-        {columnGroupHeaderCaption(cell.cell)}
+        <span style={groupedHeaderLabelStyle()}>
+          {onToggleColumnGroup ? (
+            <ColumnGroupToggle
+              cell={cell.cell}
+              labels={labels}
+              onToggle={onToggleColumnGroup}
+            />
+          ) : null}
+          {columnGroupHeaderCaption(cell.cell)}
+        </span>
       </Table.ColumnHeaderCell>
     );
   };

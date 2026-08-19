@@ -60,6 +60,11 @@ for (const adapter of ADAPTERS) {
       await expect(
         page.locator('[data-adapttable-part="column-menu-search"]').first()
       ).toBeVisible();
+      if (adapter === "shadcn" || adapter === "tailwind") {
+        await expect(
+          page.locator('[data-adapttable-part="column-menu-panel"]')
+        ).toHaveAttribute("dir", "rtl");
+      }
     });
   });
 }

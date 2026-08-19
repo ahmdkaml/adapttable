@@ -1182,7 +1182,7 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
 `computePagination`, `headerGroupRow` / `headerGroupRows` /
 `htmlGroupedHeaderPlan` / `groupedHeaderChildRule` /
-`groupedHeaderCellStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`,
+`groupedHeaderCellStyle` / `groupedHeaderLabelStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`,
 `columnGroupPath` / `columnGroupId` / `COLUMN_GROUP_ID_SEP` /
 `COLUMN_GROUP_STUB_PREFIX` / `COLUMN_GROUP_RENDER_PREFIX` /
 `isColumnGroupStubKey` / `isColumnGroupRenderKey` /
@@ -1351,7 +1351,7 @@ search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
 `rowEditingSignature`, `HeaderGroupCell`, `HtmlGroupedHeaderCell`, `headerGroupRow` /
 `headerGroupRows` / `htmlGroupedHeaderPlan` / `groupedHeaderChildRule` /
-`groupedHeaderCellStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`, `columnGroupHeaderCaption`. Each adapter mounts `ColumnGroupToggle` /
+`groupedHeaderCellStyle` / `groupedHeaderLabelStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`, `columnGroupHeaderCaption`. Each adapter mounts `ColumnGroupToggle` /
 `ColumnGroupToggleProps` over `ColumnGroupToggleChrome` /
 `ColumnGroupToggleChromeProps` / `ColumnGroupToggleSlots` /
 `ColumnGroupToggleButtonProps`. Shared

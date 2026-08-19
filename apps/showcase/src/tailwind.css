@@ -28,49 +28,55 @@
    query, so the demos flip with the navbar switch like everything else. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Preflight is skipped (above), so restore border-box sizing — but only inside
-   the unstyled AdaptTable so Tailwind's height/padding utilities measure right
-   without disturbing the Mantine/MUI/Chakra/AntD demos. */
+/* Preflight is skipped (above), so restore border-box sizing and a button
+   reset — but only on unstyled surfaces, so Mantine / MUI / Chakra / AntD
+   keep their own chrome. Portalled filters / columns / views leave `root`
+   for `document.body` and need the same substitutes. */
 @layer base {
-  [data-adapttable-part="root"],
-  [data-adapttable-part="root"] *,
-  [data-adapttable-part="root"] ::before,
-  [data-adapttable-part="root"] ::after {
-    box-sizing: border-box;
-  }
+  :is(
+    [data-adapttable-part="root"],
+    [data-adapttable-part="column-menu-panel"],
+    [data-adapttable-part="views-panel"],
+    [data-adapttable-part="filters-popover"],
+    [data-adapttable-part="filters-panel"]
+  ) {
+    /* Do not set border-style on the host. A solid style with the UA
+       `medium` width paints a black card on kits that never asked for one
+       (Radix Box, kit popovers). Descendants zero the width so a `border`
+       class can opt in; Tailwind/shadcn hosts set width on themselves. */
+    &,
+    *,
+    ::before,
+    ::after {
+      box-sizing: border-box;
+    }
 
-  /* Preflight is skipped, so `border-style` defaults to `none` and every
-     Tailwind `border` collapses to 0px. Restore the preflight border defaults,
-     scoped to the table, so `border` / `border-b` etc. actually render. */
-  [data-adapttable-part="root"] *,
-  [data-adapttable-part="root"] ::before,
-  [data-adapttable-part="root"] ::after {
-    border-width: 0;
-    border-style: solid;
-    border-color: var(--color-border);
-  }
+    /* `border` utilities need a style; descendants default to width 0 so a
+       class can opt in. The host keeps its own width (the panel's card edge). */
+    *,
+    ::before,
+    ::after {
+      border-width: 0;
+      border-style: solid;
+      border-color: var(--color-border);
+    }
 
-  /* Preflight is skipped, so native controls keep OS chrome (button borders,
-     select arrows). Reset just buttons inside the unstyled table so the
-     icon/ghost buttons render flat — utility classes still re-add any border
-     or background where a slot asks for one. */
-  /* Native checkboxes pick up the theme's primary so they stay visible on
-     dark surfaces (preflight is skipped, so set it explicitly). */
-  [data-adapttable-part="root"] input[type="checkbox"] {
-    accent-color: var(--color-primary);
-    width: 1rem;
-    height: 1rem;
-  }
+    input[type="checkbox"] {
+      accent-color: var(--color-primary);
+      width: 1rem;
+      height: 1rem;
+    }
 
-  [data-adapttable-part="root"] button {
-    appearance: none;
-    background: transparent;
-    border-width: 0;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
+    button {
+      appearance: none;
+      background: transparent;
+      border-width: 0;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
   }
 }
 

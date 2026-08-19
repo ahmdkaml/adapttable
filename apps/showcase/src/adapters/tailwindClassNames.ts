@@ -105,6 +105,18 @@ export const tailwindClassNames: DataTableClassNames = {
     "inline-grid place-items-center rounded p-[3px] text-gray-400 hover:bg-gray-100 data-[active]:text-indigo-600 dark:hover:bg-zinc-800 dark:data-[active]:text-indigo-400",
   columnMenuReset:
     "mt-1.5 w-full border-t border-gray-100 px-2 pb-1 pt-2 text-start text-[13px] font-medium text-indigo-600 hover:text-indigo-700 dark:border-zinc-800 dark:text-indigo-400",
+  columnMenuAutoSize:
+    "mt-1.5 w-full border-t border-gray-100 px-2 pb-1 pt-2 text-start text-[13px] font-medium text-indigo-600 hover:text-indigo-700 dark:border-zinc-800 dark:text-indigo-400",
+  columnMenuSearch:
+    "mb-1.5 h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-900/40",
+  columnMenuBulk: "mb-1.5 flex flex-wrap gap-1 px-1",
+  columnMenuBulkButton:
+    "rounded-md px-2 py-1 text-start text-[12px] font-medium text-gray-700 hover:bg-gray-50 dark:text-zinc-300 dark:hover:bg-zinc-800",
+  columnMenuMore:
+    "inline-grid place-items-center rounded p-[3px] text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+  columnMenuSubmenu: "ms-6 flex flex-col gap-0.5 py-1",
+  columnMenuAction:
+    "w-full rounded-md px-2 py-1.5 text-start text-[13px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:text-zinc-300 dark:hover:bg-zinc-800",
   // ── Saved views popover ─────────────────────────────────────────
   viewsMenu: "relative",
   viewsButton:

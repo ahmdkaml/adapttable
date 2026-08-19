@@ -257,12 +257,19 @@ export function ChakraDemo({
               source={source}
               columns={
                 wide
-                  ? makeWideColumns(locale, CHAKRA_CELLS)
+                  ? makeWideColumns(locale, CHAKRA_CELLS, {
+                      editable: Boolean(
+                        editing || rowMode || batch || editorShowcase
+                      ),
+                    })
                   : makeColumns(locale, CHAKRA_CELLS, {
                       groups: columnGroups,
                       sparkline,
                       editors: editorShowcase,
                       formulas: formulaColumns,
+                      editable: Boolean(
+                        editing || rowMode || batch || editorShowcase
+                      ),
                     })
               }
               rowKey={(r) => r.id}

@@ -105,6 +105,7 @@ export {
   groupedHeaderAlign,
   groupedHeaderCellStyle,
   groupedHeaderChildRule,
+  groupedHeaderLabelStyle,
   type HeaderGroupCell,
   headerGroupRow,
   headerGroupRows,

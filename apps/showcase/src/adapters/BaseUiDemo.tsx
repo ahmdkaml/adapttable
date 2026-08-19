@@ -278,12 +278,19 @@ export function BaseUiDemo({
           source={source}
           columns={
             wide
-              ? makeWideColumns(locale, BASE_UI_CELLS)
+              ? makeWideColumns(locale, BASE_UI_CELLS, {
+                  editable: Boolean(
+                    editing || rowMode || batch || editorShowcase
+                  ),
+                })
               : makeColumns(locale, BASE_UI_CELLS, {
                   groups: columnGroups,
                   sparkline,
                   editors: editorShowcase,
                   formulas: formulaColumns,
+                  editable: Boolean(
+                    editing || rowMode || batch || editorShowcase
+                  ),
                 })
           }
           rowKey={(r) => r.id}

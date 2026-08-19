@@ -256,12 +256,19 @@ export function RadixDemo({
             source={source}
             columns={
               wide
-                ? makeWideColumns(locale, RADIX_CELLS)
+                ? makeWideColumns(locale, RADIX_CELLS, {
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
+                  })
                 : makeColumns(locale, RADIX_CELLS, {
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
                     formulas: formulaColumns,
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
                   })
             }
             rowKey={(r) => r.id}

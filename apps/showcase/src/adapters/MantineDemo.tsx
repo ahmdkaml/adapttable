@@ -246,12 +246,19 @@ export function MantineDemo({
             source={source}
             columns={
               wide
-                ? makeWideColumns(locale, MANTINE_CELLS)
+                ? makeWideColumns(locale, MANTINE_CELLS, {
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
+                  })
                 : makeColumns(locale, MANTINE_CELLS, {
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
                     formulas: formulaColumns,
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
                   })
             }
             rowKey={(r) => r.id}

@@ -36,6 +36,7 @@ import {
   EXTRA_ROW_PARTS,
   groupedHeaderAlign,
   groupedHeaderChildRule,
+  groupedHeaderLabelStyle,
   type HeaderGroupCell,
   headerGroupRows,
   isColumnGroupSummaryKey,
@@ -252,12 +253,12 @@ function groupTitle(
   onToggle?: (id: string) => void
 ): ReactElement {
   return (
-    <>
+    <span style={groupedHeaderLabelStyle()}>
       {onToggle ? (
         <ColumnGroupToggle cell={cell} labels={labels} onToggle={onToggle} />
       ) : null}
       {columnGroupHeaderCaption(cell)}
-    </>
+    </span>
   );
 }
 

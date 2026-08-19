@@ -291,12 +291,19 @@ export function UnstyledLike({
             source={source}
             columns={
               wide
-                ? makeWideColumns(locale, TAILWIND_CELLS)
+                ? makeWideColumns(locale, TAILWIND_CELLS, {
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
+                  })
                 : makeColumns(locale, TAILWIND_CELLS, {
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
                     formulas: formulaColumns,
+                    editable: Boolean(
+                      editing || rowMode || batch || editorShowcase
+                    ),
                   })
             }
             rowKey={(r) => r.id}

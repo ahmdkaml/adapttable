@@ -126,7 +126,9 @@ collapsed ids and inserts a stub (`COLUMN_GROUP_STUB_PREFIX`,
 beside the group band; a collapsed brief fills the header).
 `groupedHeaderChildRule` is the inset hairline under an open group title.
 `groupedHeaderCellStyle` applies that hairline and `columnGroupStubStyle`
-(the 36px lock so a stub cannot stretch).
+(the 36px lock so a stub cannot stretch). `groupedHeaderLabelStyle` keeps
+the collapse chevron on the same line as the group title so a one-child
+group cannot wrap the arrow above the caption.
 `isColumnGroup` narrows a `ColumnInput` to a parent.
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/column-groups/).

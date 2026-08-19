@@ -3,6 +3,7 @@ import {
   columnMenuActions,
   columnMenuRows,
   columnReorderKeyProps,
+  type Direction,
   filterColumnMenuRows,
   hideAllColumns,
   REORDER_COLUMN_KEY,
@@ -350,6 +351,12 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   onFilterColumn?: (key: string) => void;
   sortBy?: string;
   sortDir?: "asc" | "desc";
+  /**
+   * Text direction. The panel portals to `document.body`, so it cannot
+   * inherit `dir` from the table — without this, Arabic keeps LTR row
+   * chrome (grip, eye, pin).
+   */
+  dir?: Direction;
 }
 
 /**
@@ -371,6 +378,7 @@ export function ColumnMenu<TRow>({
   onFilterColumn,
   sortBy,
   sortDir,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
   const { open, setOpen, rootRef, triggerRef, panelRef } = useMenuPopover();
@@ -402,6 +410,7 @@ export function ColumnMenu<TRow>({
           <fieldset
             ref={panelRef}
             aria-label={labels.columns}
+            dir={dir}
             data-adapttable-part="column-menu-panel"
             className={classNames.columnMenuPanel}
             style={MENU_PANEL_STYLE}

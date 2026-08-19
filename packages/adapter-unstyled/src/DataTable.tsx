@@ -445,6 +445,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             onFilterColumn={() => shell.setFiltersOpen(true)}
             sortBy={viewSource.sortBy}
             sortDir={viewSource.sortDir}
+            dir={dir}
           />
         )}
         {onUndo && onRedo && (

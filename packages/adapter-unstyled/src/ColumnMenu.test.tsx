@@ -343,4 +343,21 @@ describe("unstyled ColumnMenu", () => {
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole("group", { name: "Columns" })).toBeNull();
   });
+
+  it("carries dir onto the portalled panel so RTL layout mirrors", () => {
+    render(
+      <ColumnMenu
+        allColumns={cols}
+        onAutoSize={() => undefined}
+        layout={fakeLayout()}
+        labels={labels}
+        classNames={{}}
+        dir="rtl"
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    expect(
+      document.querySelector('[data-adapttable-part="column-menu-panel"]')
+    ).toHaveAttribute("dir", "rtl");
+  });
 });

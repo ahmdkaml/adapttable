@@ -5,16 +5,14 @@ import { OVERLAY_Z, placeOverlayBelowTrigger } from "./overlayPlacement";
 
 /**
  * Inline style for a toolbar menu panel portalled to `document.body`.
- * `position: fixed` + a high z-index so sticky thead / pinned cells cannot
- * paint over it. Placement (`top` / `left` / `maxHeight`) is applied by
- * {@link useMenuPopover} after mount.
+ * Positioning only — `border` / `padding` stay on `classNames` so a Tailwind
+ * or shadcn map can draw the card. `minInlineSize` kills the fieldset
+ * min-content default.
  */
 export const MENU_PANEL_STYLE: CSSProperties = {
   position: "fixed",
   zIndex: OVERLAY_Z,
   margin: 0,
-  border: 0,
-  padding: 0,
   minInlineSize: 0,
   overflowY: "auto",
 };

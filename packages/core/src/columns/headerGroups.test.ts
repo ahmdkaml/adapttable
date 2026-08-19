@@ -11,6 +11,7 @@ import {
   groupedHeaderAlign,
   groupedHeaderCellStyle,
   groupedHeaderChildRule,
+  groupedHeaderLabelStyle,
   headerGroupRow,
   headerGroupRows,
   htmlGroupedHeaderPlan,
@@ -364,7 +365,35 @@ describe("groupedHeaderCellStyle", () => {
         },
         "red"
       )
-    ).toEqual({ ...columnGroupStubStyle(), textAlign: "center" });
+    ).toEqual({
+      ...columnGroupStubStyle(),
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    });
+  });
+
+  it("keeps a labelled group from wrapping the chevron above the title", () => {
+    const style = groupedHeaderCellStyle(
+      {
+        rowSpan: 1,
+        cell: {
+          key: "g",
+          label: "Assignment",
+          span: 1,
+          id: "Assignment",
+          collapsed: true,
+          collapsible: true,
+          hideLabel: false,
+        },
+      },
+      "red"
+    );
+    expect(style.whiteSpace).toBe("nowrap");
+    expect(style.minWidth).toBe("max-content");
+    expect(groupedHeaderLabelStyle()).toMatchObject({
+      display: "inline-flex",
+      whiteSpace: "nowrap",
+    });
   });
 
   it("honours an explicit group header align", () => {

@@ -39,6 +39,7 @@ import {
   fittedTableStyle,
   groupedHeaderAlign,
   groupedHeaderCellStyle,
+  groupedHeaderLabelStyle,
   type HtmlGroupedHeaderCell,
   htmlGroupedHeaderPlan,
   insertExtraRows,
@@ -1349,14 +1350,16 @@ export function DesktopTable<TRow>({
                         data-adapttable-part="header-group-cell"
                         style={groupedHeaderCellStyle(cell, HAIRLINE)}
                       >
-                        {onToggleColumnGroup ? (
-                          <ColumnGroupToggle
-                            cell={cell.cell}
-                            labels={labels}
-                            onToggle={onToggleColumnGroup}
-                          />
-                        ) : null}
-                        {columnGroupHeaderCaption(cell.cell)}
+                        <span style={groupedHeaderLabelStyle()}>
+                          {onToggleColumnGroup ? (
+                            <ColumnGroupToggle
+                              cell={cell.cell}
+                              labels={labels}
+                              onToggle={onToggleColumnGroup}
+                            />
+                          ) : null}
+                          {columnGroupHeaderCaption(cell.cell)}
+                        </span>
                       </Table.Th>
                     ) : (
                       renderMantineLeaf(cell)

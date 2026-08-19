@@ -625,11 +625,17 @@ export function makeColumns(
      * parse errors are shown — so they arrive built rather than as specs.
      */
     formulas?: readonly ColumnDef<Person>[];
+    /**
+     * Mark demo columns editable. Off unless the page also passes
+     * `onCellEdit` — the live demo must not warn in the console.
+     */
+    editable?: boolean;
   }
 ): ColumnInput<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
   const grouped = options?.groups === true;
+  const canEdit = options?.editable === true;
   // The boolean and multi-select editors, which no other column uses — off
   // unless a page asks, so the frozen live demo is untouched.
   const editors: ColumnDef<Person>[] = options?.editors
@@ -640,7 +646,7 @@ export function makeColumns(
           accessor: (row) => (isRemote(row) ? "✓" : "—"),
           sortValue: (row) => (isRemote(row) ? 1 : 0),
           sortable: true,
-          editable: true,
+          editable: canEdit,
           editor: "boolean",
           editValue: (row) => String(isRemote(row)),
           width: 110,
@@ -650,7 +656,7 @@ export function makeColumns(
           key: "skills",
           header: s.skills,
           accessor: (row) => personSkills(row).join(", ") || "—",
-          editable: true,
+          editable: canEdit,
           editor: {
             type: "multi-select",
             options: SKILLS.map((value) => ({ value, label: value })),
@@ -686,7 +692,7 @@ export function makeColumns(
       headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
-      editable: true,
+      editable: canEdit,
       editor: "text",
       editValue: (r) => r.name,
       // A rule the reader can trip on purpose: clear the name and commit.
@@ -716,9 +722,8 @@ export function makeColumns(
       key: "email",
       header: s.email,
       headerTooltip: s.email,
-      // Opt-in cell editing demo — only activates when the host passes
-      // `onCellEdit` (Frontend path in DemoBody). Column flag alone is inert.
-      editable: true,
+      // Opt-in cell editing — only when this page also passes `onCellEdit`.
+      editable: canEdit,
       editor: "text",
       accessor: (r) => (
         <span style={{ opacity: 0.7, fontSize: "0.9em" }}>{r.email}</span>
@@ -732,7 +737,7 @@ export function makeColumns(
       key: "team",
       header: s.team,
       i18n: { ar: "teamAr" },
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: TEAMS.map((v) => ({ value: v, label: v })),
@@ -752,7 +757,7 @@ export function makeColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: STATUSES.map((v) => ({
@@ -774,7 +779,7 @@ export function makeColumns(
       sortable: true,
       // The cell shows a localized range; the editor edits the start date it
       // sorts by, in the browser's own date control.
-      editable: true,
+      editable: canEdit,
       editor: "date",
       editValue: (r) => localDay(startDate(r)),
       width: 185,
@@ -803,7 +808,7 @@ export function makeColumns(
       // carries the number underneath.
       exportValue: (r) => budget(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(budget(r)),
       width: 130,
@@ -814,7 +819,7 @@ export function makeColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(utilization(r)),
       width: 175,
@@ -843,10 +848,12 @@ export function makeColumns(
  */
 export function makeWideColumns(
   locale: Locale,
-  cells: DemoCells
+  cells: DemoCells,
+  options?: { editable?: boolean }
 ): ColumnInput<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
+  const canEdit = options?.editable === true;
   const leaves: ColumnDef<Person>[] = [
     {
       key: "person",
@@ -854,7 +861,7 @@ export function makeWideColumns(
       headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
-      editable: true,
+      editable: canEdit,
       editor: "text",
       editValue: (r) => r.name,
       width: 240,
@@ -876,7 +883,7 @@ export function makeWideColumns(
       key: "role",
       header: s.role,
       i18n: { ar: "roleAr" },
-      editable: true,
+      editable: canEdit,
       editor: "text",
       width: 150,
     },
@@ -885,7 +892,7 @@ export function makeWideColumns(
       header: s.team,
       i18n: { ar: "teamAr" },
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: TEAMS.map((v) => ({ value: v, label: v })),
@@ -904,7 +911,7 @@ export function makeWideColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: STATUSES.map((v) => ({
@@ -919,7 +926,7 @@ export function makeWideColumns(
       key: "email",
       header: s.email,
       headerTooltip: s.email,
-      editable: true,
+      editable: canEdit,
       editor: "text",
       accessor: (r) => r.email,
       width: 240,
@@ -957,7 +964,7 @@ export function makeWideColumns(
       // carries the number underneath.
       exportValue: (r) => budget(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(budget(r)),
       width: 150,
@@ -967,7 +974,7 @@ export function makeWideColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(utilization(r)),
       width: 190,
