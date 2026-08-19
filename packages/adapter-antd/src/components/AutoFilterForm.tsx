@@ -149,6 +149,7 @@ function RangeField<TRow>({
         allowClear
         style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         aria-label={`${label} ${labels.operator}`}
+        data-adapttable-part="filter-operator"
         placeholder={labels.operator}
         value={op}
         onChange={(next) => {

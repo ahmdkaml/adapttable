@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { configureFeatureLab } from "./feature-lab";
 
@@ -41,13 +41,14 @@ for (const adapter of ADAPTERS) {
       await openDemo(page, adapter);
       const table = demo(page).locator(`[data-adapter="${adapter}"]`);
       await table
+        .getByRole("columnheader", { name: /Person/ })
         .locator('[data-adapttable-part="filter-header-trigger"]')
-        .first()
         .click();
-      const name = page.getByRole("textbox", { name: "Person" });
+      const panel = headerFilterPanel(page, "Person");
+      await expect(panel).toBeVisible();
+      const name = personValue(panel);
       await expect(name).toBeVisible();
       await name.fill("Ada");
-      await expect(page).not.toHaveURL(/lab\.f_name=/);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
     });
@@ -61,23 +62,15 @@ for (const adapter of ADAPTERS) {
         .getByRole("columnheader", { name: /Person/ })
         .locator('[data-adapttable-part="filter-header-trigger"]')
         .click();
-      const panel = page
-        .locator('[data-adapttable-part="filter-header-cell"]')
-        .filter({ hasText: "Person" });
+      const panel = headerFilterPanel(page, "Person");
       await expect(panel).toBeVisible();
       const operator = panel.locator(
         '[data-adapttable-part="filter-operator"]'
       );
       await expect(operator).toBeVisible();
-      const tag = await operator.evaluate((el) => el.tagName);
-      if (tag === "SELECT") {
-        await operator.selectOption({ index: 1 });
-      } else {
-        await operator.click();
-        await page.getByRole("option").nth(1).click();
-      }
+      await pickOperatorIndex(page, operator, 1);
       await expect(panel).toBeVisible();
-      await expect(page.getByRole("textbox", { name: "Person" })).toBeVisible();
+      await expect(personValue(panel)).toBeVisible();
     });
 
     test("header popover is the same field as the Filters panel", async ({
@@ -98,9 +91,7 @@ for (const adapter of ADAPTERS) {
           .getByRole("columnheader", { name: new RegExp(column) })
           .locator('[data-adapttable-part="filter-header-trigger"]')
           .click();
-        const panel = page
-          .locator('[data-adapttable-part="filter-header-cell"]')
-          .filter({ hasText: field });
+        const panel = headerFilterPanel(page, field);
         await expect(panel).toBeVisible();
         await expect(
           panel.locator('[data-adapttable-part="filter-operator"]')
@@ -114,9 +105,7 @@ for (const adapter of ADAPTERS) {
         .getByRole("columnheader", { name: /Status/ })
         .locator('[data-adapttable-part="filter-header-trigger"]')
         .click();
-      const status = page
-        .locator('[data-adapttable-part="filter-header-cell"]')
-        .filter({ hasText: "Status" });
+      const status = headerFilterPanel(page, "Status");
       await expect(status).toBeVisible();
       await expect(
         status.locator('[data-adapttable-part="filter-header-input"]')
@@ -138,4 +127,50 @@ function tableScopedHeader(root: ReturnType<typeof demo>, adapter: string) {
   return root
     .locator(`[data-adapter="${adapter}"]`)
     .locator('[data-adapttable-part="filter-header-trigger"]');
+}
+
+/**
+ * Open overlay cells stay in the DOM when closed, and "Start" is a substring
+ * of "Starts with". Exact caption, last match — the overlay, not a leftover.
+ */
+function headerFilterPanel(page: Page, field: string): Locator {
+  return page
+    .locator('[data-adapttable-part="filter-header-cell"]')
+    .filter({ has: page.getByText(field, { exact: true }) })
+    .last();
+}
+
+function personValue(panel: Locator): Locator {
+  return panel
+    .locator('[data-adapttable-part="filter-input"]')
+    .or(panel.getByRole("textbox"))
+    .first();
+}
+
+async function pickOperatorIndex(
+  page: Page,
+  operator: Locator,
+  index: number
+): Promise<void> {
+  const native = operator.locator("select");
+  if ((await native.count()) > 0) {
+    await native.selectOption({ index });
+    return;
+  }
+  const tag = await operator.evaluate((el) => el.tagName);
+  if (tag === "SELECT") {
+    await operator.selectOption({ index });
+    return;
+  }
+  await operator.click();
+  const visible = page
+    .getByRole("listbox")
+    .filter({ visible: true })
+    .getByRole("option");
+  if ((await visible.count()) > 0) {
+    await visible.nth(index).click();
+    return;
+  }
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
 }

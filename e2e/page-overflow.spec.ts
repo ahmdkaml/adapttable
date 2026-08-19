@@ -101,11 +101,12 @@ test("the wide column set scrolls inside the table, not the page", async ({
 });
 
 /**
- * The pinned header parks at the bottom edge of the nav, whatever height the
- * bar reports — the offset is measured from the live element rather than
- * written down, so a header cannot end up behind chrome that changed shape.
+ * The pinned table chrome parks under the nav: toolbar at the nav's bottom
+ * edge, header under the toolbar. Offset is measured from the live elements
+ * rather than written down, so neither can slide under chrome that changed
+ * shape.
  */
-test("the pinned table header lands under the nav on a narrow desktop", async ({
+test("the pinned table chrome lands under the nav on a narrow desktop", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1024, height: 800 });
@@ -125,10 +126,30 @@ test("the pinned table header lands under the nav on a narrow desktop", async ({
 
   const gap = await page.evaluate(() => {
     const nav = document.querySelector(".nav")!.getBoundingClientRect();
+    const toolbar = document
+      .querySelector('[data-adapttable-part="toolbar"]')!
+      .getBoundingClientRect();
     const header = document.querySelector("thead th")!.getBoundingClientRect();
-    return Math.round(header.top - nav.bottom);
+    return {
+      toolbarFromNav: Math.round(toolbar.top - nav.bottom),
+      headerFromToolbar: Math.round(header.top - toolbar.bottom),
+    };
   });
 
-  expect(gap, "the header hides behind the nav").toBeGreaterThanOrEqual(0);
-  expect(gap, "the header floats below the nav").toBeLessThanOrEqual(2);
+  expect(
+    gap.toolbarFromNav,
+    "the toolbar hides behind the nav"
+  ).toBeGreaterThanOrEqual(0);
+  expect(
+    gap.toolbarFromNav,
+    "the toolbar floats below the nav"
+  ).toBeLessThanOrEqual(2);
+  expect(
+    gap.headerFromToolbar,
+    "the header hides behind the toolbar"
+  ).toBeGreaterThanOrEqual(0);
+  expect(
+    gap.headerFromToolbar,
+    "the header floats below the toolbar"
+  ).toBeLessThanOrEqual(2);
 });

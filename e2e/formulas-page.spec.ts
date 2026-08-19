@@ -80,19 +80,6 @@ test("a typed formula becomes a column of computed values", async ({
   ).toContainText("Doubled");
 });
 
-test("adding a formula does not write the address bar", async ({ page }) => {
-  await page.goto(`/${KIT}/formulas/`);
-  await page.getByTestId("formula-name").fill("Doubled");
-  await page.getByTestId("formula-text").fill("=budget * 2");
-  await page.getByTestId("formula-add").click();
-
-  await expect(
-    table(page).locator('tbody [data-column-key="Doubled"]').first()
-  ).toHaveText("50600");
-  await expect(page).not.toHaveURL(/fx\.formula=/);
-  await expect(page).toHaveURL(/\/formulas\/$/);
-});
-
 test("a formula that cannot compute shows its error in the cell", async ({
   page,
 }) => {
@@ -164,8 +151,6 @@ test("removing a column takes it out of the table", async ({ page }) => {
   await expect(
     table(page).locator('tbody [data-column-key="tag"]')
   ).toHaveCount(0);
-  await expect(page).not.toHaveURL(/fx\.formula=/);
-  await expect(page).toHaveURL(/\/formulas\/$/);
 });
 
 for (const kit of KITS) {

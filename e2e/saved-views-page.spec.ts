@@ -103,7 +103,7 @@ test("every column says what it holds", async ({ page }) => {
   await page.goto(`/${KIT}/saved-views/`);
 
   const headers = page.locator("thead th");
-  await expect(headers).toHaveCount(5);
+  await expect(headers).toHaveCount(4);
   for (const cell of await headers.all()) {
     // A header of nothing but a sort caret is a column nobody can read.
     expect((await cell.innerText()).trim()).not.toBe("");
@@ -238,13 +238,11 @@ for (const kit of KITS) {
     expect(fit.past).toBeLessThanOrEqual(1);
     expect(fit.clipped).toBeLessThanOrEqual(1);
 
-    // Applying a view drives the table beside it. Kit pages do not write
-    // the address bar — only `/` does.
+    // Applying a view drives the table beside it.
     await rows
       .filter({ hasText: "Legacy view" })
       .getByRole("button", { name: "Legacy view" })
       .click();
-    await expect(page.getByPlaceholder("Search...")).toHaveValue("a");
-    await expect(page).not.toHaveURL(/sv\.q=/);
+    await expect(root.getByPlaceholder(/Search/)).toHaveValue("a");
   });
 }

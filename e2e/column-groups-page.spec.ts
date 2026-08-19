@@ -34,7 +34,7 @@ test("answers the search phrase without JavaScript", async ({ browser }) => {
     copy(FEATURE.h1)
   );
   await expect(page.locator("main")).toContainText(
-    copy(FEATURE.intro[0]!).slice(0, 60)
+    copy(FEATURE.intro[0]!).replaceAll("`", "").slice(0, 60)
   );
   await expect(page.locator("main")).toContainText(ADAPTER.pkg);
   await context.close();

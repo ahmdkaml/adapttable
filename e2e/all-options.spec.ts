@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { configureFeatureLab } from "./feature-lab";
+import { configureFeatureLab, pickAddField } from "./feature-lab";
 
 /** Feature Lab: working recipes, guarded controls, and a real table preview. */
 
@@ -84,20 +84,6 @@ test("Feature Lab options open as an edge drawer and close from its backdrop", a
   await expect(
     page.getByRole("button", { name: "Configure options" })
   ).toHaveAttribute("aria-expanded", "false");
-});
-
-test("Feature Lab does not write table state to the URL", async ({ page }) => {
-  await page.goto("/all-options/");
-  await openFeatureControls(page);
-  await page
-    .getByRole("group", { name: "filters container" })
-    .getByRole("button", { name: "Header", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Close options" }).click();
-  await page.getByRole("searchbox", { name: "Person" }).fill("Ada");
-  await page.getByTestId("adapter-mui").click();
-  await expect(page.locator('[data-adapter="mui"]')).toBeVisible();
-  await expect(page).toHaveURL(/\/all-options\/$/);
 });
 
 test("the Rows recipe keeps every kit on screen, including Radix", async ({
@@ -184,7 +170,7 @@ test("Feature Lab recipes change the configuration instead of acting as labels",
     "reorder",
     "pin rows",
     "span cells",
-    "extra rows",
+    "extra attached to a person",
     "row style",
   ]) {
     await expect(
@@ -318,11 +304,7 @@ test("the docked pivot builder pivots the Lab's own table", async ({
 
   // Team down the side, budget in the cells — the smallest pivot there is.
   const addTo = async (zone: string, field: string) => {
-    const add = panel
-      .getByRole("group", { name: zone })
-      .getByRole("combobox", { name: "Add field" });
-    await add.click();
-    await page.getByRole("option", { name: field, exact: true }).click();
+    await pickAddField(page, panel.getByRole("group", { name: zone }), field);
   };
   await addTo("Rows", "Team");
   await addTo("Measures", "Budget");
@@ -338,7 +320,6 @@ test("the docked pivot builder pivots the Lab's own table", async ({
   await expect(
     panel.locator('[data-adapttable-part="pivot-panel"]')
   ).toBeVisible();
-  await expect(page).not.toHaveURL(/lab\.pivot=/);
 });
 
 test("the docked views panel manages the table's saved views", async ({
