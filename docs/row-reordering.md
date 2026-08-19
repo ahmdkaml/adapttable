@@ -2,7 +2,7 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onRowReorder` and a grip appears. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Reorder** on. Space lifts a row, arrows move it, Space drops it.
+▶ **See it working:** [drag-reorder rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — Space lifts a row, arrows move it, Space drops it. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 Pass `onRowReorder` and a drag handle appears in a reserved leading column.
 Omit it and nothing renders, nothing ships in the hot path — the same opt-in

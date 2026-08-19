@@ -2,6 +2,8 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
+▶ **See it working:** [nested tables in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/) — open a row onto another table, not a blank panel. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+
 Render a detail panel under any row by passing `renderRowDetail` — its
 presence is the whole API.
 

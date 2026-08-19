@@ -2,7 +2,7 @@
  * One page component for the whole adapter × feature matrix.
  *
  * "AdaptTable for Mantine" and "Saved views in Mantine" are the same page with
- * different arguments, and so are the hundred and twenty-six that follow them.
+ * different arguments, and so are the hundred and fifty that follow them.
  * The words come from `matrix.mjs`, the demo from `featureBodies.tsx`, and the kit's
  * accent from the adapter's own token — so a new adapter is a data entry, not a
  * new component.
@@ -32,8 +32,11 @@ import {
   Filter,
   Formula,
   Globe,
+  Keyboard,
+  Nested,
   Pencil,
   Phone,
+  Pin,
   Pivot,
   Rows,
   Star,
@@ -60,6 +63,7 @@ import { FEATURE_BODIES, LandingTable } from "./featureBodies";
  * grid is scannable before any of it is read.
  */
 const FEATURE_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
+  accessibility: Keyboard,
   columns: Columns,
   "column-groups": Columns,
   editing: Pencil,
@@ -68,8 +72,10 @@ const FEATURE_ICONS: Record<string, (props: { size?: number }) => ReactNode> = {
   formulas: Formula,
   grouping: Rows,
   "mobile-cards": Phone,
+  "nested-tables": Nested,
   pivot: Pivot,
   realtime: Bolt,
+  rows: Pin,
   rtl: Globe,
   "saved-views": Star,
   scale: Database,
@@ -222,7 +228,7 @@ function SpecPlate({ adapter }: Readonly<{ adapter: ShowcaseAdapter }>) {
   );
 }
 
-/** The fifteen features of one kit, as a grid of links. */
+/** The eighteen features of one kit, as a grid of links. */
 function FeatureGrid({
   adapter,
   root,
@@ -375,6 +381,9 @@ function FeaturePage({
 }>) {
   const fill = (text: string) => fillTemplate(text, adapter);
   const Body = FEATURE_BODIES[feature.slug];
+  if (!Body) {
+    throw new Error(`No demo body for feature "${feature.slug}"`);
+  }
   const note = feature.notes[adapter.key];
   return (
     <>

@@ -237,8 +237,10 @@ const FEATURE_DEMAND_ORDER = [
   "columns",
   "column-groups",
   "selection",
+  "rows",
   "editing",
   "grouping",
+  "nested-tables",
   "export",
   "scale",
   "tree",
@@ -248,17 +250,20 @@ const FEATURE_DEMAND_ORDER = [
   "formulas",
   "rtl",
   "realtime",
+  "accessibility",
 ];
 
 /**
- * The fifteen features that get a page per adapter.
+ * The eighteen features that get a page per adapter.
  *
  * Curated rather than exhaustive: these are the ones people search for by name
  * and evaluate a table on. Pagination is not among them — every table pages,
- * and the docs already own that search. Column groups, RTL and realtime used
- * to answer once for all eight kits; they are features of a kit page now, the
- * same as filtering or grouping. Accessibility is on by default and lives in
- * the docs, not in this grid.
+ * and the docs already own that search. Column groups, RTL, realtime, rows,
+ * nested tables and accessibility used to answer once for all eight kits (or
+ * live only in the Lab / docs); they are features of a kit page now, the same
+ * as filtering or grouping. Accessibility is last in demand order — it is on
+ * by default, and the first tile to give up if a stronger search destination
+ * needs the slot.
  *
  * @type {MatrixFeature[]}
  */
@@ -1068,6 +1073,149 @@ export function People({ rows, columns, setRows }) {
     },
     docs: ["realtime", "cell-editing"],
   },
+  {
+    slug: "rows",
+    label: "Rows",
+    h1: "Rows in {kit}",
+    title: "{kit} table rows — AdaptTable",
+    description:
+      "Pin, drag-reorder and merge cells in a {kit} data table — a 3-dot row-action menu, sticky top and bottom pins, Team written once down consecutive teammates, and add or delete through host callbacks.",
+    intro: [
+      "A row is more than a record. Pin it under the header or to the floor of the scroll box, drag it by the grip (Space lifts, arrows move, Space drops), and merge cells that share a team so the name is written once.",
+      '`onRowReorder`, `onPinnedRowIdsChange`, `getCellSpan` and `rowActionsLayout="menu"` are the four props this page turns on. Add and delete are callbacks to the host — the table never owns the data.',
+      "The grips, the pin actions, the menu and the merged cells are {kit}.",
+    ],
+    card: "Pin, drag-reorder, merge cells, and a 3-dot menu per row.",
+    snippet: `import { DataTable } from "{pkg}";
+
+export function People({ rows, columns, onReorder, setPinned, spanTeam }) {
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+      rowActionsLayout="menu"
+      onRowReorder={onReorder}
+      onPinnedRowIdsChange={setPinned}
+      getCellSpan={spanTeam}
+    />
+  );
+}`,
+    notes: {
+      mantine:
+        "The grip is a Mantine ActionIcon, pin and delete live in a Mantine Menu, and a Team merge is one Table.Td with rowspan — the same row chrome as the rest of a Mantine table.",
+      mui: "The grip is an IconButton, pin and delete live in a MUI Menu, and a Team merge is one TableCell with rowSpan inside the same TableRow the unmerged cells sit on.",
+      chakra:
+        "The grip is a Chakra IconButton, pin and delete live in a Chakra Menu, and a Team merge is one Table.Cell with rowSpan.",
+      antd: "The grip is antd's own handle column, pin and delete live in an antd Dropdown, and a Team merge is rowspan through antd's onCell hook so the span happens inside antd's Table.",
+      radix:
+        "The grip is a Radix IconButton, pin and delete live in a Radix DropdownMenu, and a Team merge is one Table.Cell with rowSpan.",
+      "base-ui":
+        "The grip is a Base UI Button, pin and delete live in a Base UI Menu, and a Team merge is one table cell with rowSpan.",
+      shadcn:
+        "The grip and the 3-dot trigger wear the preset's button classes, the menu is the same surface as every other overlay, and a Team merge is one td with rowspan.",
+      tailwind:
+        "The grip, the menu trigger and the merged cell all carry the map's classes; rowspan is the browser's, so the fill is yours to dress.",
+    },
+    docs: ["row-pinning", "row-reordering", "row-spanning"],
+  },
+  {
+    slug: "nested-tables",
+    label: "Nested tables",
+    h1: "Nested tables in {kit}",
+    title: "{kit} nested data table — AdaptTable",
+    description:
+      "Open a row in a {kit} data table onto another {kit} table — nested orders with their own columns and row keys, the same engine inside the panel, not a blank detail slot to build by hand.",
+    intro: [
+      "Open a row and the panel holds another {kit} table — the same component, not a hand-built list. Each person has recent orders; the inner table has its own columns and row keys.",
+      "`nestedTable` mounts the kit's DataTable with defaults that keep the two tables from fighting over the URL. Rows with no nested table can still use `renderRowDetail`.",
+      "The expand chevron and both tables are {kit}.",
+    ],
+    card: "A real table under a row — same engine, own columns, own keys.",
+    snippet: `import { DataTable } from "{pkg}";
+
+export function People({ rows, columns, orderColumns }) {
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+      nestedTable={(row) => ({
+        label: \`Orders for \${row.name}\`,
+        table: (defaults) => (
+          <DataTable
+            {...defaults}
+            data={row.orders}
+            columns={orderColumns}
+            rowKey={(order) => order.id}
+          />
+        ),
+      })}
+    />
+  );
+}`,
+    notes: {
+      mantine:
+        "The chevron is a Mantine ActionIcon; the inner table is another Mantine DataTable, so the nested orders sort and page with Mantine controls rather than a list in a blank panel.",
+      mui: "The chevron is an IconButton; the inner table is another MUI DataTable — same Table rows, own columns — not a Box of markup in getDetailPanelContent.",
+      chakra:
+        "The chevron is a Chakra IconButton; the inner table is another Chakra DataTable, so the nested orders are Chakra Table rows rather than a stack in a detail slot.",
+      antd: "The chevron maps onto antd's native expandable API; the inner table is another antd DataTable, so the nested orders are antd records rather than expandedRowRender markup.",
+      radix:
+        "The chevron is a Radix IconButton; the inner table is another Radix DataTable, so the nested orders are Radix Table rows.",
+      "base-ui":
+        "The chevron is a Base UI Button; the inner table is another Base UI DataTable, so the nested orders are Base UI table rows.",
+      shadcn:
+        "The chevron wears the preset; the inner table is another shadcn DataTable, so the nested orders sit on the same bg-card surface as the parent.",
+      tailwind:
+        "The chevron and both tables carry the map's classes; the nested orders are a second native table, not a div pretending to be one.",
+    },
+    docs: ["tree-data", "row-expansion"],
+  },
+  {
+    slug: "accessibility",
+    label: "Accessibility",
+    h1: "Accessible {kit} data table",
+    title: "{kit} accessible data table — AdaptTable",
+    description:
+      "Use a {kit} data table from the keyboard or a screen reader — arrow-key cell focus with a visible ring, live announcements, and a header checkbox that selects a column without a modifier key.",
+    intro: [
+      "Tab into the grid and the arrows move a visible focus, one cell at a time. Home and End jump to the row's edges.",
+      "Every move, sort, filter and edit is announced through a live region — the part of a table a sighted reader cannot check, so this page repeats those announcements as text as they happen.",
+      "`columnSelectionCheckbox` puts a named checkbox on each header so a column can be selected without a modifier key a touchscreen does not have. The grid and the checkboxes are {kit}.",
+    ],
+    card: "Arrow-key focus, a visible ring, and every announcement shown as text.",
+    snippet: `import { DataTable } from "{pkg}";
+
+export function People({ rows, columns }) {
+  return (
+    <DataTable
+      data={rows}
+      columns={columns}
+      rowKey={(row) => row.id}
+      cellNavigation
+      columnSelectionCheckbox
+    />
+  );
+}`,
+    notes: {
+      mantine:
+        "The grid is a Mantine table with a visible focus ring on the active cell, and each header checkbox is Mantine's own Checkbox — named for the column it selects.",
+      mui: "The grid is MUI Table rows; the header checkbox is MUI's Checkbox, and the focus ring is the kit's outline on the active cell.",
+      chakra:
+        "The grid is Chakra Table rows; the header checkbox is Chakra's Checkbox, and the focus ring is the kit's outline on the active cell.",
+      antd: "The grid is antd's Table; the header checkbox is antd's Checkbox, and the focus ring is the kit's outline on the active cell.",
+      radix:
+        "The grid is Radix Table rows; the header checkbox is a Radix Checkbox, and the focus ring is the kit's outline on the active cell.",
+      "base-ui":
+        "The grid is Base UI Table rows; the header checkbox is a Base UI Checkbox, and the focus ring is the kit's outline on the active cell.",
+      shadcn:
+        "The grid is semantic markup wearing the preset; the header checkbox is a native input with the preset's classes, and the focus ring is the same outline the rest of the table uses.",
+      tailwind:
+        "The grid is semantic markup carrying the map's classes; the header checkbox is a native input, and the focus ring is yours to dress — nothing in the map singles the active cell out.",
+    },
+    docs: ["accessibility", "cell-navigation"],
+  },
 ];
 
 /**
@@ -1090,7 +1238,7 @@ function inDemandOrder(features) {
   return FEATURE_DEMAND_ORDER.map((slug) => bySlug[slug]);
 }
 
-/** The fifteen features, in the order the landing grid and rails show them. */
+/** The eighteen features, in the order the landing grid and rails show them. */
 export const MATRIX_FEATURES = inDemandOrder(MATRIX_FEATURES_DEFINED);
 
 /**
@@ -1112,8 +1260,8 @@ export const LANDING = {
     "The engine is headless and shared — sorting, filtering, grouping, the pivot, URL state, saved views and export live in @adapttable/core. Every control you can see and click is {surface}.",
     "That is the whole trade: one model to learn, and a table that belongs in a {kit} app rather than sitting inside one.",
   ],
-  /** The heading over the fifteen feature pages. */
-  gridTitle: "Fifteen features, each on its own {kit} page",
+  /** The heading over the eighteen feature pages. */
+  gridTitle: "Eighteen features, each on its own {kit} page",
   gridLead:
     "Every one is the same engine and {kit}'s own components. Each page carries the code for that feature and a table you can drive.",
   /** The heading over the other seven kits. */

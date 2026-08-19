@@ -79,7 +79,7 @@ export const Globe = make([
 ]);
 export const Warning = make(["M12 4l9 16H3l9-16z", "M12 10v4", "M12 17.2v.1"]);
 
-/* The fifteen feature marks. Each draws the shape of the thing rather than a
+/* The eighteen feature marks. Each draws the shape of the thing rather than a
    symbol for it: a pivot is a grid with a marked row and column, grouping is
    rows folded under a header, a tree is a trunk with branches. */
 export const Filter = make(["M3 5h18l-7 8v6l-4 2v-8L3 5z"]);
@@ -104,6 +104,8 @@ export const Tree = make([
   "M5 13h4v4H5z",
   "M15 13h4v4h-4z",
 ]);
+/** A table sitting under a table — nested / master-detail. */
+export const Nested = make(["M4 4h16v7H4z", "M8 14h12v6H8z"]);
 export const Download = make(["M12 4v10", "M8 11l4 4 4-4", "M4 19h16"]);
 export const Rows = make(["M4 4h16v5H4z", "M7 13h13", "M7 17h13", "M4 13v4"]);
 export const Pencil = make([

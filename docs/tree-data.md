@@ -160,6 +160,8 @@ which folds the same nodes. A phone gets a tree, not a flattened list.
 
 ## A real table under a row
 
+▶ **See it working:** [nested tables in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/) — open a person onto their orders; the inner table is the same component. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+
 `renderRowDetail` gives a blank panel, and a table built by hand in one has none
 of the sorting, filtering, selection, keyboard navigation or accessibility the
 outer table has. `nestedTable` puts the same component in there instead:

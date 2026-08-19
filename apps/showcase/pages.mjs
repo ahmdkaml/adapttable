@@ -77,14 +77,6 @@ export const REPLACED_PAGES = [
   ["mobile", "mantine/mobile-cards"],
   ["rtl", "mantine/rtl"],
   ["scale", "mantine/scale"],
-  ["mantine/accessibility", "mantine/editing"],
-  ["mui/accessibility", "mui/editing"],
-  ["chakra/accessibility", "chakra/editing"],
-  ["antd/accessibility", "antd/editing"],
-  ["radix/accessibility", "radix/editing"],
-  ["base-ui/accessibility", "base-ui/editing"],
-  ["shadcn/accessibility", "shadcn/editing"],
-  ["tailwind/accessibility", "tailwind/editing"],
 ];
 
 /**
@@ -95,7 +87,7 @@ export const REPLACED_PAGES = [
 export const SHOWCASE_PAGES = [
   { key: "main", html: "./index.html", route: "/demo/", indexable: true },
   demo("all-options"),
-  // The adapter × feature matrix — a landing plus fifteen feature pages per
+  // The adapter × feature matrix — a landing plus eighteen feature pages per
   // built adapter, expanded from `matrix.mjs`.
   ...matrixPages().map((page) => demo(page.dir)),
   // The addresses those pages replaced.

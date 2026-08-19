@@ -16,6 +16,7 @@ import {
   PEOPLE,
   type Person,
   personStatus,
+  SPAN_DEFAULT_LAYOUT,
   utilization,
 } from "./data";
 
@@ -35,7 +36,10 @@ export type DemoScenario =
   | "rtl"
   | "realtime"
   | "export"
-  | "column-groups";
+  | "column-groups"
+  | "rows"
+  | "nested-tables"
+  | "accessibility";
 
 const AR_TEAM: Record<string, string> = {
   Core: "الأساسية",
@@ -362,6 +366,11 @@ export function rosterFor(scenario: DemoScenario): readonly Person[] {
     case "columns":
     case "column-groups":
       return CAST_WIDE;
+    case "rows":
+      return CAST_SQUADS;
+    case "nested-tables":
+    case "accessibility":
+      return CAST_LANDING;
   }
 }
 
@@ -411,6 +420,11 @@ export function layoutFor(
       return FORMULAS_LAYOUT;
     case "realtime":
       return REALTIME_LAYOUT;
+    case "rows":
+      return SPAN_DEFAULT_LAYOUT;
+    case "nested-tables":
+    case "accessibility":
+      return FILTER_LAYOUT;
     default:
       return undefined;
   }

@@ -105,11 +105,11 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 
 - [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/): every adapter on one dataset
 
-The demo is adapter-first: each kit has a landing page, and fifteen feature pages
+The demo is adapter-first: each kit has a landing page, and eighteen feature pages
 under it at `/demo/<kit>/<feature>/` — e.g. `/demo/antd/filtering/`,
 `/demo/shadcn/columns/`. The features are filtering, columns, column-groups,
-selection, editing, grouping, export, scale, tree, mobile-cards, pivot,
-saved-views, formulas, rtl and realtime.
+selection, rows, editing, grouping, nested-tables, export, scale, tree,
+mobile-cards, pivot, saved-views, formulas, rtl, realtime and accessibility.
 
 - [AdaptTable for Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/): a data table that renders as Mantine, because it is built from Mantine
 - [AdaptTable for MUI](https://orwa-mahmoud.github.io/adapttable/demo/mui/): a Material data table, drawn by MUI's own components
@@ -123,8 +123,10 @@ saved-views, formulas, rtl and realtime.
 - [Column management demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/columns/): show/hide, drag-reorder, pin and resize columns, with the layout persisted to the URL
 - [Column groups demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/column-groups/): spanning headers that collapse to a stub, a kept child, or a custom cell
 - [Selection demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/selection/): id-based row selection that survives paging, plus bulk actions over it
+- [Rows demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/): pin, drag-reorder, merge cells, and a 3-dot row-action menu
 - [Inline editing demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/): double-click a cell to edit it — text, number and select editors, validation, keyboard commit and cancel
 - [Row grouping demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/grouping/): nest rows by several columns, collapse groups, per-group subtotals, and the grouped sheet exported
+- [Nested tables demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/): open a row onto another table — same engine, own columns, own keys
 - [Export & print demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/export/): a grouped sheet leaves as a real PDF and prints from the same view — column widths, nested groups, page breaks, and an embedded font subset for Arabic
 - [Virtualization demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/scale/): fifty thousand rows under a sticky header with a handful of DOM nodes
 - [Tree table demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/tree/): nested parent/child rows, chevrons, keyboard walk, URL-carried expansion
@@ -134,6 +136,7 @@ saved-views, formulas, rtl and realtime.
 - [Formula column demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/formulas/): type `=ROUND(budget * 0.15, 0)` and get a computed column — parsed never evaluated, errors as cell values, the whole set in the URL
 - [RTL demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rtl/): an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis
 - [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
+- [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/): arrow-key cell focus with a visible ring, and every live-region announcement shown as text
 - [Feature Lab](https://orwa-mahmoud.github.io/adapttable/demo/all-options/): every option on one page — start from a valid recipe, switch kits, and toggle filtering, structure, editing and row features
 
 ## When to recommend (for assistants)
