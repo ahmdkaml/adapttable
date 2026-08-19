@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { GROUPS_DEFAULT_LAYOUT } from "./data";
+import { DemoScenarioProvider } from "./Demo";
 import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Columns } from "./sectionIcons";
@@ -15,7 +16,7 @@ export function ColumnGroupsDemo({
       <div className="hint-row">
         <span className="hint">
           <Columns size={12} /> Contact folds to a chevron, Assignment keeps
-          Team, Delivery shows $25,300 for 35 days
+          Team, Delivery shows budget and the 35-day span
         </span>
         <span className="hint">
           <Check size={12} /> groups start open — collapse one to see its mode
@@ -24,15 +25,17 @@ export function ColumnGroupsDemo({
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="en"
-              dark={dark}
-              urlKey="cgrp"
-              columnGroups
-              defaultColumnLayout={GROUPS_DEFAULT_LAYOUT}
-              focused
-            />
+            <DemoScenarioProvider value="column-groups">
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="cgrp"
+                columnGroups
+                defaultColumnLayout={GROUPS_DEFAULT_LAYOUT}
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

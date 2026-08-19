@@ -133,6 +133,7 @@ export const he: Required<TableLabels> = {
   duplicateRow: "שכפל שורה",
   deleteRow: "מחק שורה",
   deleteRowConfirm: "למחוק את השורה הזו? לא ניתן לבטל את הפעולה.",
+  rowActionsMenu: "פעולות שורה",
   editConflict: "השורה הזו השתנתה בזמן העריכה",
   keepMine: "להשאיר את שלי",
   takeTheirs: "לקחת את החדש",

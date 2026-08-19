@@ -516,6 +516,9 @@ describe("<DataTable> (Radix)", () => {
       .map((s) => s.textContent ?? "")
       .join("");
     expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport');
+    expect(css).toContain(
+      ".adapttable-radix-scroll .rt-ScrollAreaViewport{overflow:visible!important"
+    );
     expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-r-ta-left');
     expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-r-ta-right');
   });

@@ -6,6 +6,7 @@ import {
   defaultFilterRegistry,
   filterLabel,
   filterStateKeys,
+  useHeaderFilterOverlay,
 } from "@adapttable/core";
 import {
   BatchEditBarChrome,
@@ -51,7 +52,7 @@ import {
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
 import { Button, Checkbox, Dropdown, Input, Popover, Select } from "antd";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode } from "react";
 
 import { FiltersIcon } from "../icons";
 import { AutoFilterForm } from "./AutoFilterForm";
@@ -277,31 +278,28 @@ function headerFilterActive<TRow>(
 export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
-  const [open, setOpen] = useState(false);
   const active = headerFilterActive(props);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(
+    props,
+    {
+      nestedSelector: ".ant-popover,.ant-select-dropdown,.ant-picker-dropdown",
+    }
+  );
   return (
     <Popover
-      trigger="click"
+      trigger={[]}
       open={open}
-      onOpenChange={setOpen}
       placement="bottomLeft"
       destroyOnHidden
       content={
         <div
+          {...sessionProps}
           data-adapttable-part="filter-header-cell"
           style={{ minWidth: "20rem" }}
         >
           <AutoFilterForm
             defs={[props.def]}
-            source={props.source}
+            source={source}
             labels={props.labels}
             registry={props.registry}
           />
@@ -309,11 +307,13 @@ export function FilterHeaderTrigger<TRow>(
       }
     >
       <Button
+        {...sessionProps}
         type={active ? "primary" : "text"}
         size="small"
         aria-label={filterLabel(props.def)}
         data-adapttable-part="filter-header-trigger"
         data-active={active ? "" : undefined}
+        onClick={() => setOpen(!open)}
       >
         <FiltersIcon size={14} />
       </Button>

@@ -100,6 +100,30 @@ test("Feature Lab does not write table state to the URL", async ({ page }) => {
   await expect(page).toHaveURL(/\/all-options\/$/);
 });
 
+test("the Rows recipe keeps every kit on screen, including Radix", async ({
+  page,
+}) => {
+  // Radix Table.Root wraps a ScrollArea. The Rows recipe adds a reorder
+  // column, which is enough for that ScrollArea to fight the wrapper's
+  // overflow and crash React with "Maximum update depth exceeded".
+  await page.goto("/all-options/");
+  await page
+    .locator(".lab-recipes")
+    .getByRole("button", { name: /^Rows/ })
+    .click();
+  await expect(page.locator(".lab-summary strong")).toHaveText("Rows");
+
+  for (const adapter of ADAPTERS) {
+    if (adapter !== "mantine") {
+      await page.getByTestId(`adapter-${adapter}`).scrollIntoViewIfNeeded();
+      await page.getByTestId(`adapter-${adapter}`).click();
+    }
+    const table = page.locator(`[data-adapter="${adapter}"]`);
+    await expect(table.locator("[data-stagger]").first()).toBeVisible();
+    await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
+  }
+});
+
 test("Feature Lab recipes change the configuration instead of acting as labels", async ({
   page,
 }) => {

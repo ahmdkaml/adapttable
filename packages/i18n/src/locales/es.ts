@@ -132,6 +132,7 @@ export const es: Required<TableLabels> = {
   duplicateRow: "Duplicar fila",
   deleteRow: "Eliminar fila",
   deleteRowConfirm: "¿Eliminar esta fila? Esta acción no se puede deshacer.",
+  rowActionsMenu: "Acciones de fila",
   editConflict: "Esta fila cambió mientras la editabas",
   keepMine: "Conservar lo mío",
   takeTheirs: "Tomar lo nuevo",

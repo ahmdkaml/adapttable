@@ -7,6 +7,7 @@ import {
   filterLabel,
   filterStateKeys,
   type TableSource,
+  useHeaderFilterOverlay,
 } from "@adapttable/core";
 import {
   BatchEditBarChrome,
@@ -53,6 +54,7 @@ import {
 } from "@adapttable/core/adapter";
 import type { ChangeEvent } from "react";
 
+import type { DataTableClassNames } from "../types";
 import { AutoFilterForm } from "./AutoFilterForm";
 import { FiltersIcon } from "./icons";
 
@@ -290,12 +292,23 @@ function headerFilterActive<TRow>(
 
 /** Filters icon on the column header — the same field the Filters panel draws. */
 export function FilterHeaderTrigger<TRow>(
-  props: Readonly<FilterHeaderControlProps<TRow>>
+  props: Readonly<
+    FilterHeaderControlProps<TRow> & { classNames?: DataTableClassNames }
+  >
 ) {
   const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps, resetKey } =
+    useHeaderFilterOverlay(props, { pointerDismiss: false });
   return (
     <details
+      key={resetKey}
+      {...sessionProps}
+      open={open}
+      onToggle={(event) =>
+        setOpen((event.currentTarget as HTMLDetailsElement).open)
+      }
       data-adapttable-part="filter-header-trigger"
+      className={props.className ?? props.classNames?.filterHeaderTrigger}
       style={{ position: "relative", display: "inline-block" }}
     >
       <summary
@@ -313,6 +326,7 @@ export function FilterHeaderTrigger<TRow>(
       </summary>
       <div
         data-adapttable-part="filter-header-cell"
+        className={props.classNames?.filterHeaderCell}
         style={{
           position: "absolute",
           zIndex: 3,
@@ -327,9 +341,10 @@ export function FilterHeaderTrigger<TRow>(
       >
         <AutoFilterForm
           defs={[props.def]}
-          source={props.source as TableSource<TRow>}
+          source={source as TableSource<TRow>}
           labels={props.labels}
           registry={props.registry}
+          classNames={props.classNames}
         />
       </div>
     </details>

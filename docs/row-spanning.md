@@ -2,12 +2,19 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `getCellSpan` or `column.colSpan`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Span** on. Ada's name covers the email column.
+▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Span cells** on. Team is written once down the people who share it. Person and Email stay their own cells.
 
 A span is a rectangle. The origin cell carries `colSpan` / `rowSpan`; every
 covered neighbour is omitted from that row's cell list, so every kit maps one
 list instead of `columns.map`. Omit `getCellSpan` and every `column.colSpan` /
 `column.rowSpan` and the list is one cell per column — nothing extra renders.
+
+By default the origin is painted like a spreadsheet merge: **centered
+content, one fill** across the whole span (`data-cell-span` is
+`"colSpan x rowSpan"`, e.g. `"1x5"`). That is `cellSpanAppearance="merged"`.
+Pass `"plain"` for geometry only — same chrome as a 1×1 cell — if you want
+to draw a calendar-style bar yourself. Override the fill with
+`--adapttable-cell-span-fill`, or the unstyled `cellSpan` class hook.
 
 ```tsx
 import { DataTable } from "@adapttable/mantine";
@@ -16,9 +23,13 @@ import { DataTable } from "@adapttable/mantine";
   data={rows}
   columns={columns}
   rowKey={(row) => row.id}
-  getCellSpan={({ column, rowIndex }) =>
-    column.key === "name" && rowIndex === 0 ? { colSpan: 2 } : undefined
-  }
+  getCellSpan={({ column, row, rowIndex }) => {
+    if (column.key !== "team") return undefined;
+    if (rows[rowIndex - 1]?.team === row.team) return undefined;
+    let rowSpan = 1;
+    while (rows[rowIndex + rowSpan]?.team === row.team) rowSpan += 1;
+    return rowSpan > 1 ? { rowSpan } : undefined;
+  }}
 />;
 ```
 

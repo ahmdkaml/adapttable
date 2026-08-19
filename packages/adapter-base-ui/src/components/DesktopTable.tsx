@@ -16,6 +16,8 @@ import {
   resolveColumnFooter,
   resolveColumnHeader,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowExpansionState,
   type RowPinSide,
   type SelectionState,
@@ -41,6 +43,8 @@ import {
   htmlGroupedHeaderPlan,
   insertExtraRows,
   logicalAlign,
+  mergedCellStyle,
+  cellSpanMark,
   type PinLeads,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
@@ -303,6 +307,9 @@ interface DesktopRowProps<TRow> {
   rowVisualStyle: CSSProperties | undefined;
   rowStyleSignature: string;
   labels: Required<TableLabels>;
+  rowActionsLayout?: RowActionsLayout;
+  cellSpanAppearance?: SharedTableRenderProps<TRow>["cellSpanAppearance"];
+  renderRowActions?: RowActionsRenderer<TRow>;
   hasSelection: boolean;
   expandable: boolean;
   showActions: boolean;
@@ -376,6 +383,9 @@ function DesktopRowBase<TRow>({
   className,
   rowVisualStyle,
   labels,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   hasSelection,
   expandable,
   showActions,
@@ -510,15 +520,27 @@ function DesktopRowBase<TRow>({
               rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
               data-adapttable-part="cell"
+              data-cell-span={cellSpanMark(colSpan, rowSpan)}
               {...focusProps}
-              justify={justifyFor(column.align)}
+              justify={
+                mergedCellStyle(colSpan, rowSpan, cellSpanAppearance)
+                  ? "center"
+                  : justifyFor(column.align)
+              }
               style={
                 // This kit's own subtle fill for a selected cell, applied over the
                 // pinned background so a pinned column still shows the selection.
-                cellHighlightStyle(focusProps, dataPinStyle(column.key), {
-                  background:
-                    "var(--adapttable-cell-selected, rgba(59, 130, 246, 0.14))",
-                })
+                cellHighlightStyle(
+                  focusProps,
+                  {
+                    ...dataPinStyle(column.key),
+                    ...mergedCellStyle(colSpan, rowSpan, cellSpanAppearance),
+                  },
+                  {
+                    background:
+                      "var(--adapttable-cell-selected, rgba(59, 130, 246, 0.14))",
+                  }
+                )
               }
             >
               <TreeCell
@@ -579,7 +601,9 @@ function DesktopRowBase<TRow>({
                 row={row}
                 actions={live.rowActions}
                 confirm={live.confirm}
-                cancelLabel={labels.cancel}
+                labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
                 accentColor={accentColor}
               />
             )}
@@ -612,6 +636,9 @@ export function DesktopTable<TRow>({
   table,
   rows,
   rowActions,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   confirm,
   getRowId,
   size,
@@ -660,6 +687,7 @@ export function DesktopTable<TRow>({
   headerFilters,
   filterDefs,
   filterRegistry,
+  closeHeaderFilterOnSelect,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -850,6 +878,9 @@ export function DesktopTable<TRow>({
           resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
         )}
         labels={labels}
+        rowActionsLayout={rowActionsLayout}
+        cellSpanAppearance={cellSpanAppearance}
+        renderRowActions={renderRowActions}
         hasSelection={Boolean(selection)}
         expandable={expandable}
         showActions={showActions}
@@ -995,6 +1026,7 @@ export function DesktopTable<TRow>({
             source={table.source}
             labels={labels}
             registry={filterRegistry}
+            closeOnSelect={closeHeaderFilterOnSelect}
           />
         ) : null}
         {setWidth && (
@@ -1334,6 +1366,9 @@ export function DesktopTable<TRow>({
                       )
                     )}
                     labels={labels}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     hasSelection={Boolean(selection)}
                     expandable={expandable}
                     showActions={showActions}
@@ -1411,6 +1446,9 @@ export function DesktopTable<TRow>({
                       resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
                     )}
                     labels={labels}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     hasSelection={Boolean(selection)}
                     expandable={expandable}
                     showActions={showActions}

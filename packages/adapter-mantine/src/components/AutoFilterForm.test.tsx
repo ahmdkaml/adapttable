@@ -35,6 +35,7 @@ function makeSource(
     paginationMode: "paged",
     page: 1,
     limit: 25,
+    defaultLimit: 25,
     search: "",
     sortBy: undefined,
     sortDir: undefined,

@@ -131,6 +131,7 @@ export const ja: Required<TableLabels> = {
   duplicateRow: "行を複製",
   deleteRow: "行を削除",
   deleteRowConfirm: "この行を削除しますか？この操作は取り消せません。",
+  rowActionsMenu: "行の操作",
   editConflict: "編集中にこの行が変わりました",
   keepMine: "自分の入力を残す",
   takeTheirs: "新しい値を使う",

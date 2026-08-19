@@ -134,6 +134,7 @@ export const defaultLabels: Required<TableLabels> = {
   duplicateRow: "Duplicate row",
   deleteRow: "Delete row",
   deleteRowConfirm: "Delete this row? This cannot be undone.",
+  rowActionsMenu: "Row actions",
   editConflict: "This row changed while you were editing",
   keepMine: "Keep mine",
   takeTheirs: "Take theirs",

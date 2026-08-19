@@ -141,6 +141,13 @@ export {
   useTextFilterWidget,
 } from "./filters/filterForm";
 export {
+  bindHeaderFilterDismiss,
+  headerFilterFieldIsComplete,
+  type HeaderFilterSessionProps,
+  useHeaderFilterOverlay,
+  usePointerDismiss,
+} from "./filters/headerFilterOverlay";
+export {
   filterDefForColumn,
   type FilterHeaderClassNames,
   type FilterHeaderRowProps,
@@ -605,7 +612,9 @@ export {
   type BodyCell,
   buildBodyCells,
   cellsForRow,
+  type CellSpanAppearance,
   type CellSpanRequest,
+  cellSpanMark,
   coveredAddressSet,
   type GetCellSpan,
   type GetCellSpanArgs,
@@ -657,6 +666,12 @@ export {
   pinnedRowStickyStyle,
   useOffsetHeight,
 } from "./rows/pinnedRowChrome";
+export {
+  type RowActionsLayout,
+  type RowActionsRenderContext,
+  type RowActionsRenderer,
+  visibleRowActions,
+} from "./rows/rowActions";
 export {
   DELETE_ROW_ACTION_KEY,
   DUPLICATE_ROW_ACTION_KEY,

@@ -1,5 +1,5 @@
 import type { QueryFilterGroup } from "@adapttable/core";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
@@ -10,7 +10,11 @@ import {
   type FilterValue,
 } from "../index";
 import { FilterTreeBuilder } from "./FilterTreeBuilder";
-import { FilterHeaderControl, FilterHeaderRow } from "./kitControls";
+import {
+  FilterHeaderControl,
+  FilterHeaderRow,
+  FilterHeaderTrigger,
+} from "./kitControls";
 
 interface Row {
   name: string;
@@ -148,6 +152,76 @@ describe("kit header filters (unstyled)", () => {
       target: { value: "Core" },
     });
     expect(screen.getByLabelText("Team")).toHaveValue("Core");
+  });
+});
+
+function TriggerHarness({
+  def,
+  closeOnSelect,
+}: Readonly<{
+  def: FilterDef<Row>;
+  closeOnSelect?: boolean;
+}>) {
+  const [extra, setExtra] = useState<ExtraFilters>({});
+  const source = {
+    extra,
+    setExtra: (key: string, value: FilterValue) =>
+      setExtra((prev) => ({ ...prev, [key]: value })),
+    setExtras: (patch: ExtraFilters) =>
+      setExtra((prev) => ({ ...prev, ...patch })),
+  };
+  return (
+    <FilterHeaderTrigger
+      def={def}
+      source={source}
+      labels={defaultLabels}
+      closeOnSelect={closeOnSelect}
+    />
+  );
+}
+
+describe("kit header filter trigger (unstyled)", () => {
+  it("stays open after picking a text operator so the value can still be typed", () => {
+    render(<TriggerHarness def={DEFS[0]!} />);
+    const trigger = document.querySelector(
+      '[data-adapttable-part="filter-header-trigger"]'
+    );
+    expect(trigger).not.toBeNull();
+    fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+    fireEvent.change(screen.getByLabelText("Operator"), {
+      target: { value: "eq" },
+    });
+    expect(trigger).toHaveAttribute("open");
+    expect(
+      document.querySelector('[data-adapttable-part="filter-input"]')
+    ).not.toBeNull();
+  });
+
+  it("closes after a finished select write only when closeOnSelect is on", async () => {
+    const { unmount } = render(<TriggerHarness def={DEFS[1]!} />);
+    const openAndPick = () => {
+      const trigger = document.querySelector(
+        '[data-adapttable-part="filter-header-trigger"]'
+      );
+      expect(trigger).not.toBeNull();
+      fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+      fireEvent.change(
+        document.querySelector('[data-adapttable-part="filter-select"]')!,
+        { target: { value: "Web" } }
+      );
+      return trigger;
+    };
+    expect(openAndPick()).toHaveAttribute("open");
+    unmount();
+
+    render(<TriggerHarness def={DEFS[1]!} closeOnSelect />);
+    openAndPick();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
+    ).not.toHaveAttribute("open");
   });
 });
 

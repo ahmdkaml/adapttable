@@ -443,6 +443,10 @@ own `rowActions` — so a delete stays last, where a destructive action belongs.
 They ride the actions column like any other row action: hideable and end-pinnable
 from the Columns menu, buttons on desktop and card buttons on mobile.
 
+Pass `rowActionsLayout="menu"` to collapse those buttons into a 3-dot menu
+(omit or `"buttons"` keeps today's strip). `renderRowActions` replaces the
+cell entirely when you want your own chrome — it wins over the layout.
+
 **The table asks; you do the rest.** It holds no draft and stores no row. A row
 you add arrives through the source like every other row, which is what keeps it
 ordinary — editable, filterable, sortable, counted, grouped and virtualized from

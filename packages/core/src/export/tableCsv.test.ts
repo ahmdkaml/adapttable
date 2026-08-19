@@ -53,6 +53,7 @@ function source(
     paginationMode: "paged",
     page: 1,
     limit: 2,
+    defaultLimit: 2,
     search: "",
     sortBy: undefined,
     sortDir: undefined,

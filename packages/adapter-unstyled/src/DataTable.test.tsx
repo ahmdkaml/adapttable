@@ -986,6 +986,50 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.getAllByLabelText("DisabledAct")[0]!).toBeDisabled();
   });
 
+  it("collapses row actions into a 3-dot menu when layout is menu", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="row-actions-trigger"]'
+    );
+    expect(trigger).toHaveAttribute("aria-label", "Row actions");
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-menu"]')
+    ).not.toBeNull();
+    fireEvent.click(trigger!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("lets renderRowActions replace the actions cell", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+        renderRowActions: ({ row }) => (
+          <button
+            type="button"
+            aria-label="custom-e"
+            onClick={() => onEdit(row)}
+          >
+            Custom
+          </button>
+        ),
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-trigger"]')
+    ).toBeNull();
+    fireEvent.click(screen.getAllByLabelText("custom-e")[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
+  });
+
   it("merges extraChips with label chips", () => {
     renderHarness(
       {
@@ -1216,6 +1260,29 @@ describe("header filter trigger", () => {
         key
       ).toBeNull();
     }
+  });
+
+  it("stays open after picking a text operator so the value can still be typed", () => {
+    renderHarness({
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="filter-header-trigger"]'
+    );
+    expect(trigger).not.toBeNull();
+    fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+    const operator = document.querySelector(
+      '[data-adapttable-part="filter-operator"]'
+    );
+    expect(operator).not.toBeNull();
+    fireEvent.change(operator!, { target: { value: "eq" } });
+    expect(trigger).toHaveAttribute("open");
+    expect(
+      document.querySelector('[data-adapttable-part="filter-input"]')
+    ).not.toBeNull();
   });
 
   it("hides the header filter trigger on mobile cards", () => {

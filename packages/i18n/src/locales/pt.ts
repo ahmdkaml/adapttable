@@ -133,6 +133,7 @@ export const pt: Required<TableLabels> = {
   duplicateRow: "Duplicar linha",
   deleteRow: "Excluir linha",
   deleteRowConfirm: "Excluir esta linha? Não é possível desfazer.",
+  rowActionsMenu: "Ações da linha",
   editConflict: "Esta linha mudou enquanto você a editava",
   keepMine: "Manter o meu",
   takeTheirs: "Usar o novo",

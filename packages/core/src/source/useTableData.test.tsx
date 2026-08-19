@@ -142,6 +142,7 @@ describe("useTableData — tier resolution", () => {
       total: 3,
       page: 1,
       limit: 8,
+      defaultLimit: 8,
       search: "",
       sortBy: undefined,
       sortDir: undefined,

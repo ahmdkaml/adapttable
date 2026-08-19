@@ -16,6 +16,7 @@ import { type ReactNode, useMemo, useRef } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
 import type { ColumnGroupRecord } from "./columns/columnTree";
+import type { PinOffset } from "./columns/useColumnLayout";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import type { FilterDef } from "./filters/filterDefs";
 import type { FilterTypeRegistry } from "./filters/filterRegistry";
@@ -26,9 +27,11 @@ import type { GroupCollapseState } from "./grouping/useGroupCollapse";
 import {
   type BodyCell,
   buildBodyCells,
+  type CellSpanAppearance,
   type GetCellSpan,
 } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
+import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import { incrementalViewOf } from "./rows/incremental";
 import type { MobileCardRenderer } from "./rows/mobileCard";
 import type { RowPinningState } from "./rows/rowPinning";
@@ -60,6 +63,13 @@ export interface SharedTableRenderProps<TRow> {
   gridFocus?: GridFocusState;
   /** Per-row actions rendered in a trailing actions column. */
   rowActions?: RowAction<TRow>[];
+  /** How those actions render. Omit / `"buttons"` is the horizontal strip. */
+  rowActionsLayout?: RowActionsLayout;
+  /**
+   * Replace the trailing actions cell. Wins over
+   * {@link SharedTableRenderProps.rowActionsLayout}.
+   */
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Confirmation handler used before destructive row actions run. */
   confirm: ConfirmHandler;
   /** Stable row identity used for keys and selection. */
@@ -118,6 +128,11 @@ export interface SharedTableRenderProps<TRow> {
    * {@link TableRenderModel.cellsByRow} omits covered cells.
    */
   getCellSpan?: GetCellSpan<TRow>;
+  /**
+   * How a spanned cell is painted. Omit / `"merged"` is the spreadsheet look.
+   * `"plain"` is geometry only.
+   */
+  cellSpanAppearance?: CellSpanAppearance;
   /** Host-injected separator / full-width slots. */
   extraRows?: readonly ExtraRow[];
   /** Expansion state, present when `renderRowDetail` is set. */
@@ -191,6 +206,11 @@ export interface SharedTableRenderProps<TRow> {
    * Driven by {@link filterDefs} and the source extra bag.
    */
   headerFilters?: boolean;
+  /**
+   * Close a header-filter overlay after a finished single-control write.
+   * Default off — see {@link BaseDataTableProps.closeHeaderFilterOnSelect}.
+   */
+  closeHeaderFilterOnSelect?: boolean;
   /** Declarative filter defs the header row matches to columns. */
   filterDefs?: readonly FilterDef<TRow>[];
   /** Type registry the header row and custom widgets read. */

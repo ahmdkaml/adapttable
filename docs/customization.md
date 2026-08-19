@@ -54,27 +54,28 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Filters
 
-| Part                                                                                                                    | Element                                                                                |
-| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `filtersButton`                                                                                                         | The Filters trigger button.                                                            |
-| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                    |
-| `filtersCount`                                                                                                          | The active-filter count badge.                                                         |
-| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                      |
-| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                       |
-| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
-| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                         |
-| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                   |
-| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                          |
-| `filtersPanel`                                                                                                          | The drawer panel.                                                                      |
-| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                         |
-| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                             |
-| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                  |
-| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                        |
-| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
-| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
-| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
-| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`                                       | Compact header filter row, one cell, its input, and the multi-select menu.             |
-| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
+| Part                                                                                                                    | Element                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `filtersButton`                                                                                                         | The Filters trigger button.                                                                                        |
+| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                                                |
+| `filtersCount`                                                                                                          | The active-filter count badge.                                                                                     |
+| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                                                  |
+| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                                                   |
+| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.                              |
+| `cellSpan`                                                                                                              | A spanned cell (`getCellSpan`). `data-cell-span` is on the element (`"2x1"`). Default look is centered + one fill. |
+| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                                                     |
+| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                                               |
+| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                                                      |
+| `filtersPanel`                                                                                                          | The drawer panel.                                                                                                  |
+| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                                                     |
+| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                                                         |
+| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                                              |
+| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                                                    |
+| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`.                             |
+| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                                                      |
+| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                                                   |
+| `filterHeaderRow` / `filterHeaderTrigger` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`               | Compact header filter row, funnel overlay trigger, one cell, its input, and the multi-select menu.                 |
+| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                                                    |
 
 ### Chips
 
@@ -114,14 +115,15 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Table
 
-| Part                           | Element                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| `table` / `thead` / `tbody`    | The `<table>` and its sections.                      |
-| `headerRow` / `headerCell`     | The header `<tr>` and one `<th>`.                    |
-| `groupRow` / `groupCell`       | The grouped-header row and one spanning cell.        |
-| `sortButton` / `sortIndex`     | A sortable header's button and its multi-sort badge. |
-| `row` / `cell`                 | One body `<tr>` and one `<td>`.                      |
-| `actionsCell` / `actionButton` | The trailing actions cell and one action button.     |
+| Part                                   | Element                                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `table` / `thead` / `tbody`            | The `<table>` and its sections.                                                              |
+| `headerRow` / `headerCell`             | The header `<tr>` and one `<th>`.                                                            |
+| `groupRow` / `groupCell`               | The grouped-header row and one spanning cell.                                                |
+| `sortButton` / `sortIndex`             | A sortable header's button and its multi-sort badge.                                         |
+| `row` / `cell`                         | One body `<tr>` and one `<td>`.                                                              |
+| `actionsCell` / `actionButton`         | The trailing actions cell and one action button.                                             |
+| `rowActionsTrigger` / `rowActionsMenu` | The 3-dot control and its menu (`rowActionsLayout="menu"`). Menu items reuse `actionButton`. |
 
 ### Row expansion
 

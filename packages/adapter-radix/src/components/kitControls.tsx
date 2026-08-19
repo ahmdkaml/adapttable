@@ -6,6 +6,7 @@ import {
   defaultFilterRegistry,
   filterLabel,
   filterStateKeys,
+  useHeaderFilterOverlay,
 } from "@adapttable/core";
 import {
   BatchEditBarChrome,
@@ -240,10 +241,12 @@ export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(props);
   return (
-    <Popover.Root>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger>
         <IconButton
+          {...sessionProps}
           type="button"
           size="1"
           variant={active ? "soft" : "ghost"}
@@ -255,14 +258,18 @@ export function FilterHeaderTrigger<TRow>(
         </IconButton>
       </Popover.Trigger>
       <Popover.Content
+        {...sessionProps}
         align="start"
         sideOffset={4}
         data-adapttable-part="filter-header-cell"
         style={{ minWidth: "20rem", padding: 8 }}
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onFocusOutside={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
       >
         <AutoFilterForm
           defs={[props.def]}
-          source={props.source}
+          source={source}
           labels={props.labels}
           registry={props.registry}
         />

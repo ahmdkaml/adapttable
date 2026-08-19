@@ -3,7 +3,8 @@ import { useSavedViews } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
 import { Suspense, useMemo, useState } from "react";
 
-import { BASE_COLUMNS, PEOPLE, type Person } from "./data";
+import { BASE_COLUMNS, type Person } from "./data";
+import { rosterFor, layoutFor } from "./casts";
 import {
   kitClassNames,
   KitProvider,
@@ -18,8 +19,8 @@ import type { FeatureBodyProps } from "./matrix/featureBodies";
  * and the one that matters most.
  */
 const SHARED: SavedView = {
-  name: "Team: engineering",
-  search: "sv.q=eng",
+  name: "Team: platform",
+  search: "sv.q=Platform",
   visibility: "team",
   readOnly: true,
   version: 2,
@@ -113,10 +114,11 @@ export function SavedViewsDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
           <div>
             <Suspense fallback={null}>
               <Table
-                data={PEOPLE}
+                data={rosterFor("saved-views")}
                 columns={BASE_COLUMNS}
                 rowKey={(row) => row.id}
                 urlKey="sv"
+                defaultColumnLayout={layoutFor("saved-views")}
                 savedViews={{ storageKey: "showcase-views", storage }}
                 labels={getLabels("en")}
                 classNames={classNames}

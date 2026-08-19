@@ -1,6 +1,11 @@
 import { Suspense, useState } from "react";
 
-import { AdvancedFiltersProvider, type FiltersUi } from "./Demo";
+import {
+  AdvancedFiltersProvider,
+  DemoScenarioProvider,
+  type FiltersUi,
+} from "./Demo";
+import { DemoFilterSetProvider } from "./demoFilters";
 import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
@@ -76,19 +81,23 @@ export function FilteringDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={`${adapter}-${layout}-${form}`} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <AdvancedFiltersProvider value={advanced}>
-              <Demo
-                mode="frontend"
-                locale="en"
-                dark={dark}
-                urlKey="flt"
-                filterControls
-                filtersUi={layout === "header" ? "popover" : layout}
-                headerFilters={layout === "header" && form !== "advanced"}
-                filterFields={form !== "advanced"}
-                focused
-              />
-            </AdvancedFiltersProvider>
+            <DemoScenarioProvider value="filtering">
+              <DemoFilterSetProvider value="kitchen">
+                <AdvancedFiltersProvider value={advanced}>
+                  <Demo
+                    mode="frontend"
+                    locale="en"
+                    dark={dark}
+                    urlKey="flt"
+                    filterControls
+                    filtersUi={layout === "header" ? "popover" : layout}
+                    headerFilters={layout === "header" && form !== "advanced"}
+                    filterFields={form !== "advanced"}
+                    focused
+                  />
+                </AdvancedFiltersProvider>
+              </DemoFilterSetProvider>
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

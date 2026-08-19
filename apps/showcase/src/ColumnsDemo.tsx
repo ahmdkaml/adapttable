@@ -2,6 +2,7 @@ import { xlsxWriter } from "@adapttable/core/xlsx";
 import { Suspense } from "react";
 
 import { ADAPTERS, DemoFallback } from "./kitDemos";
+import { DemoScenarioProvider } from "./Demo";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Columns, Keyboard, Pin, Resize } from "./sectionIcons";
 
@@ -32,20 +33,22 @@ export function ColumnsDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="en"
-              dark={dark}
-              urlKey="cols"
-              wide
-              // This page IS the column tools, so it says so rather than
-              // inheriting the menu from whether the column set happens to be
-              // wide — a coupling that left every kit but antd without one.
-              columnMenu
-              cellNavigation
-              exportCsv={EXPORT_RANGE_AS_XLSX}
-              focused
-            />
+            <DemoScenarioProvider value="columns">
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="cols"
+                wide
+                // This page IS the column tools, so it says so rather than
+                // inheriting the menu from whether the column set happens to be
+                // wide — a coupling that left every kit but antd without one.
+                columnMenu
+                cellNavigation
+                exportCsv={EXPORT_RANGE_AS_XLSX}
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

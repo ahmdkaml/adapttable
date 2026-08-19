@@ -34,6 +34,23 @@ export type GetCellSpan<TRow> = (
   args: GetCellSpanArgs<TRow>
 ) => CellSpanRequest | undefined;
 
+/**
+ * How a spanned cell is painted. `"merged"` (the default) is the spreadsheet
+ * look: centered content, one fill across the span. `"plain"` is geometry
+ * only — same chrome as a 1×1 cell — so a host can draw a calendar bar
+ * themselves.
+ */
+export type CellSpanAppearance = "merged" | "plain";
+
+/** `"2x1"` when this cell owns more than one slot; otherwise nothing. */
+export function cellSpanMark(
+  colSpan: number,
+  rowSpan: number
+): string | undefined {
+  if (colSpan <= 1 && rowSpan <= 1) return undefined;
+  return `${colSpan}x${rowSpan}`;
+}
+
 /** One body cell a kit renders — covered cells never appear. */
 export interface BodyCell<TRow> {
   column: ColumnDef<TRow>;

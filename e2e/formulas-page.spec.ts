@@ -32,7 +32,7 @@ const KIT = builtAdapters()[0]!.key;
 
 const KITS = builtAdapters().map((adapter) => adapter.key);
 
-/** Ada Lovelace is row 1, and her budget derives from her id: 25300. */
+/** Priya Nair is row 1 on this page; her budget still derives from id 1: 25300. */
 const ADA_MARGIN = "3795";
 
 const table = (page: Page) => page.locator('[data-adapter="mantine"]');

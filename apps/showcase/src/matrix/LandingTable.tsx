@@ -9,6 +9,7 @@
 import { Suspense } from "react";
 
 import { ADAPTERS, DemoFallback } from "../kitDemos";
+import { DemoScenarioProvider } from "../Demo";
 import type { FeatureBodyProps } from "./featureBodies";
 
 export function LandingTable({ dark, adapter }: Readonly<FeatureBodyProps>) {
@@ -17,16 +18,18 @@ export function LandingTable({ dark, adapter }: Readonly<FeatureBodyProps>) {
     <div className="mx-demo">
       <div className="mx-demo__body" data-adapter={adapter}>
         <Suspense fallback={<DemoFallback />}>
-          <Demo
-            mode="frontend"
-            locale="en"
-            dark={dark}
-            urlKey="t"
-            filterControls
-            columnMenu
-            bulkActions
-            exportCsv
-          />
+          <DemoScenarioProvider value="landing">
+            <Demo
+              mode="frontend"
+              locale="en"
+              dark={dark}
+              urlKey="t"
+              filterControls
+              columnMenu
+              bulkActions
+              exportCsv
+            />
+          </DemoScenarioProvider>
         </Suspense>
       </div>
     </div>

@@ -131,6 +131,7 @@ export {
   isMatchedCell,
   isSelectedCell,
   logicalAlign,
+  mergedCellStyle,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
   resolveMobileLabel,
@@ -302,7 +303,13 @@ export {
   type PivotPanelSurfaceProps,
   type PivotZoneProps,
 } from "./pivot/PivotPanelChrome";
-export { type BodyCell, cellsForRow, rowSpanSignature } from "./rows/cellSpan";
+export {
+  type BodyCell,
+  type CellSpanAppearance,
+  cellSpanMark,
+  cellsForRow,
+  rowSpanSignature,
+} from "./rows/cellSpan";
 export {
   EXTRA_ROW_PARTS,
   type ExtraEntry,

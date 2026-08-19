@@ -471,8 +471,8 @@ describe("kit affordances (mantine)", () => {
       "aria-busy",
       "true"
     );
-    expect(screen.getByLabelText("Expand column group")).toBeVisible();
-    expect(screen.getByLabelText("Collapse column group")).toBeVisible();
+    expect(screen.getByLabelText("Expand column group: Meta")).toBeVisible();
+    expect(screen.getByLabelText("Collapse column group: Meta")).toBeVisible();
     expect(screen.getByText("Show 3 more groups")).toBeVisible();
     expect(screen.getByText("Show 2 more in this group")).toBeVisible();
     expect(screen.getAllByLabelText("Find in table").length).toBeGreaterThan(0);

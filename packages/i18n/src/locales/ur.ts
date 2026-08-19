@@ -133,6 +133,7 @@ export const ur: Required<TableLabels> = {
   duplicateRow: "قطار کی نقل بنائیں",
   deleteRow: "قطار حذف کریں",
   deleteRowConfirm: "‏کیا یہ قطار حذف کریں؟ اسے واپس نہیں کیا جا سکتا۔",
+  rowActionsMenu: "قطار کی کارروائیاں",
   editConflict: "ترمیم کے دوران یہ قطار بدل گئی",
   keepMine: "میرا رکھیں",
   takeTheirs: "نیا لے لیں",

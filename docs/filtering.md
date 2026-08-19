@@ -160,16 +160,17 @@ export function PeopleTable() {
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                               |
-| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
-| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
-| `headerFilters`     | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
+| Prop                        | Type                                | Default        | Description                                                                                                                               |
+| --------------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`                   | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
+| `filtersMode`               | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
+| `onClearFilters`            | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
+| `filterLabels`              | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
+| `extraChips`                | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
+| `activeFilterCount`         | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| `headerFilters`             | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
+| `closeHeaderFilterOnSelect` | `boolean`                           | `false`        | Close a header-filter overlay after a finished single-control write (select/boolean, or a valueless operator). Off by default.            |
+| `filterTypes`               | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
 
 ## Headless filter primitives
 
@@ -243,7 +244,12 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   header cell so `fixed` columns stay on antd's own header. Compact
   range inputs default the operator to `gte` (no picker in the header);
   checklist / multiSelect open a closed menu of checkboxes, not a native
-  `<select multiple>`.
+  `<select multiple>`. The funnel overlay stays open while you fill a
+  multi-input field; nested kit dropdowns are not treated as outside
+  clicks. Pass `closeHeaderFilterOnSelect` to dismiss after a finished
+  single-control write (`useHeaderFilterOverlay` /
+  `bindHeaderFilterDismiss` / `headerFilterFieldIsComplete` /
+  `usePointerDismiss` / `HeaderFilterSessionProps`).
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active

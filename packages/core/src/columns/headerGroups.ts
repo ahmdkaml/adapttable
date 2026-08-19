@@ -75,8 +75,11 @@ export interface HeaderGroupCell {
    * Header alignment. Omit and {@link groupedHeaderAlign} uses `"center"`,
    * the previous hardcoded value.
    */
-  align?: "start" | "center" | "end";
+  align?: GroupedHeaderAlign;
 }
+
+/** Alignment of a spanning group header. */
+export type GroupedHeaderAlign = "start" | "center" | "end";
 
 /**
  * Size lock for a collapsed arrow-stub column. `width` alone is a hint in
@@ -99,8 +102,8 @@ export function columnGroupStubStyle(): CSSProperties {
  * tables keep the hardcoded look; pass `"start"` or `"end"` to opt out.
  */
 export function groupedHeaderAlign(
-  align?: "start" | "center" | "end"
-): "start" | "center" | "end" {
+  align?: GroupedHeaderAlign
+): GroupedHeaderAlign {
   if (align === "start" || align === "end") return align;
   return "center";
 }
@@ -152,7 +155,7 @@ export function headerGroupRows<TRow>(
   columns: readonly ColumnDef<TRow>[],
   collapsedIds: readonly string[] = [],
   collapsible = false,
-  groups?: ReadonlyMap<string, { readonly align?: "start" | "center" | "end" }>
+  groups?: ReadonlyMap<string, { readonly align?: GroupedHeaderAlign }>
 ): HeaderGroupCell[][] | null {
   const paths = columns.map((column) => columnGroupPath(column));
   const maxDepth = paths.reduce((max, path) => Math.max(max, path.length), 0);
@@ -173,7 +176,7 @@ function headerGroupRowAt<TRow>(
   collapsed: ReadonlySet<string>,
   collapsible: boolean,
   depth: number,
-  groups?: ReadonlyMap<string, { readonly align?: "start" | "center" | "end" }>
+  groups?: ReadonlyMap<string, { readonly align?: GroupedHeaderAlign }>
 ): HeaderGroupCell[] {
   const cells: HeaderGroupCell[] = [];
   for (let index = 0; index < columns.length; index += 1) {
@@ -251,7 +254,7 @@ export function htmlGroupedHeaderPlan<TRow>(
   columns: readonly ColumnDef<TRow>[],
   collapsedIds: readonly string[] = [],
   collapsible = false,
-  groups?: ReadonlyMap<string, { readonly align?: "start" | "center" | "end" }>
+  groups?: ReadonlyMap<string, { readonly align?: GroupedHeaderAlign }>
 ): HtmlGroupedHeaderCell[][] | null {
   const groupRows = headerGroupRows(columns, collapsedIds, collapsible, groups);
   if (!groupRows) return null;

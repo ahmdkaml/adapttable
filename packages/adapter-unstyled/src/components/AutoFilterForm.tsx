@@ -78,8 +78,7 @@ function GroupField({
 }: Readonly<GroupFieldProps>) {
   const id = useId();
   return (
-    <div
-      role="group"
+    <fieldset
       aria-labelledby={id}
       data-adapttable-part={FIELD_PART}
       className={classNames.filterField}
@@ -93,7 +92,7 @@ function GroupField({
         {caption}
       </div>
       {children}
-    </div>
+    </fieldset>
   );
 }
 

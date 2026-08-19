@@ -16,6 +16,8 @@ import {
   resolveColumnFooter,
   resolveColumnHeader,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowExpansionState,
   type RowPinSide,
   type SelectionState,
@@ -40,6 +42,8 @@ import {
   htmlGroupedHeaderPlan,
   insertExtraRows,
   logicalAlign,
+  mergedCellStyle,
+  cellSpanMark,
   type PinLeads,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
@@ -220,9 +224,16 @@ const STICKY_FIX_CLASS = "adapttable-radix-scroll";
  * and `.rt-ScrollAreaRoot` is `overflow: hidden`. A page-level `stickyTop`
  * (nav, plus the toolbar we pin with the header) is then an offset *inside*
  * that box — the header drops into the first rows, and scrolling the page
- * carries it away. When we are not ourselves a scroll box, restore overflow
- * so thead sticks against the window like every other adapter. `!important`
- * is required here: the viewport overflow is inline, not a class.
+ * carries it away.
+ *
+ * Neutralize that ScrollArea on EVERY table, not only the page-stick path.
+ * The wrapper is the scroller when the table is wide or pinned; leaving
+ * Radix's viewport as a second scroller fights scrollbar gutters until
+ * React throws "Maximum update depth exceeded" (Feature Lab Rows — the
+ * extra reorder column is enough to sit on that edge). `!important` is
+ * required: the viewport overflow is inline, not a class. The page-stick
+ * class still marks "header uses the window offset"; it no longer owns
+ * the overflow override.
  */
 const PAGE_STICK_CLASS = "adapttable-radix-page-stick";
 
@@ -243,8 +254,9 @@ const FIT_CLASS = "adapttable-radix-fit";
 const STICKY_FIX_CSS =
   `.${STICKY_FIX_CLASS} .rt-TableRootTable{overflow:visible;min-width:var(--adapttable-min-width,0)}` +
   `.${FIT_CLASS} .rt-TableRootTable{table-layout:fixed;width:100%}` +
-  `.${PAGE_STICK_CLASS} .rt-ScrollAreaRoot{overflow:visible;height:auto}` +
-  `.${PAGE_STICK_CLASS} .rt-ScrollAreaViewport{overflow:visible!important;height:auto}` +
+  `.${STICKY_FIX_CLASS} .rt-ScrollAreaRoot{overflow:visible;height:auto}` +
+  `.${STICKY_FIX_CLASS} .rt-ScrollAreaViewport{overflow:visible!important;height:auto}` +
+  `.${STICKY_FIX_CLASS} .rt-ScrollAreaScrollbar{display:none}` +
   `.rt-TableRoot[dir="rtl"] .rt-ScrollAreaRoot,.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport{direction:rtl}` +
   // Third Radix quirk: `justify` is compiled to PHYSICAL alignment classes
   // (`rt-r-ta-left` / `rt-r-ta-right`), not the logical `start` / `end` every
@@ -352,6 +364,9 @@ interface DesktopRowProps<TRow> {
   rowVisualStyle: CSSProperties | undefined;
   rowStyleSignature: string;
   labels: Required<TableLabels>;
+  rowActionsLayout?: RowActionsLayout;
+  cellSpanAppearance?: SharedTableRenderProps<TRow>["cellSpanAppearance"];
+  renderRowActions?: RowActionsRenderer<TRow>;
   hasSelection: boolean;
   expandable: boolean;
   showActions: boolean;
@@ -425,6 +440,9 @@ function DesktopRowBase<TRow>({
   className,
   rowVisualStyle,
   labels,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   hasSelection,
   expandable,
   showActions,
@@ -559,14 +577,26 @@ function DesktopRowBase<TRow>({
               rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
               data-adapttable-part="cell"
+              data-cell-span={cellSpanMark(colSpan, rowSpan)}
               {...focusProps}
-              justify={justifyFor(column.align)}
+              justify={
+                mergedCellStyle(colSpan, rowSpan, cellSpanAppearance)
+                  ? "center"
+                  : justifyFor(column.align)
+              }
               style={
                 // This kit's own subtle fill for a selected cell, applied over the
                 // pinned background so a pinned column still shows the selection.
-                cellHighlightStyle(focusProps, dataPinStyle(column.key), {
-                  background: "var(--accent-a3)",
-                })
+                cellHighlightStyle(
+                  focusProps,
+                  {
+                    ...dataPinStyle(column.key),
+                    ...mergedCellStyle(colSpan, rowSpan, cellSpanAppearance),
+                  },
+                  {
+                    background: "var(--accent-a3)",
+                  }
+                )
               }
             >
               <TreeCell
@@ -627,7 +657,9 @@ function DesktopRowBase<TRow>({
                 row={row}
                 actions={live.rowActions}
                 confirm={live.confirm}
-                cancelLabel={labels.cancel}
+                labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
                 accentColor={accentColor}
               />
             )}
@@ -659,6 +691,9 @@ export function DesktopTable<TRow>({
   table,
   rows,
   rowActions,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   confirm,
   getRowId,
   size,
@@ -708,6 +743,7 @@ export function DesktopTable<TRow>({
   headerFilters,
   filterDefs,
   filterRegistry,
+  closeHeaderFilterOnSelect,
 }: Readonly<SharedProps<TRow>>) {
   // Core's render model counts the expansion column in `columnSpan` when
   // `renderRowDetail` + `expansion` arrive (the chrome builds them together),
@@ -773,9 +809,8 @@ export function DesktopTable<TRow>({
     useHorizontalOverflow<HTMLDivElement>();
   // ANY scroll container (maxHeight, pins, measured overflow) becomes the
   // sticky context: the header must pin to ITS top — a viewport offset would
-  // shove it down into the rows. Radix's own ScrollArea is neutralized
-  // separately (PAGE_STICK_CLASS) so page-scroll sticky can still use the
-  // viewport offset.
+  // shove it down into the rows. Radix's own ScrollArea is neutralized on
+  // STICKY_FIX_CLASS so it is never a second scroller beside this wrapper.
   const inScrollBox = maxHeight != null || hasPinned || overflowing;
   const pageStick = Boolean(stickyHeader) && !inScrollBox;
 
@@ -901,6 +936,9 @@ export function DesktopTable<TRow>({
           resolveRowStyle(rowStyle, rowHeight, row, sourceIndex)
         )}
         labels={labels}
+        rowActionsLayout={rowActionsLayout}
+        cellSpanAppearance={cellSpanAppearance}
+        renderRowActions={renderRowActions}
         hasSelection={Boolean(selection)}
         expandable={expandable}
         showActions={showActions}
@@ -1053,6 +1091,7 @@ export function DesktopTable<TRow>({
             source={table.source}
             labels={labels}
             registry={filterRegistry}
+            closeOnSelect={closeHeaderFilterOnSelect}
           />
         ) : null}
         {setWidth && (
@@ -1403,6 +1442,9 @@ export function DesktopTable<TRow>({
                       )
                     )}
                     labels={labels}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     hasSelection={Boolean(selection)}
                     expandable={expandable}
                     showActions={showActions}
@@ -1480,6 +1522,9 @@ export function DesktopTable<TRow>({
                       resolveRowStyle(rowStyle, rowHeight, row, focusIndex)
                     )}
                     labels={labels}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     hasSelection={Boolean(selection)}
                     expandable={expandable}
                     showActions={showActions}

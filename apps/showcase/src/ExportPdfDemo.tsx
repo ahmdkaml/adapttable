@@ -6,10 +6,10 @@ import {
 import { pdfWriter, printTable } from "@adapttable/core/pdf";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
+import { rosterFor } from "./casts";
 import {
   budget,
   type Locale,
-  PEOPLE,
   type Person,
   personName,
   personRole,
@@ -17,6 +17,7 @@ import {
   STATUS_LABELS,
   strings,
 } from "./data";
+import { DemoScenarioProvider } from "./Demo";
 import { ADAPTERS, Control, DemoFallback, Segmented } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
@@ -97,12 +98,13 @@ function printColumns(locale: Locale): ColumnDef<Person>[] {
 /** Open the browser print dialog on the grouped view. Core has no Print button. */
 function printPeople(locale: Locale, font: ArrayBuffer | undefined): void {
   const columns = printColumns(locale);
+  const rows = rosterFor("export");
   printTable({
-    rows: PEOPLE,
+    rows,
     columns,
     view: viewFromGroupedEntries(
       buildGroupedFlatModel({
-        rows: PEOPLE,
+        rows,
         columns,
         groupBy: ["team", "status"],
         getRowId: (row) => row.id,
@@ -112,7 +114,7 @@ function printPeople(locale: Locale, font: ArrayBuffer | undefined): void {
       undefined,
       true
     ),
-    title: locale === "ar" ? "الموظفون" : "People",
+    title: locale === "ar" ? "الفرق" : "Squads",
     direction: locale === "ar" ? "rtl" : "ltr",
     font,
     pageSize: "a4-landscape",
@@ -185,19 +187,21 @@ export function ExportPdfDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale={locale}
-              dark={dark}
-              urlKey="pdf"
-              grouping
-              exportCsv={exportCsv}
-              onPrint={() => {
-                printPeople(locale, font);
-              }}
-              printButton
-              focused
-            />
+            <DemoScenarioProvider value="export">
+              <Demo
+                mode="frontend"
+                locale={locale}
+                dark={dark}
+                urlKey="pdf"
+                grouping
+                exportCsv={exportCsv}
+                onPrint={() => {
+                  printPeople(locale, font);
+                }}
+                printButton
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

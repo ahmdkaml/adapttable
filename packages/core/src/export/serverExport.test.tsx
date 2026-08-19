@@ -51,6 +51,7 @@ function source(): TableSource<Row> {
     paginationMode: "paged",
     page: 3,
     limit: 25,
+    defaultLimit: 25,
     search: "ada",
     sortBy: "name",
     sortDir: "desc",

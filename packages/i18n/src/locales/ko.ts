@@ -133,6 +133,7 @@ export const ko: Required<TableLabels> = {
   duplicateRow: "행 복제",
   deleteRow: "행 삭제",
   deleteRowConfirm: "이 행을 삭제할까요? 되돌릴 수 없습니다.",
+  rowActionsMenu: "행 작업",
   editConflict: "편집하는 동안 이 행이 변경되었습니다",
   keepMine: "내 내용 유지",
   takeTheirs: "새 값 사용",

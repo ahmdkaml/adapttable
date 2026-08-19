@@ -1,5 +1,6 @@
 import {
   createMemoryAdapter,
+  flattenColumnTree,
   type TableSource,
   useFrontendData,
 } from "@adapttable/core";
@@ -39,7 +40,7 @@ function Harness(props: {
   const source = useFrontendData<Row>({
     data: ROWS,
     urlAdapter: adapter,
-    columns: cols,
+    columns: flattenColumnTree(cols).leaves,
   });
   lastSource = source;
   return (

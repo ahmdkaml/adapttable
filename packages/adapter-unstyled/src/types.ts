@@ -236,6 +236,8 @@ export interface DataTableClassNames {
   columnSelect?: string;
   /** Compact per-column filter row under the header. */
   filterHeaderRow?: string;
+  /** Funnel icon that opens a per-column header filter overlay. */
+  filterHeaderTrigger?: string;
   /** One cell in the header filter row. */
   filterHeaderCell?: string;
   /** The input inside a header filter cell. */
@@ -254,6 +256,12 @@ export interface DataTableClassNames {
   tbody?: string;
   row?: string;
   cell?: string;
+  /**
+   * A spanned cell (`getCellSpan` / `column.colSpan`). `data-cell-span` is on
+   * the element too (`"2x1"`). The default look is centered + one fill;
+   * `cellSpanAppearance="plain"` skips that paint.
+   */
+  cellSpan?: string;
   /** The leading expand-chevron header cell (row expansion). */
   expandHeader?: string;
   /** The leading expand-chevron body cell on each row. */
@@ -270,6 +278,10 @@ export interface DataTableClassNames {
   actionsHeader?: string;
   actionsCell?: string;
   actionButton?: string;
+  /** The 3-dot control that opens the row-actions menu. */
+  rowActionsTrigger?: string;
+  /** The row-actions menu surface (`rowActionsLayout="menu"`). */
+  rowActionsMenu?: string;
   /** The leading row-reorder header cell. */
   reorderHeader?: string;
   /** The leading row-reorder body cell on each row. */

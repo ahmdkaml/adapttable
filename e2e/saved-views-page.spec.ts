@@ -85,7 +85,7 @@ test("lists the seeded views", async ({ page }) => {
 
   await expect(panel(page)).toBeVisible();
   await expect(rowFor(page, "Legacy view")).toBeVisible();
-  await expect(rowFor(page, "Team: engineering")).toBeVisible();
+  await expect(rowFor(page, "Team: platform")).toBeVisible();
 });
 
 test("a view saved by an older table still loads", async ({ page }) => {
@@ -134,7 +134,7 @@ test("a shared view is visibly read-only, not silently inert", async ({
   page,
 }) => {
   await page.goto(`/${KIT}/saved-views/`);
-  const shared = rowFor(page, "Team: engineering");
+  const shared = rowFor(page, "Team: platform");
 
   await expect(shared.getByText("Read-only")).toBeVisible();
   await expect(
@@ -146,7 +146,7 @@ test("a shared view is visibly read-only, not silently inert", async ({
   // Applying someone else's view is the point of a shared one — and applying
   // is clicking its name, which is the one control a shared row keeps.
   await expect(
-    shared.getByRole("button", { name: "Team: engineering" })
+    shared.getByRole("button", { name: "Team: platform" })
   ).toBeEnabled();
 });
 
@@ -223,7 +223,7 @@ for (const kit of KITS) {
       root.locator('[data-adapttable-part="saved-view-readonly"]')
     ).toHaveText("Read-only");
     await expect(
-      rows.filter({ hasText: "Team: engineering" }).getByRole("button", {
+      rows.filter({ hasText: "Team: platform" }).getByRole("button", {
         name: "Rename view",
       })
     ).toBeDisabled();

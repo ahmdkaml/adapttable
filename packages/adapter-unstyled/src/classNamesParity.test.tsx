@@ -14,7 +14,12 @@ import { act, fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
-import type { ColumnDef, DataTableClassNames } from "./index";
+import { FilterHeaderRow } from "./components/kitControls";
+import {
+  type ColumnDef,
+  type DataTableClassNames,
+  defaultLabels,
+} from "./index";
 
 vi.mock("@adapttable/core/adapter", async (importOriginal) => {
   const actual = await importOriginal<typeof AdapterModule>();
@@ -169,7 +174,8 @@ const A11Y_PARTS = new Set([
  * the test would put two parts on one element. It is verified in
  * `selectedCells.test.tsx`, which drives a real Shift+arrow selection;
  * `cellMatch` / `cellMatchCurrent` are the same shape for find hits and are
- * verified in `findInTable.test.tsx`.
+ * verified in `findInTable.test.tsx`. `cellSpan` is the same shape for a
+ * merged cell (`data-cell-span`) and is verified in `cellSpan.test.tsx`.
  */
 /**
  * Parts core's own chrome draws, which no kit can carry a class for.
@@ -193,6 +199,7 @@ const CORE_OWNED = new Set([
 
 const STATE_CLASSES = new Set([
   "cellSelected",
+  "cellSpan",
   "groupFooterRow",
   "groupFooterCell",
   "groupMoreRow",
@@ -383,6 +390,45 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   fireEvent.click(sortButtons[1]!, { shiftKey: true });
   absorb();
   desktop.unmount();
+
+  // Compact header-filter row is a public kit control DataTable no longer
+  // mounts (headerFilters is the overlay trigger). Render it here so the
+  // `filter-header-row` / `filter-header-input` / `filter-header-menu`
+  // class hooks stay in the contract.
+  const compactRow = render(
+    <table>
+      <thead>
+        <FilterHeaderRow
+          columns={columns}
+          defs={filters}
+          source={{
+            extra: {},
+            setExtra: () => undefined,
+            setExtras: () => undefined,
+          }}
+          labels={defaultLabels}
+          classNames={classNames}
+        />
+      </thead>
+    </table>
+  );
+  absorb();
+  compactRow.unmount();
+
+  // Panel AutoFilterForm (multiSelect group + async loading placeholder).
+  // `headerFilters` hides those fields from the toolbar form.
+  const compactHeader = mount({ override: { headerFilters: false } });
+  fireEvent.click(part("filters-button")!);
+  absorb();
+  compactHeader.unmount();
+
+  // The 3-dot layout only mounts `row-actions-trigger` / `row-actions-menu`.
+  const menuLayout = mount({
+    override: { rowActionsLayout: "menu" },
+  });
+  fireEvent.click(part("row-actions-trigger")!);
+  absorb();
+  menuLayout.unmount();
 
   // A host-handled export mid-flight → the busy button's spinner. The promise
   // is left unsettled on purpose: the affordance only exists while it is.
@@ -651,6 +697,7 @@ const KEYS = [
   "headerCell",
   "columnSelect",
   "filterHeaderRow",
+  "filterHeaderTrigger",
   "filterHeaderCell",
   "filterHeaderInput",
   "filterHeaderMenu",
@@ -662,6 +709,7 @@ const KEYS = [
   "tbody",
   "row",
   "cell",
+  "cellSpan",
   "cellSelected",
   "groupFooterRow",
   "groupFooterCell",
@@ -678,6 +726,8 @@ const KEYS = [
   "actionsHeader",
   "actionsCell",
   "actionButton",
+  "rowActionsTrigger",
+  "rowActionsMenu",
   "reorderHeader",
   "reorderCell",
   "rowReorderHandle",

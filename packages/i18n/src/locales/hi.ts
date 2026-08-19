@@ -134,6 +134,7 @@ export const hi: Required<TableLabels> = {
   duplicateRow: "पंक्ति की प्रतिलिपि बनाएँ",
   deleteRow: "पंक्ति हटाएँ",
   deleteRowConfirm: "यह पंक्ति हटाएँ? इसे पूर्ववत नहीं किया जा सकता।",
+  rowActionsMenu: "पंक्ति क्रियाएँ",
   editConflict: "संपादन के दौरान यह पंक्ति बदल गई",
   keepMine: "मेरा रखें",
   takeTheirs: "नया लें",

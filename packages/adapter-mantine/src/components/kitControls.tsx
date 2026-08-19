@@ -7,6 +7,7 @@ import {
   filterLabel,
   filterStateKeys,
   type TableSource,
+  useHeaderFilterOverlay,
 } from "@adapttable/core";
 import {
   BatchEditBarChrome,
@@ -244,32 +245,47 @@ export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   const active = headerFilterActive(props);
+  const { setOpen, source, sessionProps, resetKey } = useHeaderFilterOverlay(
+    props,
+    {
+      nestedSelector: ".mantine-Popover-dropdown,.mantine-Combobox-dropdown",
+    }
+  );
   return (
-    <Popover position="bottom-start" shadow="md">
-      <Popover.Target>
-        <ActionIcon
-          variant={active ? "light" : "subtle"}
-          size="sm"
-          aria-label={filterLabel(props.def)}
-          data-adapttable-part="filter-header-trigger"
-          data-active={active ? "" : undefined}
-        >
-          <FiltersIcon size={14} />
-        </ActionIcon>
-      </Popover.Target>
-      <Popover.Dropdown
-        data-adapttable-part="filter-header-cell"
-        p="sm"
-        miw="20rem"
+    <span {...sessionProps} style={{ display: "inline-flex" }}>
+      <Popover
+        key={resetKey}
+        onChange={setOpen}
+        closeOnClickOutside={false}
+        position="bottom-start"
+        shadow="md"
       >
-        <AutoFilterForm
-          defs={[props.def]}
-          source={props.source as TableSource<TRow>}
-          labels={props.labels}
-          registry={props.registry}
-        />
-      </Popover.Dropdown>
-    </Popover>
+        <Popover.Target>
+          <ActionIcon
+            variant={active ? "light" : "subtle"}
+            size="sm"
+            aria-label={filterLabel(props.def)}
+            data-adapttable-part="filter-header-trigger"
+            data-active={active ? "" : undefined}
+          >
+            <FiltersIcon size={14} />
+          </ActionIcon>
+        </Popover.Target>
+        <Popover.Dropdown
+          {...sessionProps}
+          data-adapttable-part="filter-header-cell"
+          p="sm"
+          miw="20rem"
+        >
+          <AutoFilterForm
+            defs={[props.def]}
+            source={source as TableSource<TRow>}
+            labels={props.labels}
+            registry={props.registry}
+          />
+        </Popover.Dropdown>
+      </Popover>
+    </span>
   );
 }
 

@@ -133,6 +133,7 @@ export const ar: Required<TableLabels> = {
   duplicateRow: "تكرار الصف",
   deleteRow: "حذف الصف",
   deleteRowConfirm: "‏هل تريد حذف هذا الصف؟ لا يمكن التراجع عن ذلك.",
+  rowActionsMenu: "إجراءات الصف",
   editConflict: "تغير هذا الصف أثناء التحرير",
   keepMine: "الاحتفاظ بما كتبته",
   takeTheirs: "أخذ القيمة الجديدة",

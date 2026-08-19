@@ -2,30 +2,52 @@
 import {
   type ConfirmHandler,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
+  type TableLabels,
   runRowAction,
+  visibleRowActions,
 } from "@adapttable/core";
 import { resolveDisabledReason } from "@adapttable/core/adapter";
-import { Button, IconButton, Stack, Tooltip } from "@mui/material";
-import type { MouseEvent } from "react";
+import {
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  type PaperProps,
+  Stack,
+  Tooltip,
+} from "@mui/material";
+import type { MouseEvent, ReactNode } from "react";
+import { useState } from "react";
 
-import { iconForRowAction } from "../icons";
+import { iconForRowAction, MoreVerticalIcon } from "../icons";
 import { muiColor } from "./DesktopTable";
 
-export function RowActionButtons<TRow>({
+interface RowActionButtonsProps<TRow> {
+  row: TRow;
+  actions: readonly RowAction<TRow>[];
+  confirm: ConfirmHandler;
+  labels: Required<TableLabels>;
+  layout?: RowActionsLayout;
+  render?: RowActionsRenderer<TRow>;
+}
+
+function ActionStrip<TRow>({
   row,
   actions,
   confirm,
   cancelLabel,
 }: Readonly<{
   row: TRow;
-  actions: RowAction<TRow>[];
+  actions: readonly RowAction<TRow>[];
   confirm: ConfirmHandler;
   cancelLabel: string;
-}>) {
+}>): ReactNode {
   return (
     <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
       {actions.map((action) => {
-        if (action.isHidden?.(row)) return null;
         const reason = resolveDisabledReason(action.disabledReason?.(row));
         const disabled =
           reason !== undefined || (action.isDisabled?.(row) ?? false);
@@ -46,6 +68,7 @@ export function RowActionButtons<TRow>({
                   color={color}
                   disabled={disabled}
                   aria-label={action.label}
+                  data-adapttable-part="action-button"
                   onClick={handleClick}
                 >
                   {icon}
@@ -55,6 +78,7 @@ export function RowActionButtons<TRow>({
                   size="small"
                   color={color === "error" ? "error" : "inherit"}
                   disabled={disabled}
+                  data-adapttable-part="action-button"
                   onClick={handleClick}
                 >
                   {action.label}
@@ -65,5 +89,103 @@ export function RowActionButtons<TRow>({
         );
       })}
     </Stack>
+  );
+}
+
+function ActionsMenuPaper(props: PaperProps) {
+  return <Paper {...props} data-adapttable-part="row-actions-menu" />;
+}
+
+function ActionMenu<TRow>({
+  row,
+  actions,
+  confirm,
+  labels,
+}: Readonly<{
+  row: TRow;
+  actions: readonly RowAction<TRow>[];
+  confirm: ConfirmHandler;
+  labels: Required<TableLabels>;
+}>): ReactNode {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  return (
+    <>
+      <IconButton
+        size="small"
+        aria-label={labels.rowActionsMenu}
+        data-adapttable-part="row-actions-trigger"
+        onClick={(event) => {
+          event.stopPropagation();
+          setAnchor(event.currentTarget);
+        }}
+      >
+        <MoreVerticalIcon />
+      </IconButton>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slots={{ paper: ActionsMenuPaper }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {actions.map((action) => {
+          const reason = resolveDisabledReason(action.disabledReason?.(row));
+          const disabled =
+            reason !== undefined || (action.isDisabled?.(row) ?? false);
+          const color = muiColor(action.color);
+          return (
+            <MenuItem
+              key={action.key}
+              disabled={disabled}
+              title={reason}
+              data-adapttable-part="action-button"
+              sx={color === "error" ? { color: "error.main" } : undefined}
+              onClick={() => {
+                setAnchor(null);
+                runRowAction(action, row, confirm, labels.cancel);
+              }}
+            >
+              {iconForRowAction(action)}
+              {action.label}
+            </MenuItem>
+          );
+        })}
+      </Menu>
+    </>
+  );
+}
+
+export function RowActionButtons<TRow>({
+  row,
+  actions,
+  confirm,
+  labels,
+  layout,
+  render,
+}: Readonly<RowActionButtonsProps<TRow>>) {
+  if (render) {
+    return render({ row, actions, confirm, labels });
+  }
+  const visible = visibleRowActions(actions, row);
+  if (visible.length === 0) return null;
+  if (layout === "menu") {
+    return (
+      <ActionMenu
+        row={row}
+        actions={visible}
+        confirm={confirm}
+        labels={labels}
+      />
+    );
+  }
+  return (
+    <ActionStrip
+      row={row}
+      actions={visible}
+      confirm={confirm}
+      cancelLabel={labels.cancel}
+    />
   );
 }

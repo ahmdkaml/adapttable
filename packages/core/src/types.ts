@@ -730,6 +730,11 @@ export interface TableLabels {
   /** The question the delete dialog asks before it runs. */
   deleteRowConfirm?: string;
   /**
+   * Accessible name of the 3-dot control that opens the row-actions menu
+   * (`rowActionsLayout="menu"`).
+   */
+  rowActionsMenu?: string;
+  /**
    * The message on an editor whose row changed under it. Keep mine / Take
    * theirs sit beside it, and {@link TableLabels.theirsValue} names the
    * incoming value so the reader can see what they would take.

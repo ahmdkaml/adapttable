@@ -132,6 +132,7 @@ export const fa: Required<TableLabels> = {
   duplicateRow: "تکثیر ردیف",
   deleteRow: "حذف ردیف",
   deleteRowConfirm: "این ردیف حذف شود؟ این کار قابل بازگشت نیست.",
+  rowActionsMenu: "اقدامات ردیف",
   editConflict: "این ردیف هنگام ویرایش تغییر کرد",
   keepMine: "مال من بماند",
   takeTheirs: "مقدار جدید را بگیر",

@@ -136,6 +136,7 @@ export const ru: Required<TableLabels> = {
   duplicateRow: "Дублировать строку",
   deleteRow: "Удалить строку",
   deleteRowConfirm: "Удалить эту строку? Это действие нельзя отменить.",
+  rowActionsMenu: "Действия со строкой",
   editConflict: "Эта строка изменилась, пока вы её редактировали",
   keepMine: "Оставить своё",
   takeTheirs: "Взять новое",

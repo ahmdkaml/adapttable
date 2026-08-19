@@ -51,6 +51,7 @@ describe("cell spanning (antd)", () => {
     const cells = first?.querySelectorAll("td[data-adapttable-part='cell']");
     expect(cells).toHaveLength(1);
     expect(cells?.[0]?.getAttribute("colspan")).toBe("2");
+    expect(cells?.[0]?.getAttribute("data-cell-span")).toBe("2x1");
     expect(first?.textContent).toContain("Ship");
     expect(first?.textContent).not.toContain("Core");
   });

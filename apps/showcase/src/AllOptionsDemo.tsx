@@ -929,7 +929,8 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
           >
             <div
               className="demo-surface__body"
-              key={adapter}
+              // Remount when span flips so the seed starts clustered by team.
+              key={`${adapter}-${cellSpan}`}
               data-adapter={adapter}
             >
               <LabRows

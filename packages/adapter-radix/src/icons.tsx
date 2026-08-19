@@ -94,6 +94,17 @@ export function UnpinRowIcon({ size = 15 }: Readonly<IconProps>) {
   );
 }
 
+/** Three vertical dots — the row-actions menu trigger. */
+export function MoreVerticalIcon({ size = 15 }: Readonly<IconProps>) {
+  return (
+    <Svg size={size}>
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </Svg>
+  );
+}
+
 /**
  * Host `icon` wins. Built-in duplicate / delete / pin keys get this kit's
  * glyph so core can stay a key + label.

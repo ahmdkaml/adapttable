@@ -15,7 +15,9 @@ import {
   REORDER_COLUMN_KEY,
   resolveColumnHeader,
   type RowAction,
-  runRowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
+  type CellSpanAppearance,
   type SortDirection,
   type SortLevel,
   type TableLabels,
@@ -25,6 +27,7 @@ import {
   type BodyCell,
   cellHighlightStyle,
   cellsForRow,
+  cellSpanMark,
   columnFlexShares,
   columnGroupHeaderCaption,
   columnSelectLabel,
@@ -35,11 +38,11 @@ import {
   type HeaderGroupCell,
   headerGroupRows,
   isColumnGroupSummaryKey,
+  mergedCellStyle,
   REORDER_COLUMN_WIDTH,
-  resolveDisabledReason,
   type RowReorderState,
 } from "@adapttable/core/adapter";
-import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
+import { type TableColumnsType, Typography } from "antd";
 import type {
   CSSProperties,
   HTMLAttributes,
@@ -49,7 +52,6 @@ import type {
   ReactNode,
 } from "react";
 
-import { isDangerColor } from "./colors";
 import { ColumnSelectCheckbox } from "./components/ColumnSelectCheckbox";
 import { EditableDataCell } from "./components/EditableCell";
 import { FillHandle } from "./components/FillHandle";
@@ -67,7 +69,7 @@ import {
   RowReorderHandle,
   TreeCell,
 } from "./components/kitControls";
-import { iconForRowAction } from "./icons";
+import { RowActionButtons } from "./components/RowActionButtons";
 
 /**
  * Map a logical pin side to antd's native physical `fixed` value. antd mirrors
@@ -379,6 +381,8 @@ export interface BuildColumnsOptions<TRow> {
   gridFocus?: GridFocusState;
   columns: readonly ColumnDef<TRow>[];
   rowActions?: readonly RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   sortBy: string | undefined;
   sortDir: SortDirection | undefined;
   confirm: ConfirmHandler;
@@ -414,6 +418,8 @@ export interface BuildColumnsOptions<TRow> {
   windowStart?: number;
   /** Per-row body cells so `onCell` can apply col/row spans. */
   cellsByRow?: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
+  /** Spreadsheet merge paint; omit / `"merged"` is the default look. */
+  cellSpanAppearance?: CellSpanAppearance;
   /** When true, group parents render a collapse toggle. */
   collapsibleColumnGroups?: boolean;
   /** Collapsed column-group ids from the layout. */
@@ -434,6 +440,7 @@ export interface BuildColumnsOptions<TRow> {
   filterSource?: FilterFormSource<TRow>;
   /** Type registry so a custom `filterTypes` entry can render in the header. */
   filterRegistry?: FilterTypeRegistry;
+  closeHeaderFilterOnSelect?: boolean;
 }
 
 /**
@@ -614,6 +621,8 @@ export function buildColumns<TRow>({
   gridFocus,
   columns,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   sortBy,
   sortDir,
   confirm,
@@ -633,6 +642,7 @@ export function buildColumns<TRow>({
   rowReorder,
   windowStart = 0,
   cellsByRow,
+  cellSpanAppearance,
   collapsibleColumnGroups,
   collapsedColumnGroups,
   columnGroups,
@@ -641,6 +651,7 @@ export function buildColumns<TRow>({
   filterDefs,
   filterSource,
   filterRegistry,
+  closeHeaderFilterOnSelect,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -716,6 +727,7 @@ export function buildColumns<TRow>({
                 source={filterSource}
                 labels={labels}
                 registry={filterRegistry}
+                closeOnSelect={closeHeaderFilterOnSelect}
               />
             ) : null}
           </span>
@@ -758,12 +770,31 @@ export function buildColumns<TRow>({
           const cells = cellsForRow(cellsByRow, getRowId(record));
           const cell = cells.find((c) => c.column.key === column.key);
           if (!cell) return { colSpan: 0 };
+          const mark = cellSpanMark(cell.colSpan, cell.rowSpan);
+          const spanPaint = mergedCellStyle(
+            cell.colSpan,
+            cell.rowSpan,
+            cellSpanAppearance
+          );
+          const focus =
+            gridFocus && rowIndex !== undefined
+              ? gridFocus.getCellPropsAt(rowIndex, columnIndex)
+              : {};
           return {
             ...grouped,
             colSpan: cell.colSpan,
             rowSpan: cell.rowSpan,
             "data-adapttable-part": "cell",
             "data-column-key": column.key,
+            ...(mark ? { "data-cell-span": mark } : {}),
+            style: cellHighlightStyle(
+              focus,
+              { ...cellStyle(column.align).style, ...spanPaint },
+              {
+                background:
+                  "var(--ant-control-item-bg-active, rgba(0, 0, 0, 0.06))",
+              }
+            ),
           };
         },
         onHeaderCell: () => {
@@ -904,40 +935,16 @@ export function buildColumns<TRow>({
                 labels={labels}
               />
             )}
-            {(rowActions ?? []).map((action) => {
-              if (action.isHidden?.(row)) return null;
-              const reason = resolveDisabledReason(
-                action.disabledReason?.(row)
-              );
-              const disabled =
-                reason !== undefined || (action.isDisabled?.(row) ?? false);
-              const icon = iconForRowAction(action);
-              return (
-                <Tooltip key={action.key} title={reason ?? action.label}>
-                  <Button
-                    size="small"
-                    type="text"
-                    danger={isDangerColor(action.color)}
-                    disabled={disabled}
-                    icon={icon}
-                    title={reason}
-                    aria-label={action.label}
-                    // The disabled attribute already blocks activation, so
-                    // attach the handler only when the action can run.
-                    onClick={
-                      disabled
-                        ? undefined
-                        : (e) => {
-                            e.stopPropagation();
-                            runRowAction(action, row, confirm, labels.cancel);
-                          }
-                    }
-                  >
-                    {icon ? undefined : action.label}
-                  </Button>
-                </Tooltip>
-              );
-            })}
+            {(rowActions ?? []).length > 0 && (
+              <RowActionButtons
+                row={row}
+                actions={rowActions ?? []}
+                confirm={confirm}
+                labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
+              />
+            )}
           </div>
         );
       },

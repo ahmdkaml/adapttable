@@ -159,6 +159,10 @@ export const tailwindClassNames: DataTableClassNames = {
     "w-[120px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-end font-semibold text-gray-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
   actionsCell:
     "px-3 py-2.5 text-end [&[data-pinned]]:bg-white dark:[&[data-pinned]]:bg-zinc-900",
+  rowActionsTrigger:
+    "inline-flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 [&::-webkit-details-marker]:hidden dark:hover:bg-zinc-800",
+  rowActionsMenu:
+    "relative inline-block [&>button]:block [&>button]:w-full [&>button]:px-2 [&>button]:text-start",
   expandHeader:
     "w-8 border-b border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800",
   expandCell: "w-8 px-2 py-2.5",

@@ -52,6 +52,34 @@ for (const adapter of ADAPTERS) {
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
     });
 
+    test("picking an operator leaves the header filter open", async ({
+      page,
+    }) => {
+      await openDemo(page, adapter);
+      const table = demo(page).locator(`[data-adapter="${adapter}"]`);
+      await table
+        .getByRole("columnheader", { name: /Person/ })
+        .locator('[data-adapttable-part="filter-header-trigger"]')
+        .click();
+      const panel = page
+        .locator('[data-adapttable-part="filter-header-cell"]')
+        .filter({ hasText: "Person" });
+      await expect(panel).toBeVisible();
+      const operator = panel.locator(
+        '[data-adapttable-part="filter-operator"]'
+      );
+      await expect(operator).toBeVisible();
+      const tag = await operator.evaluate((el) => el.tagName);
+      if (tag === "SELECT") {
+        await operator.selectOption({ index: 1 });
+      } else {
+        await operator.click();
+        await page.getByRole("option").nth(1).click();
+      }
+      await expect(panel).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Person" })).toBeVisible();
+    });
+
     test("header popover is the same field as the Filters panel", async ({
       page,
     }) => {

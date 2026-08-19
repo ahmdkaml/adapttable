@@ -74,6 +74,11 @@ export interface FilterHeaderControlProps<TRow> {
   readonly labels: Required<TableLabels>;
   readonly className?: string;
   readonly registry?: FilterTypeRegistry;
+  /**
+   * Dismiss the overlay after a finished single-control write. Default off.
+   * Wired from the table's `closeHeaderFilterOnSelect`.
+   */
+  readonly closeOnSelect?: boolean;
 }
 
 /** One option in a header Select or multi menu. */

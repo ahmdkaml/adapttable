@@ -6,6 +6,8 @@ import {
   type EditableCellEditing,
   type MobileCardRenderer,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type TableLabels,
   treeCardStyle,
   type TreeEntry,
@@ -58,6 +60,8 @@ interface MobileCardProps<TRow> {
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
   /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
@@ -113,6 +117,8 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "labels",
   "confirm",
   "rowActions",
+  "rowActionsLayout",
+  "renderRowActions",
   "className",
   "styleSignature",
   "selected",
@@ -153,6 +159,8 @@ function MobileCardBase<TRow>({
   labels,
   confirm,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   className,
   style,
   selected,
@@ -279,7 +287,9 @@ function MobileCardBase<TRow>({
             row={row}
             actions={rowActions}
             confirm={confirm}
-            cancelLabel={labels.cancel}
+            labels={labels}
+            layout={rowActionsLayout}
+            render={renderRowActions}
           />
         )}
         {expanded && renderDetail && (
@@ -300,6 +310,8 @@ export function MobileCards<TRow>({
   cardClassName,
   rows,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   confirm,
   getRowId,
   size,
@@ -366,6 +378,8 @@ export function MobileCards<TRow>({
         labels={labels}
         confirm={confirm}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        renderRowActions={renderRowActions}
         className={
           [cardClassName, rowClassName?.(row, index)]
             .filter(Boolean)

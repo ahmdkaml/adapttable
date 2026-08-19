@@ -133,6 +133,10 @@ export const shadcnClassNames = {
   cell: "px-3 py-2.5 [&[data-pinned]]:bg-card [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
   actionButton:
     "h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50",
+  rowActionsTrigger:
+    "inline-flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground [&::-webkit-details-marker]:hidden",
+  rowActionsMenu:
+    "relative inline-block [&>button]:block [&>button]:w-full [&>button]:px-2 [&>button]:text-start",
   footer:
     "flex flex-wrap items-center gap-2 border-t border-border p-3 text-sm text-muted-foreground",
   pager: "ms-auto flex flex-wrap items-center gap-1",
@@ -198,6 +202,8 @@ export const shadcnClassNames = {
   thead: "bg-card",
   headerRow: "align-middle",
   filterHeaderRow: "align-middle",
+  filterHeaderTrigger:
+    "ms-1 inline-flex items-center text-muted-foreground hover:text-foreground",
   filterHeaderCell:
     "border-b border-border bg-card px-1 py-1 text-start [[data-density=compact]_&]:px-1 [[data-density=compact]_&]:py-0.5",
   filterHeaderInput:

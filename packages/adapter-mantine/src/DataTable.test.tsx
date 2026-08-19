@@ -107,6 +107,7 @@ describe("<DataTable> (Mantine)", () => {
       total: 2,
       page: 1,
       limit: 8,
+      defaultLimit: 8,
       search: "",
       sortBy: undefined,
       sortDir: undefined,
@@ -272,6 +273,23 @@ describe("<DataTable> (Mantine)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
     expect(onAction).toHaveBeenCalled();
     expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("collapses row actions into a 3-dot menu when layout is menu", async () => {
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+        rowActionsLayout: "menu",
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="row-actions-trigger"]'
+    );
+    expect(trigger).toHaveAttribute("aria-label", "Row actions");
+    fireEvent.click(trigger!);
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    expect(onAction).toHaveBeenCalled();
   });
 
   it("renders a row per source entry with column values", () => {
@@ -608,6 +626,7 @@ describe("<DataTable> (Mantine)", () => {
       paginationMode: "paged",
       page: 1,
       limit: 25,
+      defaultLimit: 25,
       search: "",
       sortBy: undefined,
       sortDir: undefined,

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { ADAPTERS, DemoFallback } from "./kitDemos";
+import { DemoScenarioProvider } from "./Demo";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
 
@@ -18,7 +19,7 @@ export function TreeDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
     <div className="mx-demo">
       <div className="hint-row">
         <span className="hint">
-          <Layers size={12} /> chevrons open and close a branch
+          <Layers size={12} /> Maya Chen is the root — chevrons open a branch
         </span>
         <span className="hint">
           <Check size={12} /> arrow keys walk the tree, Enter toggles
@@ -30,14 +31,16 @@ export function TreeDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="en"
-              dark={dark}
-              urlKey="tree"
-              tree
-              focused
-            />
+            <DemoScenarioProvider value="tree">
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="tree"
+                tree
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

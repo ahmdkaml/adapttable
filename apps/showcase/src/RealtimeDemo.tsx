@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { ADAPTERS, DemoFallback } from "./kitDemos";
+import { DemoScenarioProvider } from "./Demo";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Bolt, Check } from "./sectionIcons";
 
@@ -31,15 +32,17 @@ export function RealtimeDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="en"
-              dark={dark}
-              urlKey="rt"
-              realtime
-              density="compact"
-              focused
-            />
+            <DemoScenarioProvider value="realtime">
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="rt"
+                realtime
+                density="compact"
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

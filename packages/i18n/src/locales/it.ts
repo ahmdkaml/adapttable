@@ -133,6 +133,7 @@ export const it: Required<TableLabels> = {
   deleteRow: "Elimina riga",
   deleteRowConfirm:
     "Eliminare questa riga? L'operazione non può essere annullata.",
+  rowActionsMenu: "Azioni riga",
   editConflict: "Questa riga è cambiata mentre la stavi modificando",
   keepMine: "Tieni il mio",
   takeTheirs: "Prendi il nuovo",

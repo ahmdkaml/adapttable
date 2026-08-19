@@ -2,6 +2,7 @@ import type { ColumnLayoutState } from "@adapttable/core";
 import { Suspense } from "react";
 
 import { ADAPTERS, DemoFallback } from "./kitDemos";
+import { DemoScenarioProvider } from "./Demo";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 
 const RTL_DEFAULT_LAYOUT = {
@@ -16,18 +17,20 @@ export function RtlSection({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="ar"
-              dark={dark}
-              urlKey="rtl"
-              defaultColumnLayout={RTL_DEFAULT_LAYOUT}
-              // The filters popover is the point of this page: it has to anchor
-              // and flip from the correct edge under RTL, which nothing can show
-              // if `focused` strips the control that opens it.
-              filterControls
-              focused
-            />
+            <DemoScenarioProvider value="rtl">
+              <Demo
+                mode="frontend"
+                locale="ar"
+                dark={dark}
+                urlKey="rtl"
+                defaultColumnLayout={RTL_DEFAULT_LAYOUT}
+                // The filters popover is the point of this page: it has to anchor
+                // and flip from the correct edge under RTL, which nothing can show
+                // if `focused` strips the control that opens it.
+                filterControls
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

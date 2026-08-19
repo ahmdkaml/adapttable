@@ -44,6 +44,11 @@ export interface Person {
   nameAr: string;
   roleAr: string;
   teamAr: string;
+  /**
+   * Tree-page org chart. `null` is a root. Omit to derive “first on the
+   * team leads it” from {@link PEOPLE} — the live demo’s shape.
+   */
+  managerId?: string | null;
   /** Editable overrides — the demo derives these from `id` until a cell
    * edit materializes a real value on the row. */
   status?: DemoStatus;
@@ -121,6 +126,9 @@ export const DEMO_ORDER_COLUMNS: ColumnDef<DemoOrder>[] = [
 
 /** The id of a person's manager, or `undefined` for a team lead. */
 export function reportsTo(person: Person): string | undefined {
+  if (person.managerId !== undefined) {
+    return person.managerId ?? undefined;
+  }
   const lead = TEAM_LEAD.get(person.team);
   return lead === person.id ? undefined : lead;
 }
@@ -440,6 +448,41 @@ export function statusTone(
 export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
   hidden: ["email", "team"],
 };
+
+/**
+ * Span demo: Team is the merge column — one label down consecutive
+ * teammates who share it. Email stays hidden (same as Baseline) so the
+ * table does not grow a 250px column just to cover it. Load hides so
+ * showing Team does not add a column: same count, no sideways scroll.
+ */
+export const SPAN_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
+  hidden: ["email", "load"],
+};
+
+/** Cluster teammates so a Team row-span has a consecutive run to cover. */
+export function orderPeopleByTeam(rows: readonly Person[]): Person[] {
+  return [...rows].sort((a, b) => {
+    const byTeam = a.team.localeCompare(b.team);
+    if (byTeam !== 0) return byTeam;
+    return Number(a.id) - Number(b.id);
+  });
+}
+
+/**
+ * How many following rows share this row's team. 1 when this row is not
+ * the start of the run — the origin already covers them.
+ */
+export function consecutiveTeamSpan(
+  rows: readonly Person[],
+  index: number
+): number {
+  const current = rows[index];
+  if (!current) return 1;
+  if (rows[index - 1]?.team === current.team) return 1;
+  let span = 1;
+  while (rows[index + span]?.team === current.team) span += 1;
+  return span;
+}
 
 /**
  * Column-groups demo: Team stays visible so Assignment is Team + Status.
@@ -1113,61 +1156,60 @@ const LARGE_SQUADS = 10;
 export const LARGE_TEAM_COUNT = LARGE_AREAS.length * LARGE_SQUADS;
 
 const LARGE_FIRST = [
-  "Ada",
-  "Alan",
+  "Amara",
+  "Diego",
+  "Priya",
+  "Sefa",
+  "Lena",
+  "Marcus",
+  "Yuki",
+  "Fatima",
+  "Tomas",
+  "Chioma",
+  "Henrik",
+  "Sofia",
+  "Omar",
   "Grace",
-  "Linus",
-  "Barbara",
-  "Ken",
-  "Margaret",
-  "Edsger",
-  "Radia",
-  "Tim",
-  "Anita",
-  "Donald",
-  "Frances",
-  "Vint",
-  "Shafi",
-  "Leslie",
+  "Noah",
+  "Aisha",
 ] as const;
 
 const LARGE_FIRST_AR = [
-  "آدا",
-  "آلان",
+  "أمارا",
+  "دييغو",
+  "بريا",
+  "سيفا",
+  "لينا",
+  "ماركوس",
+  "يوكي",
+  "فاطمة",
+  "توماس",
+  "تشيوما",
+  "هنريك",
+  "صوفيا",
+  "عمر",
   "غريس",
-  "لينوس",
-  "باربرا",
-  "كين",
-  "مارغريت",
-  "إدسخر",
-  "راديا",
-  "تيم",
-  "أنيتا",
-  "دونالد",
-  "فرانسيس",
-  "فينت",
-  "شافي",
-  "ليزلي",
+  "نوح",
+  "عائشة",
 ] as const;
 
 const LARGE_LAST = [
-  "Lovelace",
-  "Turing",
-  "Hopper",
-  "Torvalds",
-  "Liskov",
-  "Thompson",
-  "Hamilton",
-  "Dijkstra",
-  "Perlman",
-  "Berners-Lee",
-  "Borg",
-  "Knuth",
-  "Allen",
-  "Cerf",
-  "Goldwasser",
-  "Lamport",
-  "Sutherland",
+  "Okafor",
+  "Marchetti",
+  "Nair",
+  "Demir",
+  "Hoffmann",
+  "Bell",
+  "Tanaka",
+  "Al-Sayed",
+  "Novak",
+  "Eze",
+  "Larsson",
+  "Reyes",
+  "Haddad",
+  "Liu",
+  "Schmidt",
+  "Chen",
 ] as const;
 
 const LARGE_ROLES = [

@@ -15,8 +15,9 @@ import {
   resolveColumnFooter,
   resolveColumnHeader,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowPinSide,
-  runRowAction,
   type TableLabels,
   tableMinWidth,
   type TreeEntry,
@@ -27,6 +28,7 @@ import {
   type BodyCell,
   cellHighlightStyle,
   cellsForRow,
+  cellSpanMark,
   columnSelectLabel,
   ColumnSpacer,
   EXTRA_ROW_PARTS,
@@ -36,6 +38,7 @@ import {
   type HtmlGroupedHeaderCell,
   htmlGroupedHeaderPlan,
   insertExtraRows,
+  mergedCellStyle,
   type PinLeads,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
@@ -43,7 +46,6 @@ import {
   pinnedRowCellStyle,
   pinnedRowStickyStyle,
   REORDER_COLUMN_WIDTH,
-  resolveDisabledReason,
   resolveRowStyle,
   rowClickProps,
   rowEditingSignature,
@@ -59,32 +61,12 @@ import {
   useOffsetHeight,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Checkbox,
-  Group,
-  Table,
-  Tooltip,
-  VisuallyHidden,
-} from "@mantine/core";
-import type {
-  CSSProperties,
-  MouseEvent,
-  ReactElement,
-  ReactNode,
-  RefObject,
-} from "react";
+import { Badge, Checkbox, Group, Table, VisuallyHidden } from "@mantine/core";
+import type { CSSProperties, ReactElement, ReactNode, RefObject } from "react";
 import { memo, useCallback, useMemo, useRef } from "react";
 
 import { type Density, DENSITY_SPACING } from "../density";
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  iconForRowAction,
-  SelectorIcon,
-} from "../icons";
+import { ChevronDownIcon, ChevronUpIcon, SelectorIcon } from "../icons";
 import { HAIRLINE, SURFACE } from "../surface";
 import { ColumnSelectCheckbox } from "./ColumnSelectCheckbox";
 import { EditableDataCell } from "./EditableCell";
@@ -98,6 +80,7 @@ import {
   RowReorderHandle,
   TreeCell,
 } from "./kitControls";
+import { RowActionButtons } from "./RowActionButtons";
 
 function ExtraSlotRow({
   kind,
@@ -315,70 +298,6 @@ function HeaderCell<TRow>({
   );
 }
 
-function RowActions<TRow>({
-  row,
-  actions,
-  confirm,
-  cancelLabel,
-}: Readonly<{
-  row: TRow;
-  actions: RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  cancelLabel: string;
-}>) {
-  return (
-    <Group gap={4} justify="flex-end" wrap="nowrap">
-      {actions.map((action) => {
-        if (action.isHidden?.(row)) return null;
-        const reason = resolveDisabledReason(action.disabledReason?.(row));
-        const disabled =
-          reason !== undefined || (action.isDisabled?.(row) ?? false);
-        // The disabled attribute already blocks activation, so attach the
-        // handler only when the action can run.
-        const handleClick = disabled
-          ? undefined
-          : (e: MouseEvent) => {
-              e.stopPropagation();
-              runRowAction(action, row, confirm, cancelLabel);
-            };
-        // Icon-only actions render as an ActionIcon; without an icon, fall
-        // back to a text button so the label is actually visible.
-        const icon = iconForRowAction(action);
-        return icon ? (
-          <Tooltip
-            key={action.key}
-            label={reason ?? action.label}
-            withArrow
-            openDelay={200}
-          >
-            <ActionIcon
-              variant="subtle"
-              color={action.color}
-              size="sm"
-              disabled={disabled}
-              aria-label={action.label}
-              onClick={handleClick}
-            >
-              {icon}
-            </ActionIcon>
-          </Tooltip>
-        ) : (
-          <Button
-            key={action.key}
-            variant="subtle"
-            color={action.color}
-            size="compact-sm"
-            disabled={disabled}
-            onClick={handleClick}
-          >
-            {action.label}
-          </Button>
-        );
-      })}
-    </Group>
-  );
-}
-
 /**
  * Props for the memoized {@link DesktopRowBase}. Everything the row's visual
  * output depends on is a primitive, a stable identity, or is fingerprinted
@@ -432,6 +351,9 @@ interface DesktopRowProps<TRow> {
   /** Open or close a tree node. */
   onToggleTree?: (id: string) => void;
   rowActions?: RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  cellSpanAppearance?: SharedTableRenderProps<TRow>["cellSpanAppearance"];
+  renderRowActions?: RowActionsRenderer<TRow>;
   confirm: ConfirmHandler;
   cancelLabel: string;
   /** `labels.editRow` / `labels.saveRow` — row mode's own controls. */
@@ -533,6 +455,9 @@ const COMPARED_ROW_PROPS: readonly Exclude<
   "renderRowDetail",
   "columnSpan",
   "rowActions",
+  "rowActionsLayout",
+  "cellSpanAppearance",
+  "renderRowActions",
   "confirm",
   "cancelLabel",
   "editLabel",
@@ -630,6 +555,9 @@ function DesktopRowBase<TRow>({
   columnSpan,
   columnSpacers,
   rowActions,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   confirm,
   cancelLabel,
   editLabel,
@@ -756,15 +684,23 @@ function DesktopRowBase<TRow>({
               rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
               data-adapttable-part="cell"
+              data-cell-span={cellSpanMark(colSpan, rowSpan)}
               {...getCellProps(column)}
               {...focusProps}
               style={
                 // A selected cell takes Mantine's own primary-light fill, applied
                 // OVER the pinned background so a pinned column still shows the
                 // selection rather than hiding it behind its opaque surface.
-                cellHighlightStyle(focusProps, bodyPinStyle(column.key), {
-                  background: "var(--mantine-primary-color-light)",
-                })
+                cellHighlightStyle(
+                  focusProps,
+                  {
+                    ...bodyPinStyle(column.key),
+                    ...mergedCellStyle(colSpan, rowSpan, cellSpanAppearance),
+                  },
+                  {
+                    background: "var(--mantine-primary-color-light)",
+                  }
+                )
               }
             >
               <TreeCell
@@ -819,11 +755,13 @@ function DesktopRowBase<TRow>({
             {/* The control column also exists for row mode alone, so this is
                 not the same question as `showActions`. */}
             {rowActions && rowActions.length > 0 && (
-              <RowActions
+              <RowActionButtons
                 row={row}
                 actions={rowActions}
                 confirm={confirm}
-                cancelLabel={cancelLabel}
+                labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
               />
             )}
           </Table.Td>
@@ -844,6 +782,9 @@ export function DesktopTable<TRow>({
   table,
   rows,
   rowActions,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   confirm,
   prefetch,
   onRowClick,
@@ -891,6 +832,7 @@ export function DesktopTable<TRow>({
   headerFilters,
   filterDefs,
   filterRegistry,
+  closeHeaderFilterOnSelect,
 }: Readonly<DesktopTableProps<TRow>>) {
   // The shared render prelude from core — including `columnSpan` for the
   // spacer/detail cells, which counts the expansion column itself when
@@ -1110,6 +1052,7 @@ export function DesktopTable<TRow>({
               source={table.source}
               labels={labels}
               registry={filterRegistry}
+              closeOnSelect={closeHeaderFilterOnSelect}
             />
           ) : undefined
         }
@@ -1231,6 +1174,9 @@ export function DesktopTable<TRow>({
         columnSpan={columnSpan}
         columnSpacers={columnSpacers}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        cellSpanAppearance={cellSpanAppearance}
+        renderRowActions={renderRowActions}
         confirm={confirm}
         cancelLabel={labels.cancel}
         editRowLabel={labels.editRow}
@@ -1531,6 +1477,9 @@ export function DesktopTable<TRow>({
                     columnSpan={columnSpan}
                     columnSpacers={columnSpacers}
                     rowActions={rowActions}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     confirm={confirm}
                     cancelLabel={labels.cancel}
                     editRowLabel={labels.editRow}
@@ -1632,6 +1581,9 @@ export function DesktopTable<TRow>({
                     columnSpan={columnSpan}
                     columnSpacers={columnSpacers}
                     rowActions={rowActions}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     confirm={confirm}
                     cancelLabel={labels.cancel}
                     editRowLabel={labels.editRow}

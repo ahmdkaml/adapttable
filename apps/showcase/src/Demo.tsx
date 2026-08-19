@@ -32,6 +32,12 @@ import {
 } from "react";
 
 import {
+  type DemoScenario,
+  layoutFor,
+  pageLimitFor,
+  seedRoster,
+} from "./casts";
+import {
   BASE_COLUMNS,
   budget,
   DEMO_FILTER_RUNTIME,
@@ -41,7 +47,10 @@ import {
   GROUPS_DEFAULT_LAYOUT,
   isRemote,
   LIVE_DEFAULT_LAYOUT,
+  SPAN_DEFAULT_LAYOUT,
+  consecutiveTeamSpan,
   makeLargeDirectory,
+  orderPeopleByTeam,
   PEOPLE,
   type Person,
   personName,
@@ -145,6 +154,15 @@ export const AdvancedFiltersProvider = AdvancedFiltersContext.Provider;
 
 function useAdvancedFilters(): boolean {
   return useContext(AdvancedFiltersContext);
+}
+
+const ScenarioContext = createContext<DemoScenario>("live");
+
+/** Feature pages wrap the table in a scenario; `/` and Feature Lab omit this. */
+export const DemoScenarioProvider = ScenarioContext.Provider;
+
+function useDemoScenario(): DemoScenario {
+  return useContext(ScenarioContext);
 }
 
 /** Hide the AND/OR builder without changing the hook's setter contract. */
@@ -468,21 +486,27 @@ function withDerivedFields(rows: readonly Person[]): Person[] {
  * page that never asks for it never builds it — and it arrives with its
  * derived fields written on, since a formula reads fields, not accessors.
  */
-function seedRows(large: boolean, derivedFields: boolean): Person[] {
+function seedRows(
+  large: boolean,
+  derivedFields: boolean,
+  scenario: DemoScenario
+): Person[] {
   if (large) return withDerivedFields(makeLargeDirectory());
-  if (derivedFields) return withDerivedFields(PEOPLE);
-  return PEOPLE.map((row) => ({ ...row }));
+  return seedRoster(scenario, derivedFields);
 }
 
 /** The page size each row shape asks for. */
 function pageDefaults(
   tree: boolean,
   large: boolean,
-  realtime: boolean
+  realtime: boolean,
+  scenario: DemoScenario
 ): { limit: number; sortBy?: string; sortDir?: "asc" | "desc" } {
   if (tree) return TREE_DEFAULTS;
   if (large) return LARGE_DEFAULTS;
   if (realtime) return REALTIME_DEFAULTS;
+  const limit = pageLimitFor(scenario);
+  if (limit !== undefined) return { limit };
   return DEFAULTS;
 }
 
@@ -703,14 +727,19 @@ function frontendColumnProps(
   }
   if (flags.cellSpan) {
     Object.assign(next, {
+      // Team is the same fact on consecutive rows — merge it, leave Person
+      // and Email alone. Reorder can break a run; that is the point.
       getCellSpan: ({
         column,
         rowIndex,
       }: {
         column: { key: string };
         rowIndex: number;
-      }) =>
-        column.key === "person" && rowIndex === 0 ? { colSpan: 2 } : undefined,
+      }) => {
+        if (column.key !== "team") return undefined;
+        const span = consecutiveTeamSpan(flags.data, rowIndex);
+        return span > 1 ? { rowSpan: span } : undefined;
+      },
     });
   }
   if (flags.extraRows) {
@@ -719,7 +748,8 @@ function frontendColumnProps(
         {
           key: "sep",
           kind: "separator" as const,
-          beforeRowId: flags.data[1]?.id,
+          // Sit above a Team merge, not inside it (rowSpan counts every <tr>).
+          beforeRowId: flags.cellSpan ? flags.data[0]?.id : flags.data[1]?.id,
         },
         {
           key: "note",
@@ -768,10 +798,14 @@ function Frontend({
   derivedFields,
   formulaColumns,
 }: Readonly<DataProps>) {
-  // Cloned, so cell edits never mutate the shared PEOPLE seed.
-  const [data, setData] = useState<readonly Person[]>(() =>
-    seedRows(large === true, derivedFields === true)
-  );
+  const scenario = useDemoScenario();
+  // Cloned, so cell edits never mutate the shared PEOPLE seed. Span starts
+  // from a team-sorted copy so Core sits together; the seed file itself
+  // stays interleaved (tree leads and Alan-as-row-2 e2e depend on that).
+  const [data, setData] = useState<readonly Person[]>(() => {
+    const rows = seedRows(large === true, derivedFields === true, scenario);
+    return cellSpan ? orderPeopleByTeam(rows) : rows;
+  });
   // The demo owns the data, so the demo is what knows which row changed —
   // exactly where a real app would flash it. Note there is no highlight prop
   // on the table: `rowClassName` is the seam, so this works in every kit.
@@ -888,7 +922,12 @@ function Frontend({
     // A hierarchy needs its parents in hand: a five-row page cut through an
     // org chart leaves every visible person a root, so the tree demo takes the
     // whole team at once.
-    defaults: pageDefaults(tree === true, large === true, realtime === true),
+    defaults: pageDefaults(
+      tree === true,
+      large === true,
+      realtime === true,
+      scenario
+    ),
     paginationMode: paginationFor(large === true, pageMode),
     urlKey,
     urlSync,
@@ -1050,15 +1089,21 @@ export function DemoBody({
   formulaColumns?: readonly ColumnDef<Person>[];
 }>) {
   const advancedFilters = useAdvancedFilters();
+  const scenario = useDemoScenario();
   // Demos mounted WITH editing (the /editing page) keep email visible — it
   // is the column the walkthrough edits. Column-groups drop Person, Email
   // and Load so the three groups plus Actions fit; Team stays visible as
   // Assignment's kept child. Only the shared live default is swapped;
-  // explicit layouts (the wide showcase's pins) pass through.
+  // explicit layouts (the wide showcase's pins, RTL) pass through.
   let resolvedDefaultLayout = defaultColumnLayout;
   if (defaultColumnLayout === LIVE_DEFAULT_LAYOUT) {
     if (editing) resolvedDefaultLayout = EDITING_DEFAULT_LAYOUT;
     else if (columnGroups) resolvedDefaultLayout = GROUPS_DEFAULT_LAYOUT;
+    else if (cellSpan) resolvedDefaultLayout = SPAN_DEFAULT_LAYOUT;
+    else {
+      const scenarioLayout = layoutFor(scenario);
+      if (scenarioLayout) resolvedDefaultLayout = scenarioLayout;
+    }
   }
   const syncToUrl = demoUrlSync(urlKey);
   const { layout, onLayoutChange } = useColumnLayoutUrlState({

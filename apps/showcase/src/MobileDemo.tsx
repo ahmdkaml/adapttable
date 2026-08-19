@@ -2,6 +2,7 @@ import { Suspense, useState } from "react";
 
 import type { PageMode } from "./Demo";
 import { ADAPTERS, DemoFallback } from "./kitDemos";
+import { DemoScenarioProvider } from "./Demo";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Monitor, Phone } from "./sectionIcons";
 
@@ -84,16 +85,18 @@ export function MobileDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
         <div className={phone ? "phone-frame" : undefined}>
           <div key={adapter} data-adapter={adapter}>
             <Suspense fallback={<DemoFallback />}>
-              <Demo
-                mode="frontend"
-                locale="en"
-                dark={dark}
-                urlKey="mob"
-                forceMobile={phone}
-                pageMode={pageMode}
-                customCard={customCard}
-                focused
-              />
+              <DemoScenarioProvider value="mobile">
+                <Demo
+                  mode="frontend"
+                  locale="en"
+                  dark={dark}
+                  urlKey="mob"
+                  forceMobile={phone}
+                  pageMode={pageMode}
+                  customCard={customCard}
+                  focused
+                />
+              </DemoScenarioProvider>
             </Suspense>
           </div>
         </div>

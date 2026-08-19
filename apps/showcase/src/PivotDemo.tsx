@@ -2,7 +2,8 @@ import { usePivotUrlState } from "@adapttable/core/pivot";
 import { getLabels } from "@adapttable/i18n";
 import { Suspense } from "react";
 
-import { PIVOT_FIELDS, PIVOT_PEOPLE } from "./data";
+import { PIVOT_FIELDS } from "./data";
+import { pivotRoster } from "./casts";
 import { kitPivotPanel, KitProvider } from "./kitProviders";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { PivotTableView } from "./PivotTableView";
@@ -50,7 +51,7 @@ export function PivotDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
           </Suspense>
           <PivotTableView
             kit={adapter}
-            rows={PIVOT_PEOPLE}
+            rows={pivotRoster()}
             fields={PIVOT_FIELDS}
             config={config}
             collapsed={collapsed}

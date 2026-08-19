@@ -8,6 +8,7 @@ import {
   type ConfirmHandler,
   type EditHistoryState,
   type FilterRuntime,
+  flattenColumnTree,
   type GridFocusState,
   type GroupByInput,
   type GroupCollapseState,
@@ -863,6 +864,21 @@ function autoFilterForm<TRow>(
   );
 }
 
+/** Declarative `filters` become the auto form; JSX passes through. */
+function resolveFiltersNode<TRow>(
+  filters: DataTableProps<TRow>["filters"],
+  runtime: FilterRuntime<TRow>,
+  source: TableSource<TRow>,
+  labels: Required<TableLabels>,
+  header: boolean,
+  filterFields?: boolean
+) {
+  if (isDeclarativeFilters(filters) || filters === undefined) {
+    return autoFilterForm(runtime, source, labels, header, filterFields);
+  }
+  return filters;
+}
+
 /** antd `<Table>` size tokens. */
 type AntdTableSize = "small" | "middle" | "large";
 
@@ -980,6 +996,8 @@ interface DataTableBodyRegionProps<TRow> {
   slots: DataTableProps<TRow>["slots"];
   columns: ReturnType<typeof buildColumns<TRow>>;
   rowActions: DataTableProps<TRow>["rowActions"];
+  rowActionsLayout: DataTableProps<TRow>["rowActionsLayout"];
+  renderRowActions: DataTableProps<TRow>["renderRowActions"];
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   labels: Required<TableLabels>;
@@ -1238,6 +1256,8 @@ function DataTableBodyRegion<TRow>(
     slots,
     columns,
     rowActions,
+    rowActionsLayout,
+    renderRowActions,
     confirm,
     getRowId,
     labels,
@@ -1310,6 +1330,8 @@ function DataTableBodyRegion<TRow>(
         cardClassName={cardClassName}
         rows={editingRows}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        renderRowActions={renderRowActions}
         confirm={confirm}
         getRowId={getRowId}
         prefetch={prefetch}
@@ -1471,6 +1493,10 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     props.urlSync === false ? undefined : props.urlAdapter,
     props.urlSync !== false
   );
+  const dataColumns = useMemo(
+    () => flattenColumnTree(props.columns).leaves,
+    [props.columns]
+  );
   const { source: resolvedSource, runtime } = useTableData<TRow>({
     locale: props.locale,
     source: props.source,
@@ -1486,7 +1512,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // the tier hooks would otherwise apply it a second time — routing the
     // active tier to a private store that saved views cannot see.
     urlKey: props.urlKey,
-    columns: props.columns,
+    columns: dataColumns,
     filters: props.filters,
     filterTypes: props.filterTypes,
     defaults: props.defaults,
@@ -1501,23 +1527,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // form needs the resolved labels before `useTableChrome` resolves its own
   // (the chrome consumes the form node), so resolve the same prop here.
   const formLabels = useMemo(() => resolveLabels(props.labels), [props.labels]);
-  const filtersNode =
-    isDeclarativeFilters(props.filters) || props.filters === undefined
-      ? autoFilterForm(
-          runtime,
-          resolvedSource,
-          formLabels,
-          resolveFilterMode(props.filtersMode, props.headerFilters) ===
-            "header",
-          props.filterFields
-        )
-      : props.filters;
+  const filtersNode = resolveFiltersNode(
+    props.filters,
+    runtime,
+    resolvedSource,
+    formLabels,
+    resolveFilterMode(props.filtersMode, props.headerFilters) === "header",
+    props.filterFields
+  );
   const filterLabels = useMemo(
     () => ({ ...runtime.filterLabels, ...props.filterLabels }),
     [runtime.filterLabels, props.filterLabels]
   );
-  const { history, onCellEdit: recordingCellEdit } =
-    useTableEditHistory<TRow>(props);
+  const { history, onCellEdit: recordingCellEdit } = useTableEditHistory<TRow>({
+    ...props,
+    columns: dataColumns,
+  });
   const pinChrome = useAntdPinChrome({
     pinnedRowIds: props.pinnedRowIds,
     onPinnedRowIdsChange: props.onPinnedRowIdsChange,
@@ -1655,6 +1680,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan: props.virtualOverscan,
     virtualScrollMargin: props.virtualScrollMargin,
   });
+  const virtualBody = virtualize && !grouping;
   const resolvedTableLabel = table.getTableProps()["aria-label"];
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -1670,14 +1696,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     enabled: sentinelEnabled(
       c.isPaged,
       source.error,
-      Boolean(virtualize && !grouping),
+      Boolean(virtualBody),
       c.body
     ),
   });
 
   const handleVirtualScroll = virtualScrollEndHandler(
     source,
-    virtualize && !grouping && !c.isPaged && !source.error
+    virtualBody && !c.isPaged && !source.error
   );
 
   // Window the MOBILE card list with core virtualization — desktop rows still
@@ -1686,7 +1712,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const cardWindow = useCardWindowing({
     rows: source.rows,
     rowKey: getRowId,
-    virtualize: virtualize && !grouping,
+    virtualize: virtualBody,
     isPaged: c.isPaged,
     error: source.error,
     body: c.body,
@@ -1740,6 +1766,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     gridFocus: gridFocus,
     columns: table.columns,
     rowActions,
+    rowActionsLayout: props.rowActionsLayout,
+    renderRowActions: props.renderRowActions,
     sortBy: source.sortBy,
     sortDir: source.sortDir,
     confirm,
@@ -1777,10 +1805,12 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     rowReorder: c.rowReorder,
     windowStart,
     cellsByRow,
+    cellSpanAppearance: props.cellSpanAppearance,
     headerFilters: filtersMode === "header",
     filterDefs: runtime.defs,
     filterSource: resolvedSource,
     filterRegistry: runtime.registry,
+    closeHeaderFilterOnSelect: props.closeHeaderFilterOnSelect === true,
   });
   // A tree is already flat by the time antd sees it: core walks the hierarchy
   // and hands back the visible rows in reading order, so antd's own
@@ -1824,8 +1854,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // page-sticky search would detach from the card while rows scroll in the
   // box — pin the toolbar only when the page itself is the scroller.
   const inScrollBox =
-    props.maxHeight != null ||
-    (virtualize && !grouping && c.body === "desktop");
+    props.maxHeight != null || (virtualBody && c.body === "desktop");
   const stickyBar = useStickyToolbarLayout(
     resolveStickyToolbar(props.stickyHeader, props.stickyToolbar, inScrollBox),
     props.stickyTop ?? 0
@@ -1857,6 +1886,8 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       slots={slots}
       columns={columns}
       rowActions={rowActions}
+      rowActionsLayout={props.rowActionsLayout}
+      renderRowActions={props.renderRowActions}
       confirm={confirm}
       getRowId={getRowId}
       labels={labels}

@@ -6,9 +6,10 @@ import {
   type GroupedFlatEntry,
   type MobileCardRenderer,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowExpansionState,
   type RowReorderState,
-  runRowAction,
   type TableLabels,
   treeCardStyle,
   type TreeEntry,
@@ -20,7 +21,6 @@ import {
   insertExtraRows,
   isExtraEntry,
   orderedCardEntries,
-  resolveDisabledReason,
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
@@ -31,11 +31,9 @@ import {
   useSummaryCells,
   type VirtualTableRow,
 } from "@adapttable/core/adapter";
-import { Button, Card, Checkbox, Descriptions, Space } from "antd";
+import { Card, Checkbox, Descriptions, Space } from "antd";
 import { type CSSProperties, memo, type ReactNode, useMemo } from "react";
 
-import { isDangerColor } from "../colors";
-import { iconForRowAction } from "../icons";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import {
@@ -44,51 +42,7 @@ import {
   GroupHeaderCard,
 } from "./grouping";
 import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
-
-/** Row-action buttons for a single card. */
-function CardActions<TRow>({
-  row,
-  rowActions,
-  confirm,
-  labels,
-}: Readonly<{
-  row: TRow;
-  rowActions: readonly RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  labels: Required<TableLabels>;
-}>) {
-  return (
-    <Space size="small" wrap>
-      {rowActions.map((action) => {
-        if (action.isHidden?.(row)) return null;
-        const reason = resolveDisabledReason(action.disabledReason?.(row));
-        const disabled =
-          reason !== undefined || (action.isDisabled?.(row) ?? false);
-        const icon = iconForRowAction(action);
-        return (
-          <Button
-            key={action.key}
-            size="small"
-            danger={isDangerColor(action.color)}
-            disabled={disabled}
-            icon={icon}
-            title={reason ?? (icon ? action.label : undefined)}
-            aria-label={action.label}
-            // The disabled attribute already blocks activation, so attach
-            // the handler only when the action can run.
-            onClick={
-              disabled
-                ? undefined
-                : () => runRowAction(action, row, confirm, labels.cancel)
-            }
-          >
-            {icon ? undefined : action.label}
-          </Button>
-        );
-      })}
-    </Space>
-  );
-}
+import { RowActionButtons } from "./RowActionButtons";
 
 /**
  * The mobile counterpart of the desktop footer summary: one trailing card
@@ -140,6 +94,8 @@ interface CardItemProps<TRow> {
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: readonly RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
   /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
@@ -198,6 +154,8 @@ function cardItemPropsEqual<TRow>(
     prev.labels === next.labels &&
     prev.confirm === next.confirm &&
     prev.rowActions === next.rowActions &&
+    prev.rowActionsLayout === next.rowActionsLayout &&
+    prev.renderRowActions === next.renderRowActions &&
     prev.className === next.className &&
     prev.styleSignature === next.styleSignature &&
     prev.selected === next.selected &&
@@ -227,6 +185,8 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     labels,
     confirm,
     rowActions,
+    rowActionsLayout,
+    renderRowActions,
     className,
     style,
     selected,
@@ -316,11 +276,13 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
               />
             )}
             {actions && (
-              <CardActions
+              <RowActionButtons
                 row={row}
-                rowActions={actions}
+                actions={actions}
                 confirm={confirm}
                 labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
               />
             )}
           </Space>
@@ -374,6 +336,8 @@ export function MobileCards<TRow>({
   cardClassName,
   rows,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   confirm,
   getRowId,
   prefetch,
@@ -405,6 +369,8 @@ export function MobileCards<TRow>({
   cardClassName?: string;
   rows: readonly TRow[];
   rowActions?: readonly RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   prefetch?: (row: TRow) => void;
@@ -505,6 +471,8 @@ export function MobileCards<TRow>({
           labels={labels}
           confirm={confirm}
           rowActions={rowActions}
+          rowActionsLayout={rowActionsLayout}
+          renderRowActions={renderRowActions}
           className={
             [cardClassName, rowClassName?.(row, index)]
               .filter(Boolean)

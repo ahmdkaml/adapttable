@@ -16,6 +16,8 @@ import {
   resolveColumnFooter,
   resolveColumnHeader,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowPinSide,
   type TableLabels,
   tableMinWidth,
@@ -27,6 +29,7 @@ import {
   type BodyCell,
   cellHighlightStyle,
   cellsForRow,
+  cellSpanMark,
   columnFlexShares,
   columnSelectLabel,
   columnSizeStyle,
@@ -37,6 +40,7 @@ import {
   type HtmlGroupedHeaderCell,
   htmlGroupedHeaderPlan,
   insertExtraRows,
+  mergedCellStyle,
   type PinLeads,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
@@ -353,6 +357,9 @@ interface DesktopRowProps<TRow> {
    */
   getRowProps: UseDataTableResult<TRow>["getRowProps"];
   rowActions?: RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  cellSpanAppearance?: SharedTableRenderProps<TRow>["cellSpanAppearance"];
+  renderRowActions?: RowActionsRenderer<TRow>;
   confirm: ConfirmHandler;
   renderRowDetail?: (row: TRow) => ReactNode;
   onToggleSelect: (id: string) => void;
@@ -411,6 +418,9 @@ const DESKTOP_ROW_COMPARED: readonly (keyof DesktopRowProps<unknown>)[] = [
   "sourceIndex",
   "reorderPinned",
   "labels",
+  "rowActionsLayout",
+  "cellSpanAppearance",
+  "renderRowActions",
   "selectRowLabel",
   "cancelLabel",
   "expandLabel",
@@ -463,6 +473,9 @@ function DesktopRowImpl<TRow>({
   collapseLabel,
   id,
   rowActions,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   confirm,
   renderRowDetail,
   onToggleSelect,
@@ -563,6 +576,7 @@ function DesktopRowImpl<TRow>({
               rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
               data-adapttable-part="cell"
+              data-cell-span={cellSpanMark(colSpan, rowSpan)}
               sx={sx.cells[column.key]}
               // MUI's own selected fill, from the palette so it follows the
               // theme and dark mode. Applied as a style rather than merged into
@@ -574,10 +588,14 @@ function DesktopRowImpl<TRow>({
                   rowPinOffset,
                   sx.pinnedColumns.has(column.key)
                 ),
-                ...cellHighlightStyle(focusProps, undefined, {
-                  backgroundColor:
-                    "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
-                }),
+                ...cellHighlightStyle(
+                  focusProps,
+                  mergedCellStyle(colSpan, rowSpan, cellSpanAppearance),
+                  {
+                    backgroundColor:
+                      "var(--mui-palette-action-selected, rgba(0, 0, 0, 0.08))",
+                  }
+                ),
               }}
               {...focusProps}
             >
@@ -631,7 +649,9 @@ function DesktopRowImpl<TRow>({
                 row={row}
                 actions={rowActions}
                 confirm={confirm}
-                cancelLabel={cancelLabel}
+                labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
               />
             )}
           </TableCell>
@@ -665,6 +685,9 @@ export function DesktopTable<TRow>({
   table,
   rows,
   rowActions,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
   confirm,
   getRowId,
   size,
@@ -711,6 +734,7 @@ export function DesktopTable<TRow>({
   headerFilters,
   filterDefs,
   filterRegistry,
+  closeHeaderFilterOnSelect,
 }: Readonly<SharedProps<TRow>>) {
   // Core's span already counts the expand column (it sees `renderRowDetail`
   // + `expansion`), so spacer and detail rows use `columnSpan` as-is.
@@ -962,6 +986,9 @@ export function DesktopTable<TRow>({
         collapseLabel={labels.collapseRow}
         id={id}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        cellSpanAppearance={cellSpanAppearance}
+        renderRowActions={renderRowActions}
         confirm={confirm}
         renderRowDetail={renderRowDetail}
         onToggleSelect={onToggleSelect}
@@ -1069,6 +1096,7 @@ export function DesktopTable<TRow>({
             source={table.source}
             labels={labels}
             registry={filterRegistry}
+            closeOnSelect={closeHeaderFilterOnSelect}
           />
         ) : null}
         {setWidth && (
@@ -1331,6 +1359,9 @@ export function DesktopTable<TRow>({
                     collapseLabel={labels.collapseRow}
                     id={id}
                     rowActions={rowActions}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     confirm={confirm}
                     renderRowDetail={renderRowDetail}
                     onToggleSelect={onToggleSelect}
@@ -1425,6 +1456,9 @@ export function DesktopTable<TRow>({
                     collapseLabel={labels.collapseRow}
                     id={id}
                     rowActions={rowActions}
+                    rowActionsLayout={rowActionsLayout}
+                    cellSpanAppearance={cellSpanAppearance}
+                    renderRowActions={renderRowActions}
                     confirm={confirm}
                     renderRowDetail={renderRowDetail}
                     onToggleSelect={onToggleSelect}

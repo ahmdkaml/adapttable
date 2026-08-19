@@ -27,6 +27,7 @@ const serverSource = (): TableSource<Row> => ({
   total: 4012,
   page: 1,
   limit: 25,
+  defaultLimit: 25,
   search: "",
   sortBy: undefined,
   sortDir: undefined,

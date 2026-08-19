@@ -1477,16 +1477,17 @@ export function PeopleTable() {
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                               |
-| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
-| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
-| `headerFilters`     | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
+| Prop                        | Type                                | Default        | Description                                                                                                                               |
+| --------------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`                   | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
+| `filtersMode`               | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
+| `onClearFilters`            | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
+| `filterLabels`              | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
+| `extraChips`                | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
+| `activeFilterCount`         | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| `headerFilters`             | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
+| `closeHeaderFilterOnSelect` | `boolean`                           | `false`        | Close a header-filter overlay after a finished single-control write (select/boolean, or a valueless operator). Off by default.            |
+| `filterTypes`               | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
 
 ## Headless filter primitives
 
@@ -1560,7 +1561,12 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   header cell so `fixed` columns stay on antd's own header. Compact
   range inputs default the operator to `gte` (no picker in the header);
   checklist / multiSelect open a closed menu of checkboxes, not a native
-  `<select multiple>`.
+  `<select multiple>`. The funnel overlay stays open while you fill a
+  multi-input field; nested kit dropdowns are not treated as outside
+  clicks. Pass `closeHeaderFilterOnSelect` to dismiss after a finished
+  single-control write (`useHeaderFilterOverlay` /
+  `bindHeaderFilterDismiss` / `headerFilterFieldIsComplete` /
+  `usePointerDismiss` / `HeaderFilterSessionProps`).
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active
@@ -1896,14 +1902,16 @@ export function PeopleTable() {
 
 ## Options
 
-| Prop                | Type                      | Default          | Description                                                                                                                                                                                                                      |
-| ------------------- | ------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bulkActions`       | `BulkAction[]`            | —                | Bulk-action buttons; passing this turns on row selection.                                                                                                                                                                        |
-| `rowActions`        | `RowAction<TRow>[]`       | —                | Trailing per-row actions; independent of selection.                                                                                                                                                                              |
-| `selectedIds`       | `readonly string[]`       | — (uncontrolled) | Controlled selection ids.                                                                                                                                                                                                        |
-| `onSelectionChange` | `(ids: string[]) => void` | —                | Uncontrolled: observer for every change — once on mount with the (empty) initial set, per toggle/select-all, and on the automatic reset when search or a filter changes. Controlled: the change-request handler (no mount fire). |
-| `selectionGetId`    | `(row: TRow) => string`   | `rowKey`         | Selection id extractor when it must differ from the React key.                                                                                                                                                                   |
-| `confirm`           | `ConfirmHandler`          | `window.confirm` | Confirmation handler for actions with a `confirm` block; pass your own for a styled dialog.                                                                                                                                      |
+| Prop                | Type                       | Default          | Description                                                                                                                                                                                                                      |
+| ------------------- | -------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bulkActions`       | `BulkAction[]`             | —                | Bulk-action buttons; passing this turns on row selection.                                                                                                                                                                        |
+| `rowActions`        | `RowAction<TRow>[]`        | —                | Trailing per-row actions; independent of selection.                                                                                                                                                                              |
+| `rowActionsLayout`  | `RowActionsLayout`         | `"buttons"`      | Omit or `"buttons"` for the strip; `"menu"` for a 3-dot menu.                                                                                                                                                                    |
+| `renderRowActions`  | `RowActionsRenderer<TRow>` | —                | Replace the trailing actions cell; wins over `rowActionsLayout`.                                                                                                                                                                 |
+| `selectedIds`       | `readonly string[]`        | — (uncontrolled) | Controlled selection ids.                                                                                                                                                                                                        |
+| `onSelectionChange` | `(ids: string[]) => void`  | —                | Uncontrolled: observer for every change — once on mount with the (empty) initial set, per toggle/select-all, and on the automatic reset when search or a filter changes. Controlled: the change-request handler (no mount fire). |
+| `selectionGetId`    | `(row: TRow) => string`    | `rowKey`         | Selection id extractor when it must differ from the React key.                                                                                                                                                                   |
+| `confirm`           | `ConfirmHandler`           | `window.confirm` | Confirmation handler for actions with a `confirm` block; pass your own for a styled dialog.                                                                                                                                      |
 
 ## Notes
 
@@ -2456,6 +2464,10 @@ own `rowActions` — so a delete stays last, where a destructive action belongs.
 They ride the actions column like any other row action: hideable and end-pinnable
 from the Columns menu, buttons on desktop and card buttons on mobile.
 
+Pass `rowActionsLayout="menu"` to collapse those buttons into a 3-dot menu
+(omit or `"buttons"` keeps today's strip). `renderRowActions` replaces the
+cell entirely when you want your own chrome — it wins over the layout.
+
 **The table asks; you do the rest.** It holds no draft and stores no row. A row
 you add arrives through the source like every other row, which is what keeps it
 ordinary — editable, filterable, sortable, counted, grouped and virtualized from
@@ -2814,12 +2826,19 @@ Labels: `pinToTop`, `pinToBottom`, `unpinRow` (`RowPinLabels`).
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `getCellSpan` or `column.colSpan`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Span** on. Ada's name covers the email column.
+▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Span cells** on. Team is written once down the people who share it. Person and Email stay their own cells.
 
 A span is a rectangle. The origin cell carries `colSpan` / `rowSpan`; every
 covered neighbour is omitted from that row's cell list, so every kit maps one
 list instead of `columns.map`. Omit `getCellSpan` and every `column.colSpan` /
 `column.rowSpan` and the list is one cell per column — nothing extra renders.
+
+By default the origin is painted like a spreadsheet merge: **centered
+content, one fill** across the whole span (`data-cell-span` is
+`"colSpan x rowSpan"`, e.g. `"1x5"`). That is `cellSpanAppearance="merged"`.
+Pass `"plain"` for geometry only — same chrome as a 1×1 cell — if you want
+to draw a calendar-style bar yourself. Override the fill with
+`--adapttable-cell-span-fill`, or the unstyled `cellSpan` class hook.
 
 ```tsx
 import { DataTable } from "@adapttable/mantine";
@@ -2828,9 +2847,13 @@ import { DataTable } from "@adapttable/mantine";
   data={rows}
   columns={columns}
   rowKey={(row) => row.id}
-  getCellSpan={({ column, rowIndex }) =>
-    column.key === "name" && rowIndex === 0 ? { colSpan: 2 } : undefined
-  }
+  getCellSpan={({ column, row, rowIndex }) => {
+    if (column.key !== "team") return undefined;
+    if (rows[rowIndex - 1]?.team === row.team) return undefined;
+    let rowSpan = 1;
+    while (rows[rowIndex + rowSpan]?.team === row.team) rowSpan += 1;
+    return rowSpan > 1 ? { rowSpan } : undefined;
+  }}
 />;
 ```
 
@@ -6046,27 +6069,28 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Filters
 
-| Part                                                                                                                    | Element                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `filtersButton`                                                                                                         | The Filters trigger button.                                                                        |
-| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                                |
-| `filtersCount`                                                                                                          | The active-filter count badge.                                                                     |
-| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                                  |
-| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                                   |
-| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.              |
-| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                                     |
-| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                               |
-| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                                      |
-| `filtersPanel`                                                                                                          | The drawer panel.                                                                                  |
-| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                                     |
-| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                                         |
-| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                              |
-| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                                    |
-| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`.             |
-| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                                      |
-| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                                   |
-| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`                                       | Compact header filter row, one cell, its input, and the multi-select menu.                         |
-| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                                    |
+| Part                                                                                                                    | Element                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `filtersButton`                                                                                                         | The Filters trigger button.                                                                                        |
+| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                                                |
+| `filtersCount`                                                                                                          | The active-filter count badge.                                                                                     |
+| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                                                  |
+| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                                                   |
+| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.                              |
+| `cellSpan`                                                                                                              | A spanned cell (`getCellSpan`). `data-cell-span` is on the element (`"2x1"`). Default look is centered + one fill. |
+| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                                                     |
+| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                                               |
+| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                                                      |
+| `filtersPanel`                                                                                                          | The drawer panel.                                                                                                  |
+| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                                                     |
+| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                                                         |
+| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                                              |
+| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                                                    |
+| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`.                             |
+| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                                                      |
+| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                                                   |
+| `filterHeaderRow` / `filterHeaderTrigger` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`               | Compact header filter row, funnel overlay trigger, one cell, its input, and the multi-select menu.                 |
+| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                                                    |
 
 ### Chips
 
@@ -6106,14 +6130,15 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Table
 
-| Part                           | Element                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| `table` / `thead` / `tbody`    | The `<table>` and its sections.                      |
-| `headerRow` / `headerCell`     | The header `<tr>` and one `<th>`.                    |
-| `groupRow` / `groupCell`       | The grouped-header row and one spanning cell.        |
-| `sortButton` / `sortIndex`     | A sortable header's button and its multi-sort badge. |
-| `row` / `cell`                 | One body `<tr>` and one `<td>`.                      |
-| `actionsCell` / `actionButton` | The trailing actions cell and one action button.     |
+| Part                                   | Element                                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `table` / `thead` / `tbody`            | The `<table>` and its sections.                                                              |
+| `headerRow` / `headerCell`             | The header `<tr>` and one `<th>`.                                                            |
+| `groupRow` / `groupCell`               | The grouped-header row and one spanning cell.                                                |
+| `sortButton` / `sortIndex`             | A sortable header's button and its multi-sort badge.                                         |
+| `row` / `cell`                         | One body `<tr>` and one `<td>`.                                                              |
+| `actionsCell` / `actionButton`         | The trailing actions cell and one action button.                                             |
+| `rowActionsTrigger` / `rowActionsMenu` | The 3-dot control and its menu (`rowActionsLayout="menu"`). Menu items reuse `actionButton`. |
 
 ### Row expansion
 
@@ -7161,28 +7186,31 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 
 ### Filters & search
 
-| Prop                | Type                                | Default     | Description                                                                                                                                                                                                                                                                             |
-| ------------------- | ----------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                                                                             |
-| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: per-column icons; hides the Filters button unless the AND/OR tree is on (`toolbarShowsFilters`). `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`). |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                                                                          |
-| `extraChips`        | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                                                                     |
-| `activeFilterCount` | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                                                                 |
-| `onClearFilters`    | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                                                                       |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                                                                 |
-| `searchable`        | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                                                                |
-| `searchPlaceholder` | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                                                                       |
+| Prop                        | Type                                | Default     | Description                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------------- | ----------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `filters`                   | `FilterDef<TRow>[] \| ReactNode`    | —           | Declarative array (the adapter builds the form) or JSX (you draw it); column `filter` shorthands merge in, a same-key `filters` entry wins.                                                                                                                                                                                                                                                                              |
+| `filtersMode`               | `"popover" \| "drawer" \| "header"` | `"popover"` | One container at a time. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: per-column icons; hides the Filters button unless the AND/OR tree is on (`toolbarShowsFilters`). `headerFilters` is an alias for `"header"` (`resolveFilterMode` / `FilterChromeMode`).                                                                                                                                  |
+| `closeHeaderFilterOnSelect` | `boolean`                           | `false`     | Close a header-filter overlay after a finished single-control write (a select/boolean value, or a valueless operator such as "Is empty"). Off by default — picking an operator on a field that still has a value input does not dismiss. Outside click and Escape always close. `useHeaderFilterOverlay` / `bindHeaderFilterDismiss` / `headerFilterFieldIsComplete` / `usePointerDismiss` / `HeaderFilterSessionProps`. |
+| `filterLabels`              | `Record<string, ChipLabelResolver>` | —           | Per-filter-key chip label resolvers. Declarative `filters` derive them automatically; needed only for hand-drawn JSX filters (or to override a derived label).                                                                                                                                                                                                                                                           |
+| `extraChips`                | `ActiveFilterChip[]`                | —           | Extra chips driven by non-URL state, merged with the derived chips.                                                                                                                                                                                                                                                                                                                                                      |
+| `activeFilterCount`         | `number`                            | chip count  | Override the active-filter count badge.                                                                                                                                                                                                                                                                                                                                                                                  |
+| `onClearFilters`            | `() => void`                        | —           | Clear-filters handler used by the panel + chip strip (built-in `clearExtras` fallback otherwise).                                                                                                                                                                                                                                                                                                                        |
+| `filterTypes`               | `FilterTypeSpec[]`                  | built-ins   | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces a built-in.                                                                                                                                                                                                                                                                                                                  |
+| `searchable`                | `boolean`                           | `true`      | Render the built-in search box; pass `false` to hide it.                                                                                                                                                                                                                                                                                                                                                                 |
+| `searchPlaceholder`         | `string`                            | —           | Placeholder for the search input.                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### Selection & actions
 
-| Prop                | Type                              | Default          | Description                                                                                                                                                                                                    |
-| ------------------- | --------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rowActions`        | `RowAction<TRow>[]`               | —                | Trailing per-row actions. Pass `icon` for an icon-only button (`label` is the tooltip and accessible name); omit it for a text button. Built-in duplicate, delete and pin actions use each kit's own icons.    |
-| `bulkActions`       | `BulkAction[]`                    | —                | Bulk actions — providing these turns on row selection.                                                                                                                                                         |
-| `selectionGetId`    | `(row: TRow) => string`           | `rowKey`         | Selection id extractor when it must differ from `rowKey`.                                                                                                                                                      |
-| `selectedIds`       | `readonly string[]`               | —                | Controlled selection; apply `onSelectionChange` requests to your own state.                                                                                                                                    |
-| `onSelectionChange` | `(selectedIds: string[]) => void` | —                | Selection observer (uncontrolled) or change-request handler (controlled).                                                                                                                                      |
-| `confirm`           | `ConfirmHandler`                  | `window.confirm` | Confirmation handler for actions that declare a `confirm` block. Where no dialog exists (SSR, some webviews), the default DENIES the action and dev-warns — pass your own handler for dialogless environments. |
+| Prop                | Type                              | Default          | Description                                                                                                                                                                                                               |
+| ------------------- | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rowActions`        | `RowAction<TRow>[]`               | —                | Trailing per-row actions. Pass `icon` for an icon-only button (`label` is the tooltip and accessible name); omit it for a text button. Built-in duplicate, delete and pin actions use each kit's own icons.               |
+| `rowActionsLayout`  | `RowActionsLayout`                | `"buttons"`      | How the trailing actions column renders. Omit or `"buttons"` keeps today's horizontal strip. `"menu"` collapses visible actions into a 3-dot menu using each kit's own Menu. Ignored when `renderRowActions` is set.      |
+| `renderRowActions`  | `RowActionsRenderer<TRow>`        | —                | Replace the trailing actions cell (desktop and mobile cards). Receives the resolved action list (host + built-in duplicate / delete / pin). The column still only appears when there are row actions or row-mode editing. |
+| `bulkActions`       | `BulkAction[]`                    | —                | Bulk actions — providing these turns on row selection.                                                                                                                                                                    |
+| `selectionGetId`    | `(row: TRow) => string`           | `rowKey`         | Selection id extractor when it must differ from `rowKey`.                                                                                                                                                                 |
+| `selectedIds`       | `readonly string[]`               | —                | Controlled selection; apply `onSelectionChange` requests to your own state.                                                                                                                                               |
+| `onSelectionChange` | `(selectedIds: string[]) => void` | —                | Selection observer (uncontrolled) or change-request handler (controlled).                                                                                                                                                 |
+| `confirm`           | `ConfirmHandler`                  | `window.confirm` | Confirmation handler for actions that declare a `confirm` block. Where no dialog exists (SSR, some webviews), the default DENIES the action and dev-warns — pass your own handler for dialogless environments.            |
 
 ### Appearance & chrome
 
@@ -7222,6 +7250,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `pinnedRowIds`              | `RowPinState`                                                   | —               | Controlled `{ top, bottom }` row-id lists. Pinned rows leave the virtual window and stick above or below the scroll box. See [row pinning](./row-pinning.md).                                                                                                                                                                                                                    |
 | `onPinnedRowIdsChange`      | `(next: RowPinState) => void`                                   | —               | Pin-list channel. Setting this (or `pinnedRowIds`) arms the feature. Uncontrolled lists also write `rowPin` to the URL. Grouping or a tree refuses with a `devWarn`.                                                                                                                                                                                                             |
 | `getCellSpan`               | `GetCellSpan<TRow>`                                             | —               | Per-cell `{ colSpan, rowSpan }`. Covered cells are omitted from the row's cell list. Clips at pin boundaries and the column window. Mobile cards ignore geometry. See [row and column spanning](./row-spanning.md).                                                                                                                                                              |
+| `cellSpanAppearance`        | `"merged" \| "plain"`                                           | `"merged"`      | How a spanned cell is painted. `"merged"` is centered content and one fill; `"plain"` is geometry only. See [row and column spanning](./row-spanning.md).                                                                                                                                                                                                                        |
 | `extraRows`                 | `readonly ExtraRow[]`                                           | —               | Host-injected separator and full-width slots, spliced in by `beforeRowId`. Omit and nothing is inserted. See [full-width and separator rows](./full-width-rows.md).                                                                                                                                                                                                              |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
 | `tableFooter`               | `ReactNode`                                                     | —               | Free slot under the table, above the pager. Not the column-aligned summary row.                                                                                                                                                                                                                                                                                                  |
@@ -7364,7 +7393,12 @@ the AND/OR tree still has a chrome. The shared layout is `FilterHeaderChrome`
 `FilterHeaderSlots` / `FilterHeaderSearchProps` / `FilterHeaderSelectProps`
 / `FilterHeaderRangeProps` / `FilterHeaderMultiProps` / `FilterHeaderOption`
 on `@adapttable/core/adapter`. Helpers `filterDefForColumn` /
-`headerFilterStickTop` stay on core. Desktop only. Never stacked with the
+`headerFilterStickTop` stay on core. Nested kit dropdowns (Select, DatePicker)
+are not "outside" — the overlay stays open until a true outside click, Escape,
+or (when `closeHeaderFilterOnSelect` is on) a finished single-control write
+(`useHeaderFilterOverlay` / `bindHeaderFilterDismiss` /
+`headerFilterFieldIsComplete` / `usePointerDismiss` /
+`HeaderFilterSessionProps`). Desktop only. Never stacked with the
 popover or drawer.
 `filterTypes` merges `FilterTypeSpec`s onto `defaultFilterRegistry`
 (`builtInFilterSpecs` / `resolveFilterRegistry` / `createFilterRegistry` /
@@ -7379,28 +7413,29 @@ operators, predicate, chips, tree projection, and optional `render`
 
 Props beyond the core surface, with per-kit availability.
 
-| Prop            | Type                                            | Default        | Available on                              | Description                                                                                                                                                                                               |
-| --------------- | ----------------------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data`          | `readonly TRow[]`                               | —              | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                                                                                |
-| `total`         | `number`                                        | —              | all                                       | Server tier: total row count across all pages (drives the pager).                                                                                                                                         |
-| `loading`       | `boolean`                                       | —              | all                                       | Server tier: a request is in flight.                                                                                                                                                                      |
-| `onQueryChange` | `(query: TableQuery, info: { signal }) => void` | —              | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                                                                                |
-| `supports`      | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                                                |
-| `facetKeys`     | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                                       |
-| `facets`        | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                                         |
-| `headerFilters` | `boolean`                                       | `false`        | all                                       | Alias for `filtersMode="header"`: compact per-column row (desktop). Hides the toolbar Filters button. Same defs and extra bag as the panel.                                                               |
-| `filterTypes`   | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                                    |
-| `urlKey`        | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                                       |
-| `urlAdapter`    | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                                                |
-| `urlSync`       | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                                           |
-| `savedViews`    | `UseSavedViewsOptions`                          | —              | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                                                 |
-| `slots`         | `{ skeleton?, empty?, noResults?, error? }`     | —              | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one; `error` takes a node or a `(state) => node` receiving the error and its retry (see customization). |
-| `classNames`    | `DataTableClassNames`                           | —              | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                                                 |
-| `className`     | `string`                                        | —              | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                                   |
-| `animate`       | `boolean`                                       | `false`        | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                                     |
-| `size`          | kit-specific union                              | —              | mui, chakra, antd, radix                  | Explicit kit table size, overriding the density mapping (comfortable/compact → chakra `"md"`/`"sm"`, radix & base-ui `"2"`/`"1"`, mui `"medium"`/`"small"`, antd `"middle"`/`"small"`).                   |
-| `accentColor`   | kit accent union (chakra: `string`)             | —              | chakra, radix, base-ui                    | Accent color for primary controls (buttons, badges, active page).                                                                                                                                         |
-| `bordered`      | `boolean`                                       | `false`        | antd                                      | Render the table with cell borders.                                                                                                                                                                       |
+| Prop                        | Type                                            | Default        | Available on                              | Description                                                                                                                                                                                               |
+| --------------------------- | ----------------------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`                      | `readonly TRow[]`                               | —              | all                                       | Frontend tier: raw rows the table filters/sorts/pages; with `onQueryChange` it is the current server page.                                                                                                |
+| `total`                     | `number`                                        | —              | all                                       | Server tier: total row count across all pages (drives the pager).                                                                                                                                         |
+| `loading`                   | `boolean`                                       | —              | all                                       | Server tier: a request is in flight.                                                                                                                                                                      |
+| `onQueryChange`             | `(query: TableQuery, info: { signal }) => void` | —              | all                                       | Server tier: fired with the consolidated query whenever it changes (mount included); fetch and hand back `data` + `total`.                                                                                |
+| `supports`                  | `QuerySupport`                                  | —              | all                                       | Server tier: capabilities this endpoint answers. `supports.facets` unlocks `query.facets`.                                                                                                                |
+| `facetKeys`                 | `readonly string[]`                             | checklist keys | all                                       | Server tier: keys sent as `query.facets`. Defaults to every `checklist` definition.                                                                                                                       |
+| `facets`                    | `FacetMap`                                      | —              | all                                       | Server tier: distinct-value counts from the last fetch, surfaced on the source for the checklist.                                                                                                         |
+| `headerFilters`             | `boolean`                                       | `false`        | all                                       | Alias for `filtersMode="header"`: compact per-column row (desktop). Hides the toolbar Filters button. Same defs and extra bag as the panel.                                                               |
+| `closeHeaderFilterOnSelect` | `boolean`                                       | `false`        | all                                       | Close a header-filter overlay after a finished single-control write. Off by default so an operator pick on a multi-input field stays open.                                                                |
+| `filterTypes`               | `FilterTypeSpec[]`                              | built-ins      | all                                       | Extra or replacement filter types merged onto `defaultFilterRegistry`.                                                                                                                                    |
+| `urlKey`                    | `string`                                        | —              | all                                       | Namespace for this table's URL params (`urlKey="left"` → `left.q`, `left.page`, …).                                                                                                                       |
+| `urlAdapter`                | `UrlStateAdapter`                               | History API    | all                                       | URL-state backend for the `data`/`onQueryChange` tiers (router adapter, `createMemoryAdapter()` in tests).                                                                                                |
+| `urlSync`                   | `boolean`                                       | `true`         | all                                       | `false` keeps all state in memory — the address bar never changes, any `urlAdapter` is ignored.                                                                                                           |
+| `savedViews`                | `UseSavedViewsOptions`                          | —              | all                                       | Mounts a saved-views toolbar menu; `adapter`/`urlKey` default to the table's own, so usually only `storageKey` is needed.                                                                                 |
+| `slots`                     | `{ skeleton?, empty?, noResults?, error? }`     | —              | all                                       | Replace sub-components. `empty` covers both empty states; `noResults` overrides just the filtered one; `error` takes a node or a `(state) => node` receiving the error and its retry (see customization). |
+| `classNames`                | `DataTableClassNames`                           | —              | mantine, chakra, radix, base-ui, unstyled | Per-part class overrides — five parts on Mantine/Chakra/Radix/Base UI (`root`/`toolbar`/`table`/`card`/`footer`), every part on unstyled.                                                                 |
+| `className`                 | `string`                                        | —              | mui, antd                                 | Class name applied to the root wrapper.                                                                                                                                                                   |
+| `animate`                   | `boolean`                                       | `false`        | all                                       | Animate rows/cards on mount (dependency-free; honors reduced motion).                                                                                                                                     |
+| `size`                      | kit-specific union                              | —              | mui, chakra, antd, radix                  | Explicit kit table size, overriding the density mapping (comfortable/compact → chakra `"md"`/`"sm"`, radix & base-ui `"2"`/`"1"`, mui `"medium"`/`"small"`, antd `"middle"`/`"small"`).                   |
+| `accentColor`               | kit accent union (chakra: `string`)             | —              | chakra, radix, base-ui                    | Accent color for primary controls (buttons, badges, active page).                                                                                                                                         |
+| `bordered`                  | `boolean`                                       | `false`        | antd                                      | Render the table with cell borders.                                                                                                                                                                       |
 
 Each adapter also re-exports the core source builders and types, so one
 import path covers everything.
@@ -7594,7 +7629,8 @@ unless `confirmDeleteRow={false}`. `useRowMutations(options)`
 (`UseRowMutationsOptions` in, `RowMutationsState` out, taking the
 `RowMutationHandlers`) is the state behind them; `labels.addRow`,
 `labels.duplicateRow`, `labels.deleteRow` and `labels.deleteRowConfirm` name
-them. The table stores nothing — a new row arrives through the source like any
+them, and `labels.rowActionsMenu` names the 3-dot trigger when
+`rowActionsLayout="menu"`. The table stores nothing — a new row arrives through the source like any
 other.
 
 **Dirty marks.** `dirtyIndicators` turns them on;
@@ -7714,7 +7750,7 @@ array to the snapshot (`incrementalViewConfig` reads it back);
 `RowReorderAnnouncer` stays on `@adapttable/core/adapter`. See
 [row reordering](./row-reordering.md).
 
-**Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`). Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `BodyCell`. See [row and column spanning](./row-spanning.md).
+**Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`, `cellSpanMark`). `cellSpanAppearance` (`"merged"` / `"plain"`) is how the origin cell is painted. Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `CellSpanAppearance`, `BodyCell`. See [row and column spanning](./row-spanning.md).
 
 **Full-width and separator rows.** `extraRows` is a list of `ExtraRow` (`kind: "separator" | "fullWidth"`, `beforeRowId`, `render`). `insertExtraRows` splices them into a `kind`-tagged list; `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` are the kit helpers. Label: `rowSeparator`. See [full-width and separator rows](./full-width-rows.md).
 
@@ -7771,7 +7807,8 @@ Chips:
 `ChecklistFilterState` / `collectChecklistValues` / `ChecklistValue` /
 `CHECKLIST_VIRTUALIZE_AT` / `CHECKLIST_ITEM_HEIGHT` /
 `CHECKLIST_LIST_HEIGHT`. Header row (on each adapter): `FilterHeaderRow` /
-`FilterHeaderControl` / `FilterHeaderRowProps` / `FilterHeaderControlProps`.
+`FilterHeaderControl` / `FilterHeaderRowProps` / `FilterHeaderControlProps`
+(`closeOnSelect`).
 Layout (on `@adapttable/core/adapter`): `FilterHeaderChrome` /
 `FilterHeaderControlChrome` / `FilterHeaderChromeProps` /
 `FilterHeaderControlChromeProps` / `FilterHeaderClassNames` /
@@ -8276,7 +8313,8 @@ builders. `HeaderSelectionState` is the header checkbox's tri-state.
 `defaultSearchText` is the default searchable-text projector (a row's own
 values, flattened). `columnMenuLabel` gives a column its readable name in the
 menu (header string → `mobileLabel` → key). `runRowAction` runs a row action
-through the confirmation handler. `LayoutStorage` is the slice of the `Storage`
+through the confirmation handler. `visibleRowActions` drops `isHidden` entries
+from a resolved list. `LayoutStorage` is the slice of the `Storage`
 API the column-layout hook needs, injectable for tests. `SavedViewsMenu` /
 `SavedViewsLabels` are the adapters' saved-views control and its strings, and
 `ToolbarChromeProps` is the toolbar's kit-agnostic prop surface. The CLI
@@ -8343,6 +8381,9 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `ColumnGroupRecord` / `FlattenedColumns`                                  | Collapse policy for one parent, and the `{ leaves, groups }` result of `flattenColumnTree`.                                                                        |
 | `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                                                     |
 | `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                                   |
+| `RowActionsLayout`                                                        | `"buttons" \| "menu"` — omit / `"buttons"` is the strip; `"menu"` is the 3-dot control.                                                                            |
+| `RowActionsRenderContext<TRow>` / `RowActionsRenderer<TRow>`              | What `renderRowActions` receives (`row`, `actions`, `confirm`, `labels`) / the renderer type.                                                                      |
+| `visibleRowActions`                                                       | Filters `isHidden` actions out of a resolved list. Default layouts use this; a custom cell can keep hidden ones.                                                   |
 | `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                                  |
 | `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                                         |
 | `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                                                            |
@@ -8361,7 +8402,7 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 | `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                                                        |
 | `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                                                           |
 | `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                                                  |
-| `GetCellSpan` / `BodyCell` / `CellSpanRequest`                            | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }`. See [row and column spanning](./row-spanning.md).                                               |
+| `GetCellSpan` / `BodyCell` / `CellSpanRequest` / `CellSpanAppearance`     | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }` / `"merged" \| "plain"`. See [row and column spanning](./row-spanning.md).                       |
 | `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                                  |
 | `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                                                     |
 | `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                                    |
@@ -8463,6 +8504,8 @@ handlers). Editing/grouping glue: `focusEditorOnMount`,
 `ColumnGroupToggleChromeProps` / `ColumnGroupToggleSlots` /
 `ColumnGroupToggleButtonProps`. Shared
 utilities: `logicalAlign` (logical → physical alignment),
+`mergedCellStyle` (spreadsheet merge paint for a spanned cell),
+`cellSpanMark` (`"2x1"` on the origin),
 `resolveMobileLabel` (a card field's caption), `isSelectedCell` (whether a
 cell's props put it inside the selected range, for a kit applying its own fill),
 `shallowEqualByKeys`, `resolveVirtualRows`, `SHARED_DESKTOP_ROW_KEYS`,

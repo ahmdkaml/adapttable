@@ -135,6 +135,7 @@ export const de: Required<TableLabels> = {
   deleteRow: "Zeile löschen",
   deleteRowConfirm:
     "Diese Zeile löschen? Das kann nicht rückgängig gemacht werden.",
+  rowActionsMenu: "Zeilenaktionen",
   editConflict: "Diese Zeile hat sich während der Bearbeitung geändert",
   keepMine: "Meins behalten",
   takeTheirs: "Neues übernehmen",

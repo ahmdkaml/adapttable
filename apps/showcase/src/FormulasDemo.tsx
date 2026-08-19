@@ -6,6 +6,7 @@ import {
 import { Suspense, useMemo, useState } from "react";
 
 import type { Person } from "./data";
+import { DemoScenarioProvider } from "./Demo";
 import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Warning } from "./sectionIcons";
@@ -226,15 +227,17 @@ export function FormulasDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="en"
-              dark={dark}
-              urlKey="fx"
-              formulaColumns={columns}
-              derivedFields
-              focused
-            />
+            <DemoScenarioProvider value="formulas">
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="fx"
+                formulaColumns={columns}
+                derivedFields
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

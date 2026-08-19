@@ -8,6 +8,7 @@ import {
   COLUMN_GROUP_STUB_WIDTH,
   columnGroupId,
   columnGroupPath,
+  type GroupedHeaderAlign,
   isColumnGroupRenderKey,
   isColumnGroupStubKey,
 } from "./headerGroups";
@@ -44,7 +45,7 @@ export interface ColumnGroupDef<TRow> {
    * value adapters used when this was hardcoded. Pass `"start"` or `"end"`
    * to opt out.
    */
-  readonly align?: "start" | "center" | "end";
+  readonly align?: GroupedHeaderAlign;
 }
 
 /** A leaf {@link ColumnDef} or a {@link ColumnGroupDef} parent. */
@@ -58,7 +59,7 @@ export interface ColumnGroupRecord<TRow> {
   readonly collapsedRender?: (row: TRow) => ReactNode;
   readonly marryChildren: boolean;
   readonly headerTooltip?: string;
-  readonly align?: "start" | "center" | "end";
+  readonly align?: GroupedHeaderAlign;
   readonly childKeys: readonly string[];
 }
 
@@ -126,21 +127,14 @@ export function applyCollapsedColumnGroups<TRow>(
       inserted.clear();
       continue;
     }
-    for (const id of collapsedAncestors(column, collapsed)) {
-      if (inserted.has(id)) continue;
-      if (groupHasKeptLeaf(id, columns, keep)) {
-        inserted.add(id);
-        continue;
-      }
-      const record = groups.get(id);
-      const path = id.split(COLUMN_GROUP_ID_SEP);
-      if (record?.collapsedRender) {
-        out.push(renderColumn(id, path, record, index));
-      } else {
-        out.push(stubColumn(id, path, record, index));
-      }
-      inserted.add(id);
-    }
+    appendCollapsedChrome(column, index, {
+      columns,
+      keep,
+      collapsed,
+      groups,
+      inserted,
+      out,
+    });
   }
   return out;
 }
@@ -162,7 +156,7 @@ export function marriedOrderHolds<TRow>(
     }
     if (hits.length <= 1) continue;
     const first = hits[0]!;
-    const last = hits[hits.length - 1]!;
+    const last = hits.at(-1)!;
     if (last - first !== hits.length - 1) return false;
   }
   return true;
@@ -175,7 +169,7 @@ interface MutableGroup<TRow> {
   collapsedRender?: (row: TRow) => ReactNode;
   marryChildren: boolean;
   headerTooltip?: string;
-  align?: "start" | "center" | "end";
+  align?: GroupedHeaderAlign;
   childKeys: string[];
 }
 
@@ -204,9 +198,46 @@ function walk<TRow>(
     }
     leaves.push({
       ...node,
-      group:
-        path.length === 0 ? node.group : path.length === 1 ? path[0] : path,
+      group: inheritedGroup(node, path),
     });
+  }
+}
+
+function inheritedGroup<TRow>(
+  node: ColumnDef<TRow>,
+  path: readonly string[]
+): ColumnDef<TRow>["group"] {
+  if (path.length === 0) return node.group;
+  if (path.length === 1) return path[0];
+  return path;
+}
+
+function appendCollapsedChrome<TRow>(
+  column: ColumnDef<TRow>,
+  index: number,
+  pass: {
+    columns: readonly ColumnDef<TRow>[];
+    keep: readonly boolean[];
+    collapsed: ReadonlySet<string>;
+    groups: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
+    inserted: Set<string>;
+    out: ColumnDef<TRow>[];
+  }
+): void {
+  for (const id of collapsedAncestors(column, pass.collapsed)) {
+    if (pass.inserted.has(id)) continue;
+    if (groupHasKeptLeaf(id, pass.columns, pass.keep)) {
+      pass.inserted.add(id);
+      continue;
+    }
+    const record = pass.groups.get(id);
+    const path = id.split(COLUMN_GROUP_ID_SEP);
+    pass.out.push(
+      record?.collapsedRender
+        ? renderColumn(id, path, record, index)
+        : stubColumn(id, path, record, index)
+    );
+    pass.inserted.add(id);
   }
 }
 

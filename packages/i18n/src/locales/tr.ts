@@ -134,6 +134,7 @@ export const tr: Required<TableLabels> = {
   duplicateRow: "Satırı çoğalt",
   deleteRow: "Satırı sil",
   deleteRowConfirm: "Bu satır silinsin mi? Bu işlem geri alınamaz.",
+  rowActionsMenu: "Satır işlemleri",
   editConflict: "Düzenlerken bu satır değişti",
   keepMine: "Benimkini tut",
   takeTheirs: "Yenisini al",

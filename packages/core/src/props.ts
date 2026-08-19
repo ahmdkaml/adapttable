@@ -23,10 +23,11 @@ import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
 import type { SidePanelEntry } from "./layout/SidePanelChrome";
-import type { GetCellSpan } from "./rows/cellSpan";
+import type { CellSpanAppearance, GetCellSpan } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
 import type { MobileCardRenderer } from "./rows/mobileCard";
 import type { RowPinState } from "./rows/rowPinning";
+import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
@@ -98,6 +99,20 @@ export interface BaseDataTableProps<TRow> {
   /* ── Display ─────────────────────────────────────────────────────── */
   /** Trailing per-row actions. */
   rowActions?: RowAction<TRow>[];
+  /**
+   * How the trailing actions column renders. Omit or `"buttons"` for the
+   * horizontal strip. `"menu"` collapses visible actions into a 3-dot menu
+   * using each kit's own Menu. {@link BaseDataTableProps.renderRowActions}
+   * wins over this.
+   */
+  rowActionsLayout?: RowActionsLayout;
+  /**
+   * Replace the trailing actions cell (desktop and mobile cards). Receives
+   * the resolved action list (host + built-in duplicate / delete / pin).
+   * When set, `rowActionsLayout` is ignored. The column still only appears
+   * when there are row actions (or row-mode editing).
+   */
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Accessible label for the table. */
   tableLabel?: string;
   /** Placeholder for the search input. */
@@ -449,6 +464,12 @@ export interface BaseDataTableProps<TRow> {
    */
   getCellSpan?: GetCellSpan<TRow>;
   /**
+   * How a spanned cell is painted. Omit / `"merged"` is the spreadsheet look
+   * (centered content, one fill). `"plain"` keeps today's 1×1 chrome so a
+   * host can style a calendar-style bar on `data-cell-span`.
+   */
+  cellSpanAppearance?: CellSpanAppearance;
+  /**
    * Host-injected separator and full-width rows, spliced into the body
    * by `beforeRowId`. Omit the list and nothing is inserted. Extras are
    * content, not table state — nothing is written to the URL. Mobile
@@ -723,6 +744,13 @@ export interface BaseDataTableProps<TRow> {
    * nothing extra renders.
    */
   headerFilters?: boolean;
+  /**
+   * Close a header-filter popover after a finished single-control write
+   * (a select/boolean value, or a valueless operator such as "Is empty").
+   * Off by default — picking an operator on a field that still has a value
+   * input must not dismiss the overlay. Outside click and Escape always close.
+   */
+  closeHeaderFilterOnSelect?: boolean;
   /**
    * Mount the per-field Filters form. Default on. Pass `false` to keep only
    * the AND/OR tree in that chrome — the field list is gone, not hidden.

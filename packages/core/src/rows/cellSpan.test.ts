@@ -4,6 +4,7 @@ import type { ColumnDef } from "../types";
 import {
   buildBodyCells,
   cellsForRow,
+  cellSpanMark,
   coveredAddressSet,
   resolveCellSpan,
   rowSpanSignature,
@@ -258,5 +259,14 @@ describe("rowSpanSignature", () => {
         column.key === "name" ? { colSpan: 2 } : undefined,
     });
     expect(rowSpanSignature(cellsForRow(map, "a"))).toBe("name:2x1,city:1x1");
+  });
+});
+
+describe("cellSpanMark", () => {
+  it("names a span and stays silent on a 1×1 cell", () => {
+    expect(cellSpanMark(1, 1)).toBeUndefined();
+    expect(cellSpanMark(2, 1)).toBe("2x1");
+    expect(cellSpanMark(1, 3)).toBe("1x3");
+    expect(cellSpanMark(2, 2)).toBe("2x2");
   });
 });

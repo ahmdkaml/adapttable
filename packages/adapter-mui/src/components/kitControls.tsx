@@ -6,6 +6,7 @@ import {
   defaultFilterRegistry,
   filterLabel,
   filterStateKeys,
+  useHeaderFilterOverlay,
 } from "@adapttable/core";
 import {
   BatchEditBarChrome,
@@ -57,10 +58,11 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Popover,
+  Paper,
+  Popper,
   TextField,
 } from "@mui/material";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { FiltersIcon } from "../icons";
 import { AutoFilterForm } from "./AutoFilterForm";
@@ -275,37 +277,47 @@ function headerFilterActive<TRow>(
 export function FilterHeaderTrigger<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const active = headerFilterActive(props);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(
+    props,
+    {
+      nestedSelector: "[role='listbox'],.MuiMenu-root,.MuiPopover-root",
+    }
+  );
   return (
     <>
       <IconButton
+        {...sessionProps}
+        ref={triggerRef}
         size="small"
         aria-label={filterLabel(props.def)}
         data-adapttable-part="filter-header-trigger"
         data-active={active ? "" : undefined}
-        onClick={(event) => setAnchor(event.currentTarget)}
+        onClick={() => setOpen(!open)}
       >
         <FiltersIcon size={14} />
       </IconButton>
-      <Popover
-        open={anchor !== null}
-        anchorEl={anchor}
-        onClose={() => setAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      <Popper
+        open={open}
+        anchorEl={triggerRef.current}
+        placement="bottom-start"
+        style={{ zIndex: 1300 }}
       >
-        <div
+        <Paper
+          {...sessionProps}
+          elevation={8}
           data-adapttable-part="filter-header-cell"
-          style={{ minWidth: "20rem", padding: 8 }}
+          sx={{ minWidth: "20rem", p: 1 }}
         >
           <AutoFilterForm
             defs={[props.def]}
-            source={props.source}
+            source={source}
             labels={props.labels}
             registry={props.registry}
           />
-        </div>
-      </Popover>
+        </Paper>
+      </Popper>
     </>
   );
 }

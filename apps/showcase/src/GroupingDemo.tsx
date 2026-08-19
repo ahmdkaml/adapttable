@@ -2,6 +2,7 @@ import { xlsxWriter } from "@adapttable/core/xlsx";
 import { Suspense } from "react";
 
 import { ADAPTERS, DemoFallback } from "./kitDemos";
+import { DemoScenarioProvider } from "./Demo";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
 
@@ -26,7 +27,7 @@ export function GroupingDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
     <div className="mx-demo">
       <div className="hint-row">
         <span className="hint">
-          <Layers size={12} /> collapse / expand any level
+          <Layers size={12} /> Platform is the large squad — collapse any level
         </span>
         <span className="hint">
           <Check size={12} /> per-group subtotals from one mapper
@@ -41,15 +42,17 @@ export function GroupingDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
       <div className="mx-demo__body">
         <div key={adapter} data-adapter={adapter}>
           <Suspense fallback={<DemoFallback />}>
-            <Demo
-              mode="frontend"
-              locale="en"
-              dark={dark}
-              urlKey="grp"
-              grouping
-              exportCsv={EXPORT_GROUPED_AS_XLSX}
-              focused
-            />
+            <DemoScenarioProvider value="grouping">
+              <Demo
+                mode="frontend"
+                locale="en"
+                dark={dark}
+                urlKey="grp"
+                grouping
+                exportCsv={EXPORT_GROUPED_AS_XLSX}
+                focused
+              />
+            </DemoScenarioProvider>
           </Suspense>
         </div>
       </div>

@@ -207,7 +207,6 @@ const FALLBACK_ONLY = {
   // Native controls: a select for sorting where a kit has a Select, a bare
   // checkbox where a kit has a Checkbox, a button where a kit has a Button.
   "native controls": [
-    "action-button",
     "checkbox",
     "empty-clear",
     "expand-button",

@@ -80,6 +80,15 @@ export const DeleteRowIcon = (p: Readonly<IconProps>) => (
   </Svg>
 );
 
+/** Three vertical dots — the row-actions menu trigger. */
+export const MoreVerticalIcon = (p: Readonly<IconProps>) => (
+  <Svg {...p}>
+    <circle cx="12" cy="5" r="1" />
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="12" cy="19" r="1" />
+  </Svg>
+);
+
 /** Map-pin drop pointing down (pin to top of the list). */
 export const PinTopIcon = (p: Readonly<IconProps>) => (
   <Svg {...p}>

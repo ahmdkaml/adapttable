@@ -10,6 +10,7 @@ import {
   columnGroupStubStyle,
   groupedHeaderAlign,
   groupedHeaderCellStyle,
+  groupedHeaderChildRule,
   headerGroupRow,
   headerGroupRows,
   htmlGroupedHeaderPlan,
@@ -42,6 +43,14 @@ describe("columnGroupPath", () => {
       "Finance",
       "Q1",
     ]);
+  });
+});
+
+describe("groupedHeaderChildRule", () => {
+  it("draws an inset hairline instead of a full-width border", () => {
+    const rule = groupedHeaderChildRule("red");
+    expect(rule.borderBottom).toBe("none");
+    expect(rule.backgroundImage).toContain("red");
   });
 });
 

@@ -16,6 +16,8 @@ import {
   resolveColumnFooter,
   resolveColumnHeader,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowPinSide,
   type TableLabels,
   tableMinWidth,
@@ -38,6 +40,8 @@ import {
   isExtraEntry,
   isMatchedCell,
   isSelectedCell,
+  mergedCellStyle,
+  cellSpanMark,
   type PinLeads,
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
@@ -209,6 +213,9 @@ interface DesktopRowProps<TRow> {
   /** Dataset index for ARIA / focus when pinning remapped the window. */
   sourceIndex: number;
   rowActions?: RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  cellSpanAppearance?: SharedTableRenderProps<TRow>["cellSpanAppearance"];
+  renderRowActions?: RowActionsRenderer<TRow>;
   confirm: ConfirmHandler;
   /** Full-width colSpan (expansion + selection + data + actions), core-computed. */
   columnSpan: number;
@@ -293,6 +300,9 @@ function desktopRowPropsEqual<TRow>(
     prev.sourceIndex === next.sourceIndex &&
     prev.reorderPinned === next.reorderPinned &&
     prev.rowActions === next.rowActions &&
+    prev.rowActionsLayout === next.rowActionsLayout &&
+    prev.cellSpanAppearance === next.cellSpanAppearance &&
+    prev.renderRowActions === next.renderRowActions &&
     prev.columnSpan === next.columnSpan &&
     prev.columnWidths === next.columnWidths &&
     prev.pinSignature === next.pinSignature &&
@@ -349,6 +359,9 @@ function DesktopRowBase<TRow>(
     rowCount,
     reorderPinned,
     rowActions,
+    rowActionsLayout,
+    cellSpanAppearance,
+    renderRowActions,
     confirm,
     columnSpan,
     columnSpacers,
@@ -480,31 +493,43 @@ function DesktopRowBase<TRow>(
           const { column, columnIndex, colSpan, rowSpan } = cell;
           const pinStyle = bodyPinStyle(column.key);
           const focusProps = gridFocus?.getCellPropsAt(focusIndex, columnIndex);
+          const mark = cellSpanMark(colSpan, rowSpan);
+          const letClassPaint =
+            isSelectedCell(focusProps) ||
+            isMatchedCell(focusProps) ||
+            isCurrentMatchCell(focusProps);
           return (
             <td
               key={column.key}
               colSpan={colSpan > 1 ? colSpan : undefined}
               rowSpan={rowSpan > 1 ? rowSpan : undefined}
               data-column-key={column.key}
-              {...table.getCellProps(column, pinStyle && { style: pinStyle })}
+              {...table.getCellProps(column, {
+                style: {
+                  ...pinStyle,
+                  ...mergedCellStyle(
+                    colSpan,
+                    rowSpan,
+                    cellSpanAppearance,
+                    letClassPaint ? "off" : "on"
+                  ),
+                },
+                ...(mark ? { "data-cell-span": mark } : {}),
+              })}
               {...focusProps}
               data-adapttable-part="cell"
               data-pinned={pinOffset?.(column.key)?.side}
-              className={
-                // The selection has no kit colour to borrow here, so it is a
-                // second class the host styles — `data-cell-selected` is on the
-                // element either way for CSS that prefers attribute selectors.
-                [
-                  classNames.cell,
-                  isSelectedCell(focusProps) ? classNames.cellSelected : "",
-                  isMatchedCell(focusProps) ? classNames.cellMatch : "",
-                  isCurrentMatchCell(focusProps)
-                    ? classNames.cellMatchCurrent
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")
-              }
+              className={[
+                classNames.cell,
+                mark ? classNames.cellSpan : "",
+                isSelectedCell(focusProps) ? classNames.cellSelected : "",
+                isMatchedCell(focusProps) ? classNames.cellMatch : "",
+                isCurrentMatchCell(focusProps)
+                  ? classNames.cellMatchCurrent
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
             >
               <TreeCell
                 entry={treeEntry}
@@ -574,8 +599,10 @@ function DesktopRowBase<TRow>(
                 row={row}
                 actions={rowActions}
                 confirm={confirm}
-                cancelLabel={labels.cancel}
+                labels={labels}
                 classNames={classNames}
+                layout={rowActionsLayout}
+                render={renderRowActions}
               />
             )}
           </td>
@@ -688,6 +715,10 @@ export function DesktopTable<TRow>({
   headerFilters,
   filterDefs,
   filterRegistry,
+  closeHeaderFilterOnSelect,
+  rowActionsLayout,
+  cellSpanAppearance,
+  renderRowActions,
 }: Readonly<SharedProps<TRow>>) {
   // The model's columnSpan already counts the expand chevron column (core
   // only counts it when BOTH `renderRowDetail` and `expansion` arrive).
@@ -919,6 +950,9 @@ export function DesktopTable<TRow>({
         rowPinSignature={rowPinSignature(rowPinning, id)}
         sourceIndex={sourceIndex}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        cellSpanAppearance={cellSpanAppearance}
+        renderRowActions={renderRowActions}
         confirm={confirm}
         columnSpan={columnSpan}
         columnWidths={columnWidths}
@@ -1045,6 +1079,8 @@ export function DesktopTable<TRow>({
             source={table.source}
             labels={labels}
             registry={filterRegistry}
+            closeOnSelect={closeHeaderFilterOnSelect}
+            classNames={classNames}
           />
         ) : null}
         {setWidth && (
@@ -1313,6 +1349,9 @@ export function DesktopTable<TRow>({
                   rowPinSignature={rowPinSignature(rowPinning, id)}
                   sourceIndex={entry.index}
                   rowActions={rowActions}
+                  rowActionsLayout={rowActionsLayout}
+                  cellSpanAppearance={cellSpanAppearance}
+                  renderRowActions={renderRowActions}
                   confirm={confirm}
                   columnSpan={columnSpan}
                   columnWidths={columnWidths}
@@ -1397,6 +1436,9 @@ export function DesktopTable<TRow>({
                   rowPinSignature={rowPinSignature(rowPinning, id)}
                   sourceIndex={sourceIndex ?? index}
                   rowActions={rowActions}
+                  rowActionsLayout={rowActionsLayout}
+                  cellSpanAppearance={cellSpanAppearance}
+                  renderRowActions={renderRowActions}
                   confirm={confirm}
                   columnSpan={columnSpan}
                   columnWidths={columnWidths}

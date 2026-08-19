@@ -5,7 +5,8 @@ import {
   type EditableCellEditing,
   type MobileCardRenderer,
   type RowAction,
-  runRowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type TableLabels,
   treeCardStyle,
   type TreeEntry,
@@ -15,7 +16,6 @@ import {
   insertExtraRows,
   isExtraEntry,
   orderedCardEntries,
-  resolveDisabledReason,
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
@@ -26,16 +26,7 @@ import {
   type SharedTableRenderProps,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import {
-  ActionIcon,
-  Button,
-  Card,
-  Checkbox,
-  Group,
-  Stack,
-  Text,
-  Tooltip,
-} from "@mantine/core";
+import { Card, Checkbox, Group, Stack, Text } from "@mantine/core";
 import {
   type CSSProperties,
   memo,
@@ -46,11 +37,11 @@ import {
 } from "react";
 
 import type { Density } from "../density";
-import { iconForRowAction } from "../icons";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
 import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
+import { RowActionButtons } from "./RowActionButtons";
 
 /**
  * Props for {@link MobileCards}: the card-relevant slice of core's shared
@@ -62,6 +53,8 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "table"
   | "rows"
   | "rowActions"
+  | "rowActionsLayout"
+  | "renderRowActions"
   | "confirm"
   | "getRowId"
   | "onRowClick"
@@ -106,6 +99,8 @@ interface MobileCardProps<TRow> {
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
   /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
@@ -161,6 +156,8 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "labels",
   "confirm",
   "rowActions",
+  "rowActionsLayout",
+  "renderRowActions",
   "className",
   "styleSignature",
   "selected",
@@ -202,6 +199,8 @@ function MobileCardBase<TRow>({
   labels,
   confirm,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   className,
   style,
   selected,
@@ -329,52 +328,14 @@ function MobileCardBase<TRow>({
           />
         )}
         {rowActions && rowActions.length > 0 && (
-          <Group gap={4} justify="flex-end" pt={4}>
-            {rowActions.map((action) => {
-              if (action.isHidden?.(row)) return null;
-              const reason = resolveDisabledReason(
-                action.disabledReason?.(row)
-              );
-              const disabled =
-                reason !== undefined || (action.isDisabled?.(row) ?? false);
-              // The disabled attribute already blocks activation, so attach
-              // the handler only when the action can run.
-              const run = disabled
-                ? undefined
-                : () => runRowAction(action, row, confirm, labels.cancel);
-              const icon = iconForRowAction(action);
-              return icon ? (
-                <Tooltip
-                  key={action.key}
-                  label={reason ?? action.label}
-                  withArrow
-                  openDelay={200}
-                >
-                  <ActionIcon
-                    variant="subtle"
-                    color={action.color}
-                    size="sm"
-                    disabled={disabled}
-                    aria-label={action.label}
-                    onClick={run}
-                  >
-                    {icon}
-                  </ActionIcon>
-                </Tooltip>
-              ) : (
-                <Button
-                  key={action.key}
-                  variant="subtle"
-                  color={action.color}
-                  size="compact-sm"
-                  disabled={disabled}
-                  onClick={run}
-                >
-                  {action.label}
-                </Button>
-              );
-            })}
-          </Group>
+          <RowActionButtons
+            row={row}
+            actions={rowActions}
+            confirm={confirm}
+            labels={labels}
+            layout={rowActionsLayout}
+            render={renderRowActions}
+          />
         )}
       </Stack>
     </Card>
@@ -386,6 +347,8 @@ export function MobileCards<TRow>({
   table,
   rows,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   confirm,
   getRowId,
   bodyRef,
@@ -452,6 +415,8 @@ export function MobileCards<TRow>({
         labels={labels}
         confirm={confirm}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        renderRowActions={renderRowActions}
         className={rowClassName?.(row, index)}
         style={resolveRowStyle(rowStyle, rowHeight, row, index)}
         styleSignature={rowStyleSignature(

@@ -131,6 +131,7 @@ export const zh: Required<TableLabels> = {
   duplicateRow: "复制行",
   deleteRow: "删除行",
   deleteRowConfirm: "删除此行？此操作无法撤销。",
+  rowActionsMenu: "行操作",
   editConflict: "编辑时此行已更改",
   keepMine: "保留我的",
   takeTheirs: "采用新值",
