@@ -314,7 +314,9 @@ export {
   EXTRA_ROW_PARTS,
   type ExtraEntry,
   type ExtraRow,
+  extraRowsForSection,
   insertExtraRows,
+  insertExtrasBeforeRows,
   isExtraEntry,
 } from "./rows/extraRows";
 export {

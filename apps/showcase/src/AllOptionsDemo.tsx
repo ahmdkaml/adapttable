@@ -885,7 +885,7 @@ export function AllOptionsDemo({ dark }: Readonly<{ dark: boolean }>) {
                       onChange={(next) => customize(setCellSpan, next)}
                     />
                     <Toggle
-                      label="Extra rows"
+                      label="Extra attached to a person"
                       value={extraRows}
                       disabledOn={clientOnlyReason}
                       onChange={(next) => customize(setExtraRows, next)}

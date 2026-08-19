@@ -1939,6 +1939,8 @@ See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/).
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
+▶ **See it working:** [nested tables in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/) — open a row onto another table, not a blank panel. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+
 Render a detail panel under any row by passing `renderRowDetail` — its
 presence is the whole API.
 
@@ -2651,7 +2653,7 @@ history of rows that no longer exist can only put back values nobody wants.
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onRowReorder` and a grip appears. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Reorder** on. Space lifts a row, arrows move it, Space drops it.
+▶ **See it working:** [drag-reorder rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — Space lifts a row, arrows move it, Space drops it. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 Pass `onRowReorder` and a drag handle appears in a reserved leading column.
 Omit it and nothing renders, nothing ships in the hot path — the same opt-in
@@ -2741,7 +2743,7 @@ Each adapter mounts `RowReorderHandle` (`RowReorderHandleProps`) and
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onPinnedRowIdsChange` and pin actions appear. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Pin rows** on. Pin to top keeps a row under the header; pin to bottom keeps it on the floor of the scroll box.
+▶ **See it working:** [pin, reorder and merge rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — sticky pins, a drag grip, Team written once down consecutive teammates, and a 3-dot menu. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains icon-only
 Pin to top / Pin to bottom / Unpin (labels on hover and as the accessible name).
@@ -2826,7 +2828,7 @@ Labels: `pinToTop`, `pinToBottom`, `unpinRow` (`RowPinLabels`).
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `getCellSpan` or `column.colSpan`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Span cells** on. Team is written once down the people who share it. Person and Email stay their own cells.
+▶ **See it working:** [merge cells in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — Team is written once down the people who share it. Person stays its own cell. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 A span is a rectangle. The origin cell carries `colSpan` / `rowSpan`; every
 covered neighbour is omitted from that row's cell list, so every kit maps one
@@ -2847,11 +2849,13 @@ import { DataTable } from "@adapttable/mantine";
   data={rows}
   columns={columns}
   rowKey={(row) => row.id}
-  getCellSpan={({ column, row, rowIndex }) => {
+  getCellSpan={({ column, row, sectionRows, sectionRowIndex }) => {
     if (column.key !== "team") return undefined;
-    if (rows[rowIndex - 1]?.team === row.team) return undefined;
+    if (sectionRows[sectionRowIndex - 1]?.team === row.team) return undefined;
     let rowSpan = 1;
-    while (rows[rowIndex + rowSpan]?.team === row.team) rowSpan += 1;
+    while (sectionRows[sectionRowIndex + rowSpan]?.team === row.team) {
+      rowSpan += 1;
+    }
     return rowSpan > 1 ? { rowSpan } : undefined;
   }}
 />;
@@ -2878,7 +2882,11 @@ show every column. Spans are derived from data, so there is nothing to
 put in the URL or a saved view.
 
 Row spans stay inside one tbody. A pin section and the scroll body do not
-share a span.
+share a span — walk `sectionRows` / `sectionRowIndex` so leftover teammates
+in the scroll body start a new origin instead of each drawing their own
+Team. antd owns one tbody, so a sticky pin and a `rowSpan` in that same
+body paint on top of each other — the row still moves to the top or floor;
+the sticky offset is skipped while any body cell spans more than one row.
 
 ---
 
@@ -2911,7 +2919,20 @@ import { DataTable } from "@adapttable/mantine";
 ```
 
 `beforeRowId` is a data-row id. Omit it to append after the last data row.
-Several extras that share a target keep the host's order.
+Several extras that share a target keep the host's order. A named extra
+stays in front of that person through drag-reorder and pin: pin sections
+splice extras whose `beforeRowId` is in that section.
+
+```tsx
+extraRows={[
+  {
+    key: "note",
+    kind: "fullWidth",
+    beforeRowId: ada.id,
+    render: () => `Attached to ${ada.name} — drag or pin them and this extra comes along.`,
+  },
+]}
+```
 
 The slots join the grouping entry list when grouping is on, so they window
 with the groups. On a flat or tree table they splice into the rendered
@@ -4457,6 +4478,8 @@ it steps from the right in Arabic and Hebrew) and carries the same chevron,
 which folds the same nodes. A phone gets a tree, not a flattened list.
 
 ## A real table under a row
+
+▶ **See it working:** [nested tables in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/) — open a person onto their orders; the inner table is the same component. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 `renderRowDetail` gives a blank panel, and a table built by hand in one has none
 of the sorting, filtering, selection, keyboard navigation or accessibility the
@@ -7054,7 +7077,7 @@ const sw = { ...en, search: "Tafuta", noData: "Hakuna data" };
 
 # Accessible React data table — keyboard, screen readers, labelled controls
 
-▶ **See it working:** [edit a Mantine table from the keyboard](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/) — Tab in, arrow between cells (`cellNavigation` is on that page). Keyboard walk and announcements are documented in [cell navigation](./cell-navigation.md).
+▶ **See it working:** [arrow through a Mantine table and read the live-region transcript](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/) — Tab in, arrow between cells, and every announcement appears as text. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind. Keyboard walk is documented in [cell navigation](./cell-navigation.md).
 
 An accessible data table is one a person can use without a mouse, and one a
 screen reader can describe. AdaptTable ships that way. There is no
@@ -7076,7 +7099,7 @@ Every adapter is audited with `axe` in CI, on desktop and mobile card layouts.
 
 ## Try it yourself
 
-On the [editing demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/):
+On the [accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/):
 
 1. Press **Tab** until a cell shows a focus ring.
 2. Press the **arrow keys**. The ring moves cell to cell.
@@ -7249,7 +7272,7 @@ exports `DataTable<TRow>`. The props below are the shared core surface
 | `onRowReorder`              | `RowReorderHandler<TRow>`                                       | —               | Drag handle in a reserved column. `from` / `to` are dataset-relative; the table never mutates rows. Keyboard: Space lifts, arrows move, Space drops, Escape cancels. Grouping or a tree refuses with a `devWarn`. See [row reordering](./row-reordering.md).                                                                                                                     |
 | `pinnedRowIds`              | `RowPinState`                                                   | —               | Controlled `{ top, bottom }` row-id lists. Pinned rows leave the virtual window and stick above or below the scroll box. See [row pinning](./row-pinning.md).                                                                                                                                                                                                                    |
 | `onPinnedRowIdsChange`      | `(next: RowPinState) => void`                                   | —               | Pin-list channel. Setting this (or `pinnedRowIds`) arms the feature. Uncontrolled lists also write `rowPin` to the URL. Grouping or a tree refuses with a `devWarn`.                                                                                                                                                                                                             |
-| `getCellSpan`               | `GetCellSpan<TRow>`                                             | —               | Per-cell `{ colSpan, rowSpan }`. Covered cells are omitted from the row's cell list. Clips at pin boundaries and the column window. Mobile cards ignore geometry. See [row and column spanning](./row-spanning.md).                                                                                                                                                              |
+| `getCellSpan`               | `GetCellSpan<TRow>`                                             | —               | Per-cell `{ colSpan, rowSpan }`. Covered cells are omitted from the row's cell list. Receives `sectionRows` / `sectionRowIndex` for the current tbody so a consecutive merge can restart after a pin. Clips at pin boundaries and the column window. Mobile cards ignore geometry. See [row and column spanning](./row-spanning.md).                                             |
 | `cellSpanAppearance`        | `"merged" \| "plain"`                                           | `"merged"`      | How a spanned cell is painted. `"merged"` is centered content and one fill; `"plain"` is geometry only. See [row and column spanning](./row-spanning.md).                                                                                                                                                                                                                        |
 | `extraRows`                 | `readonly ExtraRow[]`                                           | —               | Host-injected separator and full-width slots, spliced in by `beforeRowId`. Omit and nothing is inserted. See [full-width and separator rows](./full-width-rows.md).                                                                                                                                                                                                              |
 | `summaryRow`                | `(rows: readonly TRow[]) => Partial<Record<string, ReactNode>>` | —               | Map the current page's rows to per-column footer summary cells.                                                                                                                                                                                                                                                                                                                  |
@@ -7752,7 +7775,7 @@ array to the snapshot (`incrementalViewConfig` reads it back);
 
 **Row and column spanning.** `getCellSpan` / `ColumnDef.colSpan` / `ColumnDef.rowSpan` produce a per-row `BodyCell` list (`buildBodyCells`, `cellsForRow`, `coveredAddressSet`, `rowSpanSignature`, `spanningArmed`, `cellSpanMark`). `cellSpanAppearance` (`"merged"` / `"plain"`) is how the origin cell is painted. Arrow keys skip a covered cell; CSV writes the origin once. Types: `GetCellSpan`, `GetCellSpanArgs`, `CellSpanRequest`, `CellSpanAppearance`, `BodyCell`. See [row and column spanning](./row-spanning.md).
 
-**Full-width and separator rows.** `extraRows` is a list of `ExtraRow` (`kind: "separator" | "fullWidth"`, `beforeRowId`, `render`). `insertExtraRows` splices them into a `kind`-tagged list; `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` are the kit helpers. Label: `rowSeparator`. See [full-width and separator rows](./full-width-rows.md).
+**Full-width and separator rows.** `extraRows` is a list of `ExtraRow` (`kind: "separator" | "fullWidth"`, `beforeRowId`, `render`). `insertExtraRows` splices them into a `kind`-tagged list; `extraRowsForSection` / `insertExtrasBeforeRows` keep a named extra in front of a pinned person; `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` are the kit helpers. Label: `rowSeparator`. See [full-width and separator rows](./full-width-rows.md).
 
 **Row styling and heights.** `rowStyle` / `rowHeight` resolve through `resolveRowStyle` / `resolveRowHeight`. Height wins over `style.height`. `rowStyleSignature` is the memo digest; `rowStyleArmed` is whether either hook was passed; `estimateFromRowHeight` is the virtualizer estimator. Types: `RowStyle`, `RowHeight`. See [row styling and heights](./row-styling.md).
 
@@ -8360,56 +8383,56 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 
 ## Types
 
-| Type                                                                      | What it is                                                                                                                                                         |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `TableSource<TRow>`                                                       | The uniform data + state contract a table consumes (rows, total, `defaultLimit`, `allFilteredRows`, `allSearchedRows`, `facets`, loading flags, state read/write). |
-| `TableQuery`                                                              | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                                                       |
-| `TableQueryParams`                                                        | Baseline query params a backend list endpoint receives.                                                                                                            |
-| `QuerySupport`                                                            | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                                                     |
-| `QueryExtensions`                                                         | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                                                      |
-| `QueryAggregate`                                                          | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                                                  |
-| `aggregate`                                                               | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                                                       |
-| `AggregateName` / `AGGREGATE_NAMES`                                       | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                                 |
-| `Aggregator` / `AggregateSpec` / `AggregateOptions`                       | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                                                        |
-| `AggregateFn`                                                             | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                                 |
-| `QueryCondition` / `QueryFilterGroup`                                     | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                                                       |
-| `isFilterGroup`                                                           | Narrows a filter-tree child to a nested group while walking the tree.                                                                                              |
-| `PaginatedResponse<TRow>`                                                 | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                                                   |
-| `ColumnLayoutState`                                                       | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                                                   |
-| `ColumnGroupDef<TRow>` / `ColumnInput<TRow>`                              | A parent header with `children`, or a leaf-or-parent union. See [column groups](./column-groups.md).                                                               |
-| `ColumnGroupShow`                                                         | `"open" \| "closed" \| "always"` — when a leaf under a collapsible group is visible.                                                                               |
-| `ColumnGroupRecord` / `FlattenedColumns`                                  | Collapse policy for one parent, and the `{ leaves, groups }` result of `flattenColumnTree`.                                                                        |
-| `TableLabels`                                                             | Every string the table renders; all keys optional, English defaults fill gaps.                                                                                     |
-| `RowAction<TRow>` / `BulkAction`                                          | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                                   |
-| `RowActionsLayout`                                                        | `"buttons" \| "menu"` — omit / `"buttons"` is the strip; `"menu"` is the 3-dot control.                                                                            |
-| `RowActionsRenderContext<TRow>` / `RowActionsRenderer<TRow>`              | What `renderRowActions` receives (`row`, `actions`, `confirm`, `labels`) / the renderer type.                                                                      |
-| `visibleRowActions`                                                       | Filters `isHidden` actions out of a resolved list. Default layouts use this; a custom cell can keep hidden ones.                                                   |
-| `BulkActionContext`                                                       | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                                  |
-| `ActionConfirm<TArg>`                                                     | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                                         |
-| `ConfirmHandler` / `ConfirmRequest`                                       | The injectable confirmation seam (`(request) => void`).                                                                                                            |
-| `defaultConfirm`                                                          | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                                                    |
-| `ActiveFilterChip` / `ChipLabelResolver`                                  | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                                                     |
-| `UrlStateAdapter`                                                         | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                                             |
-| `SavedView`                                                               | `{ name, search }` — one captured view.                                                                                                                            |
-| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`       | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                                      |
-| `FilterTypeSpec` / `FilterTypeRegistry` / `FilterWidgetKind`              | One registered type / the immutable registry / which built-in widget to draw.                                                                                      |
-| `FilterWidgetRenderProps`                                                 | Props a custom `FilterTypeSpec.render` receives.                                                                                                                   |
-| `CellProps<TRow>`                                                         | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                                            |
-| `SortDirection` / `SortLevel`                                             | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                                             |
-| `Direction`                                                               | `"ltr" \| "rtl"`.                                                                                                                                                  |
-| `ColorScheme`                                                             | `"light" \| "dark" \| "auto"`.                                                                                                                                     |
-| `PaginationMode`                                                          | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                                                              |
-| `FilterValue` / `ExtraFilters`                                            | One URL-round-tripped filter value / the keyed bag of them.                                                                                                        |
-| `SortableValue`                                                           | Comparable primitive returned by a sort-value extractor.                                                                                                           |
-| `SortByOption`                                                            | `{ value, label }` for the mobile sort-by select.                                                                                                                  |
-| `GetCellSpan` / `BodyCell` / `CellSpanRequest` / `CellSpanAppearance`     | Span callback / one rendered body cell / `{ colSpan?, rowSpan? }` / `"merged" \| "plain"`. See [row and column spanning](./row-spanning.md).                       |
-| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                                  |
-| `insertExtraRows` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / narrow one / whether any were asked for / the part names kits stamp.                                                     |
-| `RowStyle` / `RowHeight`                                                  | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                                    |
-| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`              | Merge style + height / read one height / memo digest of the resolved style.                                                                                        |
-| `rowStyleArmed` / `estimateFromRowHeight`                                 | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                                                      |
-| `RowPinState` / `RowPinSide`                                              | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                                                             |
-| `RowPinningState` / `RowPinLabels`                                        | Headless pin state and the three action strings.                                                                                                                   |
+| Type                                                                                                                         | What it is                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TableSource<TRow>`                                                                                                          | The uniform data + state contract a table consumes (rows, total, `defaultLimit`, `allFilteredRows`, `allSearchedRows`, `facets`, loading flags, state read/write).                                                    |
+| `TableQuery`                                                                                                                 | The consolidated server-tier query: `page`, `limit`, `search`, `sortBy`, `sortDir`, `sortLevels`, `filters`.                                                                                                          |
+| `TableQueryParams`                                                                                                           | Baseline query params a backend list endpoint receives.                                                                                                                                                               |
+| `QuerySupport`                                                                                                               | What a server endpoint can answer: `grouping`, `aggregates`, `filterTree`, `facets`, `cursor`.                                                                                                                        |
+| `QueryExtensions`                                                                                                            | The optional query fields those capabilities unlock, carried on `TableQuery`.                                                                                                                                         |
+| `QueryAggregate`                                                                                                             | One aggregate to compute: `{ key, fn }` where `fn` is a `AggregateFn` or your backend's own name.                                                                                                                     |
+| `aggregate`                                                                                                                  | Builds a `summaryRow` / `groupAggregates` mapper from a declaration — see [row grouping](./row-grouping.md).                                                                                                          |
+| `AggregateName` / `AGGREGATE_NAMES`                                                                                          | The built-in aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                                                                                    |
+| `Aggregator` / `AggregateSpec` / `AggregateOptions`                                                                          | A custom aggregate function, the per-column declaration, and `aggregate()`'s options (`columns`, `format`).                                                                                                           |
+| `AggregateFn`                                                                                                                | The standard aggregate names: `sum`, `avg`, `count`, `min`, `max`.                                                                                                                                                    |
+| `QueryCondition` / `QueryFilterGroup`                                                                                        | A leaf condition (`key`, `op`, `value`) and a nestable AND/OR group of them.                                                                                                                                          |
+| `isFilterGroup`                                                                                                              | Narrows a filter-tree child to a nested group while walking the tree.                                                                                                                                                 |
+| `PaginatedResponse<TRow>`                                                                                                    | Standard envelope: `items`, `total`, `page`, `limit`, `hasNext`.                                                                                                                                                      |
+| `ColumnLayoutState`                                                                                                          | `{ hidden, order, pinned, widths, collapsedGroups? }` — the column-layout shape.                                                                                                                                      |
+| `ColumnGroupDef<TRow>` / `ColumnInput<TRow>`                                                                                 | A parent header with `children`, or a leaf-or-parent union. See [column groups](./column-groups.md).                                                                                                                  |
+| `ColumnGroupShow`                                                                                                            | `"open" \| "closed" \| "always"` — when a leaf under a collapsible group is visible.                                                                                                                                  |
+| `ColumnGroupRecord` / `FlattenedColumns`                                                                                     | Collapse policy for one parent, and the `{ leaves, groups }` result of `flattenColumnTree`.                                                                                                                           |
+| `TableLabels`                                                                                                                | Every string the table renders; all keys optional, English defaults fill gaps.                                                                                                                                        |
+| `RowAction<TRow>` / `BulkAction`                                                                                             | Action definitions with `disabledReason`, `isHidden`, optional `confirm` wiring.                                                                                                                                      |
+| `RowActionsLayout`                                                                                                           | `"buttons" \| "menu"` — omit / `"buttons"` is the strip; `"menu"` is the 3-dot control.                                                                                                                               |
+| `RowActionsRenderContext<TRow>` / `RowActionsRenderer<TRow>`                                                                 | What `renderRowActions` receives (`row`, `actions`, `confirm`, `labels`) / the renderer type.                                                                                                                         |
+| `visibleRowActions`                                                                                                          | Filters `isHidden` actions out of a resolved list. Default layouts use this; a custom cell can keep hidden ones.                                                                                                      |
+| `BulkActionContext`                                                                                                          | `{ allMatching, total }` — scope handed to a bulk action handler.                                                                                                                                                     |
+| `ActionConfirm<TArg>`                                                                                                        | Confirmation dialog wiring (`title`, `message`, `confirmLabel`, `danger`).                                                                                                                                            |
+| `ConfirmHandler` / `ConfirmRequest`                                                                                          | The injectable confirmation seam (`(request) => void`).                                                                                                                                                               |
+| `defaultConfirm`                                                                                                             | The built-in `ConfirmHandler` (`window.confirm`; DENIES when no dialog exists).                                                                                                                                       |
+| `ActiveFilterChip` / `ChipLabelResolver`                                                                                     | One removable chip (`key`, `label`, `onRemove`) / value → chip-label function.                                                                                                                                        |
+| `UrlStateAdapter`                                                                                                            | The router seam: `getSearch()`, `setSearch(search, { push? })`, `subscribe(onChange)`.                                                                                                                                |
+| `SavedView`                                                                                                                  | `{ name, search }` — one captured view.                                                                                                                                                                               |
+| `FilterDef` / `FilterType` / `FilterOption` / `FilterOptionsSource`                                                          | The declarative filter surface (see [FilterDef](#filterdef)).                                                                                                                                                         |
+| `FilterTypeSpec` / `FilterTypeRegistry` / `FilterWidgetKind`                                                                 | One registered type / the immutable registry / which built-in widget to draw.                                                                                                                                         |
+| `FilterWidgetRenderProps`                                                                                                    | Props a custom `FilterTypeSpec.render` receives.                                                                                                                                                                      |
+| `CellProps<TRow>`                                                                                                            | `{ row, rowIndex }` — what a `Cell` component receives.                                                                                                                                                               |
+| `SortDirection` / `SortLevel`                                                                                                | `"asc" \| "desc"` / one entry in the multi-sort chain.                                                                                                                                                                |
+| `Direction`                                                                                                                  | `"ltr" \| "rtl"`.                                                                                                                                                                                                     |
+| `ColorScheme`                                                                                                                | `"light" \| "dark" \| "auto"`.                                                                                                                                                                                        |
+| `PaginationMode`                                                                                                             | `"infinite" \| "paged" \| "auto"` (`"auto"` resolves by viewport: mobile → infinite).                                                                                                                                 |
+| `FilterValue` / `ExtraFilters`                                                                                               | One URL-round-tripped filter value / the keyed bag of them.                                                                                                                                                           |
+| `SortableValue`                                                                                                              | Comparable primitive returned by a sort-value extractor.                                                                                                                                                              |
+| `SortByOption`                                                                                                               | `{ value, label }` for the mobile sort-by select.                                                                                                                                                                     |
+| `GetCellSpan` / `GetCellSpanArgs` / `BodyCell` / `CellSpanRequest` / `CellSpanAppearance`                                    | Span callback / `{ row, column, rowIndex, columnIndex, sectionRows, sectionRowIndex }` / one rendered body cell / `{ colSpan?, rowSpan? }` / `"merged" \| "plain"`. See [row and column spanning](./row-spanning.md). |
+| `ExtraRow` / `ExtraEntry` / `ExtraRowKind`                                                                                   | Host-injected slot / the spliced entry / `"separator" \| "fullWidth"`. See [full-width and separator rows](./full-width-rows.md).                                                                                     |
+| `insertExtraRows` / `insertExtrasBeforeRows` / `extraRowsForSection` / `isExtraEntry` / `extraRowsArmed` / `EXTRA_ROW_PARTS` | Splice extras into a `kind`-tagged list / splice named extras in front of a pin section / extras whose target sits in this section / narrow one / whether any were asked for / the part names kits stamp.             |
+| `RowStyle` / `RowHeight`                                                                                                     | Per-row style callback / a number or `(row, index) => number`. See [row styling and heights](./row-styling.md).                                                                                                       |
+| `resolveRowStyle` / `resolveRowHeight` / `rowStyleSignature`                                                                 | Merge style + height / read one height / memo digest of the resolved style.                                                                                                                                           |
+| `rowStyleArmed` / `estimateFromRowHeight`                                                                                    | Whether either hook was passed / virtualizer `estimateSize` from `rowHeight`.                                                                                                                                         |
+| `RowPinState` / `RowPinSide`                                                                                                 | `{ top, bottom }` id lists / `"top" \| "bottom"`. See [row pinning](./row-pinning.md).                                                                                                                                |
+| `RowPinningState` / `RowPinLabels`                                                                                           | Headless pin state and the three action strings.                                                                                                                                                                      |
 
 ## Development warnings
 

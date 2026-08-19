@@ -27,7 +27,20 @@ import { DataTable } from "@adapttable/mantine";
 ```
 
 `beforeRowId` is a data-row id. Omit it to append after the last data row.
-Several extras that share a target keep the host's order.
+Several extras that share a target keep the host's order. A named extra
+stays in front of that person through drag-reorder and pin: pin sections
+splice extras whose `beforeRowId` is in that section.
+
+```tsx
+extraRows={[
+  {
+    key: "note",
+    kind: "fullWidth",
+    beforeRowId: ada.id,
+    render: () => `Attached to ${ada.name} — drag or pin them and this extra comes along.`,
+  },
+]}
+```
 
 The slots join the grouping entry list when grouping is on, so they window
 with the groups. On a flat or tree table they splice into the rendered

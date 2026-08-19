@@ -280,13 +280,30 @@ type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
   "data-collapsed"?: string;
 };
 
+/**
+ * A `rowSpan` taller than one row and a sticky `<tr>` in the same tbody
+ * paint on top of each other — the pinned row sits on the next people.
+ * Reorder-to-top still happens; only the sticky offset is skipped.
+ */
+function bodyCellsHaveRowSpan(
+  cellsByRow: ReadonlyMap<string, readonly { rowSpan: number }[]>
+): boolean {
+  for (const cells of cellsByRow.values()) {
+    for (const cell of cells) {
+      if (cell.rowSpan > 1) return true;
+    }
+  }
+  return false;
+}
+
 function antdPinnedRowAttrs(
   pinSide: RowPinSide | undefined,
-  headerOffset: number
+  headerOffset: number,
+  sticky: boolean
 ): AntdRowHtmlAttrs {
   if (!pinSide) return {};
   return {
-    style: pinnedRowStickyStyle(pinSide, headerOffset),
+    ...(sticky ? { style: pinnedRowStickyStyle(pinSide, headerOffset) } : {}),
     "data-row-pin": pinSide,
     "data-adapttable-part":
       pinSide === "top" ? PINNED_TOP_PART : PINNED_BOTTOM_PART,
@@ -299,6 +316,8 @@ function antdOnRow<TRow>(options: {
   getRowId: (row: TRow) => string;
   rowPinning: RowPinningState<TRow> | undefined;
   headerOffset: number;
+  /** Sticky pin chrome — off when a cell span would overlay the next rows. */
+  pinRowSticky: boolean;
   rowReorder: RowReorderState<TRow> | undefined;
   windowStart: number;
   gridFocus: GridFocusState | undefined;
@@ -314,6 +333,7 @@ function antdOnRow<TRow>(options: {
     getRowId,
     rowPinning,
     headerOffset,
+    pinRowSticky,
     rowReorder,
     windowStart,
     gridFocus,
@@ -337,7 +357,11 @@ function antdOnRow<TRow>(options: {
     };
   }
   const id = getRowId(record);
-  const pin = antdPinnedRowAttrs(rowPinning?.sideOf(id), headerOffset);
+  const pin = antdPinnedRowAttrs(
+    rowPinning?.sideOf(id),
+    headerOffset,
+    pinRowSticky
+  );
   const visual = resolveRowStyle(rowStyle, rowHeight, record, rowIndex ?? 0);
   const reorderStyle =
     rowReorder && rowIndex !== undefined
@@ -1041,6 +1065,7 @@ interface DataTableBodyRegionProps<TRow> {
   pinnedTopRows: readonly TRow[];
   pinnedBottomRows: readonly TRow[];
   extraRows: DataTableProps<TRow>["extraRows"];
+  pinRowSticky: boolean;
 }
 
 /** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
@@ -1073,6 +1098,7 @@ function DesktopTableBody<TRow>({
   rowReorder,
   windowStart,
   rowPinning,
+  pinRowSticky,
 }: Readonly<{
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
@@ -1104,6 +1130,7 @@ function DesktopTableBody<TRow>({
   rowReorder: RowReorderState<TRow> | undefined;
   windowStart: number;
   rowPinning: RowPinningState<TRow> | undefined;
+  pinRowSticky: boolean;
 }>) {
   const [theadRef, headerHeight] = useOffsetHeight();
   let stickyHeaderOffset: number | undefined;
@@ -1171,6 +1198,7 @@ function DesktopTableBody<TRow>({
           getRowId,
           rowPinning,
           headerOffset,
+          pinRowSticky,
           rowReorder,
           windowStart,
           gridFocus,
@@ -1299,6 +1327,7 @@ function DataTableBodyRegion<TRow>(
     pinnedTopRows,
     pinnedBottomRows,
     extraRows,
+    pinRowSticky,
   } = props;
 
   let body: ReactNode;
@@ -1387,6 +1416,7 @@ function DataTableBodyRegion<TRow>(
         rowReorder={rowReorder}
         windowStart={windowStart}
         rowPinning={rowPinning}
+        pinRowSticky={pinRowSticky}
       />
     );
   }
@@ -1761,6 +1791,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     pinOffset: c.columnLayout.pinOffset,
     grouping: c.grouping,
   });
+  const pinRowSticky = !bodyCellsHaveRowSpan(cellsByRow);
 
   const columns = buildColumns<TRow>({
     gridFocus: gridFocus,
@@ -1929,6 +1960,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       pinnedTopRows={pinnedTopRows}
       pinnedBottomRows={pinnedBottomRows}
       extraRows={props.extraRows}
+      pinRowSticky={pinRowSticky}
     />
   );
 

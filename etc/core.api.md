@@ -1559,6 +1559,9 @@ export type ExtraRowKind = "separator" | "fullWidth";
 export function extraRowsArmed(extraRows: readonly ExtraRow[] | undefined): boolean;
 
 // @public
+export function extraRowsForSection(extraRows: readonly ExtraRow[] | undefined, rowIds: ReadonlySet<string>, appendUntargeted?: boolean): readonly ExtraRow[] | undefined;
+
+// @public
 export type FacetCounts = readonly ChecklistValue[];
 
 // @public
@@ -1887,6 +1890,8 @@ export interface GetCellSpanArgs<TRow> {
     // (undocumented)
     row: TRow;
     rowIndex: number;
+    sectionRowIndex: number;
+    sectionRows: readonly TRow[];
 }
 
 // @public
@@ -2196,6 +2201,12 @@ export interface InfiniteQueryLike<TPage> {
 export function insertExtraRows<T extends {
     key: string;
 }>(entries: readonly T[], extraRows: readonly ExtraRow[] | undefined, dataKey: (entry: T) => string | undefined): readonly (T | ExtraEntry)[];
+
+// @public
+export function insertExtrasBeforeRows<TRow>(rows: readonly TRow[], extraRows: readonly ExtraRow[] | undefined, getRowId: (row: TRow) => string): readonly ({
+    key: string;
+    row: TRow;
+} | ExtraEntry)[];
 
 // @public
 export interface InsertPatch<TRow> {

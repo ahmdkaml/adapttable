@@ -627,7 +627,9 @@ export {
   type ExtraRow,
   type ExtraRowKind,
   extraRowsArmed,
+  extraRowsForSection,
   insertExtraRows,
+  insertExtrasBeforeRows,
   isExtraEntry,
 } from "./rows/extraRows";
 export {

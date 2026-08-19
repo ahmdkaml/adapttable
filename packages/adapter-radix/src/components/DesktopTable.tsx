@@ -41,6 +41,8 @@ import {
   type HtmlGroupedHeaderCell,
   htmlGroupedHeaderPlan,
   insertExtraRows,
+  insertExtrasBeforeRows,
+  isExtraEntry,
   logicalAlign,
   mergedCellStyle,
   cellSpanMark,
@@ -1357,7 +1359,20 @@ export function DesktopTable<TRow>({
             data-adapttable-part={PINNED_TOP_PART}
             style={pinnedRowStickyStyle("top", rowPinOffset)}
           >
-            {pinnedTopRows.map((row) => renderPinnedRow(row, "top"))}
+            {insertExtrasBeforeRows(pinnedTopRows, extraRows, getRowId).map(
+              (slot) =>
+                isExtraEntry(slot) ? (
+                  <ExtraSlotRow
+                    key={slot.key}
+                    kind={slot.kind}
+                    colSpan={columnSpan}
+                    render={slot.kind === "fullWidth" ? slot.render : undefined}
+                    labels={labels}
+                  />
+                ) : (
+                  renderPinnedRow(slot.row, "top")
+                )
+            )}
           </Table.Body>
         )}
         <Table.Body data-adapttable-part="tbody">
@@ -1581,7 +1596,20 @@ export function DesktopTable<TRow>({
             data-adapttable-part={PINNED_BOTTOM_PART}
             style={pinnedRowStickyStyle("bottom", 0)}
           >
-            {pinnedBottomRows.map((row) => renderPinnedRow(row, "bottom"))}
+            {insertExtrasBeforeRows(pinnedBottomRows, extraRows, getRowId).map(
+              (slot) =>
+                isExtraEntry(slot) ? (
+                  <ExtraSlotRow
+                    key={slot.key}
+                    kind={slot.kind}
+                    colSpan={columnSpan}
+                    render={slot.kind === "fullWidth" ? slot.render : undefined}
+                    labels={labels}
+                  />
+                ) : (
+                  renderPinnedRow(slot.row, "bottom")
+                )
+            )}
           </Table.Body>
         )}
       </Table.Root>

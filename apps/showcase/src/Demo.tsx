@@ -644,6 +644,7 @@ function frontendColumnProps(
     rowPinning?: boolean;
     cellSpan?: boolean;
     extraRows?: boolean;
+    extraAnchorId?: string;
     rowStyle?: boolean;
     customCard?: boolean;
     failure?: Failure;
@@ -727,34 +728,40 @@ function frontendColumnProps(
   }
   if (flags.cellSpan) {
     Object.assign(next, {
-      // Team is the same fact on consecutive rows — merge it, leave Person
-      // and Email alone. Reorder can break a run; that is the point.
+      // Team is the same fact on consecutive rows in this tbody — merge
+      // it, leave Person and Email alone. Reorder can break a run; that
+      // is the point. Pin restarts the merge among leftover teammates.
       getCellSpan: ({
         column,
-        rowIndex,
+        sectionRows,
+        sectionRowIndex,
       }: {
         column: { key: string };
-        rowIndex: number;
+        sectionRows: readonly Person[];
+        sectionRowIndex: number;
       }) => {
         if (column.key !== "team") return undefined;
-        const span = consecutiveTeamSpan(flags.data, rowIndex);
+        const span = consecutiveTeamSpan(sectionRows, sectionRowIndex);
         return span > 1 ? { rowSpan: span } : undefined;
       },
     });
   }
-  if (flags.extraRows) {
+  if (flags.extraRows && flags.extraAnchorId) {
+    const extraHost = flags.data.find((row) => row.id === flags.extraAnchorId);
+    const extraHostName = extraHost?.name ?? "this person";
     Object.assign(next, {
       extraRows: [
         {
           key: "sep",
           kind: "separator" as const,
-          // Sit above a Team merge, not inside it (rowSpan counts every <tr>).
-          beforeRowId: flags.cellSpan ? flags.data[0]?.id : flags.data[1]?.id,
+          beforeRowId: flags.extraAnchorId,
         },
         {
           key: "note",
           kind: "fullWidth" as const,
-          render: () => "Section note",
+          beforeRowId: flags.extraAnchorId,
+          render: () =>
+            `Full-width extra attached to ${extraHostName}. Drag or pin them — this note stays in front of them.`,
         },
       ],
     });
@@ -806,6 +813,7 @@ function Frontend({
     const rows = seedRows(large === true, derivedFields === true, scenario);
     return cellSpan ? orderPeopleByTeam(rows) : rows;
   });
+  const extraAnchorId = useRef(data[0]?.id).current;
   // The demo owns the data, so the demo is what knows which row changed —
   // exactly where a real app would flash it. Note there is no highlight prop
   // on the table: `rowClassName` is the seam, so this works in every kit.
@@ -975,6 +983,7 @@ function Frontend({
           rowPinning,
           cellSpan,
           extraRows,
+          extraAnchorId,
           rowStyle,
           customCard,
           failure,

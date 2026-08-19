@@ -7,6 +7,8 @@
  *
  * Position is `beforeRowId` (a data-row id). Omit it to append after the
  * last data row. Several extras sharing a target keep the host's order.
+ * A named extra stays in front of that person through reorder and pin —
+ * pin sections splice extras whose `beforeRowId` is in that section.
  *
  * Extras are content, not table state — nothing goes in the URL. Mobile
  * cards keep the same slots: a rule between cards, or a full-width note.
@@ -90,6 +92,41 @@ export function insertExtraRows<T extends { key: string }>(
   }
   for (const extra of append) result.push(toEntry(extra));
   return result;
+}
+
+/**
+ * Extras whose `beforeRowId` sits in this section. Untargeted extras
+ * (no `beforeRowId`) are included only when `appendUntargeted` is true —
+ * those still belong at the end of the scroll body, not in a pin section.
+ */
+export function extraRowsForSection(
+  extraRows: readonly ExtraRow[] | undefined,
+  rowIds: ReadonlySet<string>,
+  appendUntargeted = false
+): readonly ExtraRow[] | undefined {
+  if (!extraRows || extraRows.length === 0) return extraRows;
+  const next = extraRows.filter((extra) => {
+    if (extra.beforeRowId === undefined) return appendUntargeted;
+    return rowIds.has(extra.beforeRowId);
+  });
+  return next.length === 0 ? undefined : next;
+}
+
+/**
+ * Splice extras whose `beforeRowId` is in this row list. Use on a pin
+ * section so a named extra stays in front of a pinned person.
+ */
+export function insertExtrasBeforeRows<TRow>(
+  rows: readonly TRow[],
+  extraRows: readonly ExtraRow[] | undefined,
+  getRowId: (row: TRow) => string
+): readonly ({ key: string; row: TRow } | ExtraEntry)[] {
+  const ids = new Set(rows.map(getRowId));
+  return insertExtraRows(
+    rows.map((row) => ({ key: getRowId(row), row })),
+    extraRowsForSection(extraRows, ids),
+    (entry) => entry.key
+  );
 }
 
 /** Part names every kit stamps on an extra row. */

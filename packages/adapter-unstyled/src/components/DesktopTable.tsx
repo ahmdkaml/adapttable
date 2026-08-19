@@ -36,6 +36,7 @@ import {
   type HtmlGroupedHeaderCell,
   htmlGroupedHeaderPlan,
   insertExtraRows,
+  insertExtrasBeforeRows,
   isCurrentMatchCell,
   isExtraEntry,
   isMatchedCell,
@@ -1259,11 +1260,23 @@ export function DesktopTable<TRow>({
           className={classNames.tbody}
           style={pinnedRowStickyStyle("top", rowPinOffset)}
         >
-          {pinnedTopRows.map((row) => (
-            <Fragment key={getRowId(row)}>
-              {renderPinnedRow(row, "top")}
-            </Fragment>
-          ))}
+          {insertExtrasBeforeRows(pinnedTopRows, extraRows, getRowId).map(
+            (slot) =>
+              isExtraEntry(slot) ? (
+                <ExtraSlotRow
+                  key={slot.key}
+                  kind={slot.kind}
+                  colSpan={columnSpan}
+                  render={slot.kind === "fullWidth" ? slot.render : undefined}
+                  labels={labels}
+                  classNames={classNames}
+                />
+              ) : (
+                <Fragment key={slot.key}>
+                  {renderPinnedRow(slot.row, "top")}
+                </Fragment>
+              )
+          )}
         </tbody>
       )}
       <tbody data-adapttable-part="tbody" className={classNames.tbody}>
@@ -1499,11 +1512,23 @@ export function DesktopTable<TRow>({
           className={classNames.tbody}
           style={pinnedRowStickyStyle("bottom", 0)}
         >
-          {pinnedBottomRows.map((row) => (
-            <Fragment key={getRowId(row)}>
-              {renderPinnedRow(row, "bottom")}
-            </Fragment>
-          ))}
+          {insertExtrasBeforeRows(pinnedBottomRows, extraRows, getRowId).map(
+            (slot) =>
+              isExtraEntry(slot) ? (
+                <ExtraSlotRow
+                  key={slot.key}
+                  kind={slot.kind}
+                  colSpan={columnSpan}
+                  render={slot.kind === "fullWidth" ? slot.render : undefined}
+                  labels={labels}
+                  classNames={classNames}
+                />
+              ) : (
+                <Fragment key={slot.key}>
+                  {renderPinnedRow(slot.row, "bottom")}
+                </Fragment>
+              )
+          )}
         </tbody>
       )}
       {showColumnFooter && (

@@ -2,7 +2,7 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `getCellSpan` or `column.colSpan`. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Span cells** on. Team is written once down the people who share it. Person and Email stay their own cells.
+▶ **See it working:** [merge cells in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — Team is written once down the people who share it. Person stays its own cell. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
 A span is a rectangle. The origin cell carries `colSpan` / `rowSpan`; every
 covered neighbour is omitted from that row's cell list, so every kit maps one
@@ -23,11 +23,13 @@ import { DataTable } from "@adapttable/mantine";
   data={rows}
   columns={columns}
   rowKey={(row) => row.id}
-  getCellSpan={({ column, row, rowIndex }) => {
+  getCellSpan={({ column, row, sectionRows, sectionRowIndex }) => {
     if (column.key !== "team") return undefined;
-    if (rows[rowIndex - 1]?.team === row.team) return undefined;
+    if (sectionRows[sectionRowIndex - 1]?.team === row.team) return undefined;
     let rowSpan = 1;
-    while (rows[rowIndex + rowSpan]?.team === row.team) rowSpan += 1;
+    while (sectionRows[sectionRowIndex + rowSpan]?.team === row.team) {
+      rowSpan += 1;
+    }
     return rowSpan > 1 ? { rowSpan } : undefined;
   }}
 />;
@@ -54,4 +56,8 @@ show every column. Spans are derived from data, so there is nothing to
 put in the URL or a saved view.
 
 Row spans stay inside one tbody. A pin section and the scroll body do not
-share a span.
+share a span — walk `sectionRows` / `sectionRowIndex` so leftover teammates
+in the scroll body start a new origin instead of each drawing their own
+Team. antd owns one tbody, so a sticky pin and a `rowSpan` in that same
+body paint on top of each other — the row still moves to the top or floor;
+the sticky offset is skipped while any body cell spans more than one row.

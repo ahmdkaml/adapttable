@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { extraRowsArmed, insertExtraRows, isExtraEntry } from "./extraRows";
+import {
+  extraRowsArmed,
+  extraRowsForSection,
+  insertExtraRows,
+  insertExtrasBeforeRows,
+  isExtraEntry,
+  type ExtraRow,
+} from "./extraRows";
 
 const ROWS = [
   { kind: "row" as const, key: "a" },
@@ -75,5 +82,51 @@ describe("insertExtraRows", () => {
       (entry) => (entry.kind === "row" ? entry.key : undefined)
     );
     expect(next.map((entry) => entry.key)).toEqual(["g", "s", "a"]);
+  });
+});
+
+describe("extraRowsForSection", () => {
+  const extras: ExtraRow[] = [
+    { key: "s", kind: "separator", beforeRowId: "a" },
+    { key: "n", kind: "fullWidth", render: () => "note" },
+  ];
+
+  it("keeps extras aimed at a row in this section", () => {
+    expect(
+      extraRowsForSection(extras, new Set(["a"]))?.map((e) => e.key)
+    ).toEqual(["s"]);
+  });
+
+  it("drops extras aimed at a row in another section", () => {
+    expect(extraRowsForSection(extras, new Set(["b"]))).toBeUndefined();
+  });
+
+  it("appends untargeted extras only when asked", () => {
+    expect(
+      extraRowsForSection(extras, new Set(["b"]), true)?.map((e) => e.key)
+    ).toEqual(["n"]);
+  });
+});
+
+describe("insertExtrasBeforeRows", () => {
+  it("places a named extra in front of that row", () => {
+    const next = insertExtrasBeforeRows(
+      [{ id: "a" }, { id: "b" }],
+      [{ key: "s", kind: "separator", beforeRowId: "b" }],
+      (row) => row.id
+    );
+    expect(next.map((entry) => entry.key)).toEqual(["a", "s", "b"]);
+  });
+
+  it("omits untargeted extras from a pin list", () => {
+    const next = insertExtrasBeforeRows(
+      [{ id: "a" }],
+      [
+        { key: "s", kind: "separator", beforeRowId: "a" },
+        { key: "n", kind: "fullWidth", render: () => "note" },
+      ],
+      (row) => row.id
+    );
+    expect(next.map((entry) => entry.key)).toEqual(["s", "a"]);
   });
 });

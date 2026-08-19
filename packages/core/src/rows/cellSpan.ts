@@ -27,6 +27,14 @@ export interface GetCellSpanArgs<TRow> {
   rowIndex: number;
   /** Index in the full visible column list. */
   columnIndex: number;
+  /**
+   * Rows in this tbody (pinned top, scroll, or pinned bottom). Walk this
+   * list for a consecutive merge — a pin section and the scroll body do
+   * not share a span, so leftover teammates here start a new origin.
+   */
+  sectionRows: readonly TRow[];
+  /** Index of `row` in {@link GetCellSpanArgs.sectionRows}. */
+  sectionRowIndex: number;
 }
 
 /** Host callback that decides a cell's span. */
@@ -196,6 +204,7 @@ function originSpan<TRow>(options: {
   firstRowIndex: number;
   remainingCols: number;
   remainingRows: number;
+  sectionRows: readonly TRow[];
   getCellSpan: GetCellSpan<TRow> | undefined;
   armed: boolean;
 }): { colSpan: number; rowSpan: number } {
@@ -207,6 +216,7 @@ function originSpan<TRow>(options: {
     firstRowIndex,
     remainingCols,
     remainingRows,
+    sectionRows,
     getCellSpan,
     armed,
   } = options;
@@ -217,6 +227,8 @@ function originSpan<TRow>(options: {
       column,
       rowIndex: firstRowIndex + localRow,
       columnIndex: col,
+      sectionRows,
+      sectionRowIndex: localRow,
     },
     getCellSpan,
     remainingCols,
@@ -247,6 +259,7 @@ function collectOrigins<TRow>(options: {
         firstRowIndex,
         remainingCols: columns.length - col,
         remainingRows: rows.length - localRow,
+        sectionRows: rows,
         getCellSpan,
         armed,
       });
@@ -404,6 +417,8 @@ export function coveredAddressSet<TRow>(options: {
           column: columns[col]!,
           rowIndex: firstRowIndex + localRow,
           columnIndex: col,
+          sectionRows: rows,
+          sectionRowIndex: localRow,
         },
         getCellSpan,
         columns.length - col,

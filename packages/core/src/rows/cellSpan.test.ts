@@ -49,6 +49,8 @@ describe("resolveCellSpan", () => {
       column: COLUMNS[0]!,
       rowIndex: 0,
       columnIndex: 0,
+      sectionRows: ROWS,
+      sectionRowIndex: 0,
     };
     expect(
       resolveCellSpan(args, () => ({ colSpan: 9, rowSpan: 9 }), 3, 2)
@@ -72,7 +74,14 @@ describe("resolveCellSpan", () => {
     };
     expect(
       resolveCellSpan(
-        { row: ROWS[0]!, column, rowIndex: 0, columnIndex: 0 },
+        {
+          row: ROWS[0]!,
+          column,
+          rowIndex: 0,
+          columnIndex: 0,
+          sectionRows: ROWS,
+          sectionRowIndex: 0,
+        },
         undefined,
         3,
         3
@@ -216,6 +225,64 @@ describe("buildBodyCells", () => {
     expect(continued.map((cell) => cell.column.key)).toEqual(["team", "city"]);
     expect(continued[0]?.rowSpan).toBe(1);
     expect(continued[0]?.colSpan).toBe(1);
+  });
+
+  it("restarts a consecutive team span when the origin is in another section", () => {
+    const people: Person[] = [
+      { id: "1", name: "Chioma", team: "Core", city: "Lagos" },
+      { id: "2", name: "Fatima", team: "Core", city: "Accra" },
+      { id: "3", name: "Elena", team: "Core", city: "Madrid" },
+      { id: "4", name: "Sefa", team: "Data", city: "Istanbul" },
+      { id: "5", name: "Omar", team: "Data", city: "Lima" },
+    ];
+    const teamSpan = ({
+      column,
+      sectionRows,
+      sectionRowIndex,
+    }: {
+      column: { key: string };
+      sectionRows: readonly Person[];
+      sectionRowIndex: number;
+    }) => {
+      if (column.key !== "team") return undefined;
+      const current = sectionRows[sectionRowIndex];
+      if (!current) return undefined;
+      if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+        return undefined;
+      }
+      let span = 1;
+      while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+        span += 1;
+      }
+      return span > 1 ? { rowSpan: span } : undefined;
+    };
+    const pinned = buildBodyCells({
+      rows: [people[0]!],
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: teamSpan,
+    });
+    expect(
+      cellsForRow(pinned, "1").find((cell) => cell.column.key === "team")
+        ?.rowSpan
+    ).toBe(1);
+    const scroll = buildBodyCells({
+      rows: people.slice(1),
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: teamSpan,
+    });
+    expect(
+      cellsForRow(scroll, "2").find((cell) => cell.column.key === "team")
+        ?.rowSpan
+    ).toBe(2);
+    expect(
+      cellsForRow(scroll, "3").map((cell) => cell.column.key)
+    ).not.toContain("team");
+    expect(
+      cellsForRow(scroll, "4").find((cell) => cell.column.key === "team")
+        ?.rowSpan
+    ).toBe(2);
   });
 
   it("maps every row to no cells when the table has no columns", () => {

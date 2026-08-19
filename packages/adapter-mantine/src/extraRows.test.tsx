@@ -68,4 +68,30 @@ describe("extra rows (mantine)", () => {
     expect(keys).toContain("separator-row");
     expect(keys).toContain("full-width-row");
   });
+
+  it("keeps a named extra in front of a pinned row", () => {
+    render(
+      wrap(
+        <DataTable
+          data={ROWS}
+          columns={COLS}
+          rowKey={(r) => r.id}
+          urlSync={false}
+          pinnedRowIds={{ top: ["1"], bottom: [] }}
+          onPinnedRowIdsChange={() => undefined}
+          extraRows={[
+            {
+              key: "n",
+              kind: "fullWidth",
+              beforeRowId: "1",
+              render: () => "Attached to Ship",
+            },
+          ]}
+        />
+      )
+    );
+    const pin = document.querySelector('[data-adapttable-part="pinned-top"]');
+    expect(pin?.textContent).toContain("Attached to Ship");
+    expect(pin?.textContent).toContain("Ship");
+  });
 });

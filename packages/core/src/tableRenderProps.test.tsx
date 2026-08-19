@@ -124,6 +124,56 @@ describe("tableRenderModel", () => {
     expect(model.entries.map((entry) => entry.key)).toEqual(["a"]);
   });
 
+  it("restarts a team span in the scroll body after the origin is pinned", () => {
+    interface Member {
+      id: string;
+      name: string;
+      team: string;
+    }
+    const people: Member[] = [
+      { id: "1", name: "Chioma", team: "Core" },
+      { id: "2", name: "Fatima", team: "Core" },
+      { id: "3", name: "Elena", team: "Core" },
+      { id: "4", name: "Sefa", team: "Data" },
+      { id: "5", name: "Omar", team: "Data" },
+    ];
+    const memberCols: ColumnDef<Member>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "team", header: "Team", accessor: (r) => r.team },
+    ];
+    const memberTable = {
+      columns: memberCols,
+      selection: null,
+      labels: { cancel: "Cancel" },
+    } as unknown as UseDataTableResult<Member>;
+    const model = tableRenderModel({
+      table: memberTable,
+      rows: people,
+      getRowId: (r) => r.id,
+      pinnedTopRows: [people[0]!],
+      getCellSpan: ({ column, sectionRows, sectionRowIndex }) => {
+        if (column.key !== "team") return undefined;
+        const current = sectionRows[sectionRowIndex];
+        if (!current) return undefined;
+        if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+          return undefined;
+        }
+        let span = 1;
+        while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+          span += 1;
+        }
+        return span > 1 ? { rowSpan: span } : undefined;
+      },
+    });
+    const teamSpan = (id: string) =>
+      model.cellsByRow.get(id)?.find((cell) => cell.column.key === "team")
+        ?.rowSpan;
+    expect(teamSpan("1")).toBe(1);
+    expect(teamSpan("2")).toBe(2);
+    expect(teamSpan("3")).toBeUndefined();
+    expect(teamSpan("4")).toBe(2);
+  });
+
   it("windows body cells to the column window", () => {
     const wide: ColumnDef<Row>[] = [
       { key: "name", header: "Name", accessor: (r) => r.name },

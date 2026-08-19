@@ -758,6 +758,9 @@ export interface ExtraRow {
 }
 
 // @public
+export function extraRowsForSection(extraRows: readonly ExtraRow[] | undefined, rowIds: ReadonlySet<string>, appendUntargeted?: boolean): readonly ExtraRow[] | undefined;
+
+// @public
 export function EyeIcon(input: Readonly<{
     off?: boolean;
 }>): ReactElement;
@@ -1274,6 +1277,12 @@ export function hideAllColumns<TRow>(rows: readonly ColumnMenuRow<TRow>[], layou
 export function insertExtraRows<T extends {
     key: string;
 }>(entries: readonly T[], extraRows: readonly ExtraRow[] | undefined, dataKey: (entry: T) => string | undefined): readonly (T | ExtraEntry)[];
+
+// @public
+export function insertExtrasBeforeRows<TRow>(rows: readonly TRow[], extraRows: readonly ExtraRow[] | undefined, getRowId: (row: TRow) => string): readonly ({
+    key: string;
+    row: TRow;
+} | ExtraEntry)[];
 
 // @public
 export function isCurrentMatchCell(props: Readonly<Record<string, unknown>> | undefined): boolean;
