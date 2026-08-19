@@ -29,6 +29,9 @@ jobs:
   #     publint, the dist smoke test and the React matrix. `apps/` imports
   #     from `packages/` and never the reverse, so an app-only diff cannot
   #     affect them — running them there tests nothing and costs four runners.
+  #   need-build   — run-packages || packages-changed. One compile; lint,
+  #     tests, publint, floors, the consumer harness and the React matrix
+  #     replay `^build` from that cache instead of compiling the graph again.
   # Every decision fails open: any error → full gate.
   changes:
     name: Changes
@@ -38,6 +41,7 @@ jobs:
       dedupe: ${{ steps.dedupe.outputs.dedupe }}
       run-packages: ${{ steps.combine.outputs.run }}
       packages-changed: ${{ steps.combine.outputs.packages }}
+      need-build: ${{ steps.combine.outputs.need-build }}
     steps:
       # Full history: the three-dot diff below needs a merge base.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -127,43 +131,51 @@ jobs:
           # PR events measured the packages diff directly; push/dispatch have
           # no base to diff against, so the harness follows the package gate.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "packages=${{ steps.diff.outputs.packages }}" >> "$GITHUB_OUTPUT"
+            packages="${{ steps.diff.outputs.packages }}"
           else
-            echo "packages=$run" >> "$GITHUB_OUTPUT"
+            packages="$run"
+          fi
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+          if [ "$run" = "true" ] || [ "$packages" = "true" ]; then
+            echo "need-build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "need-build=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Formatting, the doc guards, lint and types — no build products needed,
-  # so this runs alongside tests and packaging instead of ahead of them.
-  quality:
-    name: Quality (format · doc guards · lint · types)
+  # The only cold compile. Lint, typecheck, tests, publint, floors, the
+  # consumer harness and the React matrix all `needs:` this job and replay
+  # `^build` from the SHA-keyed turbo cache. Always reports so dependents
+  # are never skipped into "expected" on a required check.
+  build:
+    name: Build
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: needs.changes.outputs.dedupe != 'true' && needs.changes.outputs.need-build == 'true'
+
+      - uses: ./.github/actions/setup-pnpm
+        if: needs.changes.outputs.dedupe != 'true' && needs.changes.outputs.need-build == 'true'
+
+      - name: Build packages
+        if: needs.changes.outputs.dedupe != 'true' && needs.changes.outputs.need-build == 'true'
+        run: pnpm build
+
+  # Format and the source-only guards — no dist needed, so this runs
+  # alongside Build instead of behind it.
+  quality-docs:
+    name: Format · doc guards
     needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.changes.outputs.dedupe != 'true'
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        if: needs.changes.outputs.dedupe != 'true'
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: ./.github/actions/setup-pnpm
         if: needs.changes.outputs.dedupe != 'true'
         with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        if: needs.changes.outputs.dedupe != 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore Turborepo cache
-        if: needs.changes.outputs.dedupe != 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .turbo
-          key: turbo-quality-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-quality-${{ runner.os }}-
-            turbo-${{ runner.os }}-
+          turbo-cache: "false"
 
       - name: Format check
         if: needs.changes.outputs.dedupe != 'true'
@@ -183,10 +195,6 @@ jobs:
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm check:parts
 
-      - name: Lint
-        if: needs.changes.outputs.run-packages == 'true'
-        run: pnpm lint
-
       - name: Lint root tooling
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm lint:root
@@ -198,37 +206,70 @@ jobs:
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm test:scripts
 
+  # Type-aware eslint and tsc need the built .d.ts files (`lint` / `typecheck`
+  # both `dependsOn: ["^build"]`). They wait for Build and replay, they do
+  # not compile the graph again.
+  quality-code:
+    name: Lint · types
+    needs: [changes, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: needs.changes.outputs.run-packages == 'true'
+
+      - uses: ./.github/actions/setup-pnpm
+        if: needs.changes.outputs.run-packages == 'true'
+
+      - name: Lint
+        if: needs.changes.outputs.run-packages == 'true'
+        # One package at a time: the 2-core runner starves parallel eslint
+        # the same way it starves vitest (see Tests below). Without this
+        # the job hangs until the 6h GitHub cap.
+        run: pnpm lint --concurrency=1
+
       - name: Typecheck
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm typecheck
 
+  # Exact required-check name. Do not rename. Format runs in parallel with
+  # Build; lint waits for it; this wrap-up still reports under the name the
+  # ruleset requires, including on docs-only diffs.
+  quality:
+    name: Quality (format · doc guards · lint · types)
+    needs: [changes, quality-docs, quality-code]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require format, docs, lint and types
+        run: |
+          changes="${{ needs.changes.result }}"
+          docs="${{ needs.quality-docs.result }}"
+          code="${{ needs.quality-code.result }}"
+          if [ "$changes" != "success" ]; then
+            echo "Changes job: $changes"
+            exit 1
+          fi
+          if [ "$docs" != "success" ]; then
+            echo "Format · doc guards: $docs"
+            exit 1
+          fi
+          if [ "$code" != "success" ]; then
+            echo "Lint · types: $code"
+            exit 1
+          fi
+
   # The slowest lane gets its own runner instead of queueing behind lint.
+  # `test:coverage` still `dependsOn: ["^build"]` — that is a cache replay.
   tests:
     name: Tests (coverage)
-    needs: changes
+    needs: [changes, build]
     if: needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore Turborepo cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .turbo
-          key: turbo-tests-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-tests-${{ runner.os }}-
-            turbo-${{ runner.os }}-
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Test with coverage
         # One package's suite at a time: the 2-core runner can't host several
@@ -239,32 +280,17 @@ jobs:
 
   package:
     name: Package (build · publint · smoke · budget)
-    needs: changes
+    needs: [changes, build]
     if: needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: ./.github/actions/setup-pnpm
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore Turborepo cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .turbo
-          key: turbo-package-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-package-${{ runner.os }}-
-            turbo-${{ runner.os }}-
-
-      - name: Build
+      # Replay, not a second compile: turbo restores dist from the SHA cache
+      # so api:check / publint / smoke / budget see files on disk.
+      - name: Restore built packages
         run: pnpm build
 
       # The committed etc/*.api.md reports are the reviewable form of the
@@ -287,14 +313,13 @@ jobs:
       - name: Bundle-size budget
         run: pnpm budget
 
-
   # Each adapter promises a kit FLOOR (Mantine 7.2, MUI 6, …). This job runs
   # the packed-tarball floor probe — render, sort, filter popover, row
   # selection, column menu, on React 18 — but ONLY for adapters the PR
   # actually touches; the full matrix guards every publish in verify:release.
   floors:
     name: Peer floors (changed adapters)
-    needs: changes
+    needs: [changes, build]
     if: github.event_name == 'pull_request' && needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -330,20 +355,10 @@ jobs:
             echo "No floored adapter changed — nothing to probe."
           fi
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: ./.github/actions/setup-pnpm
         if: steps.kits.outputs.kits != ''
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: steps.kits.outputs.kits != ''
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        if: steps.kits.outputs.kits != ''
-        run: pnpm install --frozen-lockfile
-
-      - name: Build the changed adapters
+      - name: Restore the changed adapters
         if: steps.kits.outputs.kits != ''
         run: |
           for kit in ${{ steps.kits.outputs.kits }}; do
@@ -363,32 +378,15 @@ jobs:
   # Router prerender, all from the tarballs alone.
   consumer:
     name: Packed-consumer harness
-    needs: changes
+    needs: [changes, build]
     if: needs.changes.outputs.packages-changed == 'true' && needs.changes.outputs.run-packages == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: ./.github/actions/setup-pnpm
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore Turborepo cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .turbo
-          key: turbo-consumer-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-consumer-${{ runner.os }}-
-            turbo-${{ runner.os }}-
-
-      - name: Build packages
+      - name: Restore built packages
         run: pnpm build
 
       - name: Run the packed-consumer harness
@@ -404,7 +402,7 @@ jobs:
   # success under its real name in seconds when there is nothing to verify.
   react-matrix:
     name: React ${{ matrix.react }} compatibility
-    needs: changes
+    needs: [changes, build]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -414,20 +412,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.changes.outputs.packages-changed == 'true'
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: ./.github/actions/setup-pnpm
         if: needs.changes.outputs.packages-changed == 'true'
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: needs.changes.outputs.packages-changed == 'true'
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        if: needs.changes.outputs.packages-changed == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Build the probed packages
+      - name: Restore the probed packages
         if: needs.changes.outputs.packages-changed == 'true'
         run: pnpm turbo run build --filter=@adapttable/unstyled...
 
