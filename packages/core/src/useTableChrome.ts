@@ -555,6 +555,14 @@ export function useTableChrome<TRow>(
     columnLayout: columnLayoutProp,
     onColumnLayoutChange,
     defaultColumnLayout,
+    groupAggregates,
+    groupFooters,
+    groupSort,
+    groupFilter,
+    groupPageSize,
+    groupRowPageSize,
+    onGroupLoadMore,
+    extraRows,
   } = props;
 
   const autoMobile = useIsMobile(mobileBreakpoint);
@@ -1048,13 +1056,13 @@ export function useTableChrome<TRow>(
           groupBy: groupByKeys,
           columns: columnLayout.visibleColumns,
           getRowId,
-          groupAggregates: props.groupAggregates,
-          groupSort: props.groupSort,
-          groupFilter: props.groupFilter,
-          groupFooters: props.groupFooters === true,
+          groupAggregates,
+          groupSort,
+          groupFilter,
+          groupFooters: groupFooters === true,
           collapsedGroupIds: groupCollapse.collapsedGroupIds,
-          groupPageSize: props.groupPageSize,
-          rowPageSize: props.groupRowPageSize,
+          groupPageSize,
+          rowPageSize: groupRowPageSize,
           paging: groupPaging.paging,
         })
       : undefined;
@@ -1064,7 +1072,7 @@ export function useTableChrome<TRow>(
           groupBy: groupByKeys,
           collapsedGroupIds: groupCollapse.collapsedGroupIds,
           getRowId,
-          footers: props.groupFooters === true,
+          footers: groupFooters === true,
         })
       : (view?.groups ??
         buildGroupedFlatModel({
@@ -1073,12 +1081,12 @@ export function useTableChrome<TRow>(
           columns: columnLayout.visibleColumns,
           getRowId,
           collapsedGroupIds: groupCollapse.collapsedGroupIds,
-          aggregates: props.groupAggregates,
-          footers: props.groupFooters === true,
-          sort: props.groupSort,
-          filter: props.groupFilter,
-          groupPageSize: props.groupPageSize,
-          rowPageSize: props.groupRowPageSize,
+          aggregates: groupAggregates,
+          footers: groupFooters === true,
+          sort: groupSort,
+          filter: groupFilter,
+          groupPageSize,
+          rowPageSize: groupRowPageSize,
           paging: groupPaging.paging,
         }));
     // The whole-tree actions need the keys, and the entries are where they
@@ -1088,13 +1096,13 @@ export function useTableChrome<TRow>(
     const openGroups = entries.flatMap((entry) =>
       entry.kind === "group" ? [{ key: entry.key, level: entry.level }] : []
     );
-    const withExtras = insertExtraRows(entries, props.extraRows, (entry) =>
+    const withExtras = insertExtraRows(entries, extraRows, (entry) =>
       entry.kind === "row" ? entry.key : undefined
     );
     return {
       groupBy: groupByKeys,
       collapsed: groupCollapse,
-      aggregates: props.groupAggregates,
+      aggregates: groupAggregates,
       entries: withExtras,
       setGroupBy,
       /**
@@ -1105,11 +1113,11 @@ export function useTableChrome<TRow>(
       showMore: (entry: { scope: "groups" | "rows"; groupKey?: string }) => {
         const size =
           entry.scope === "groups"
-            ? (props.groupPageSize ?? 0)
-            : (props.groupRowPageSize ?? 0);
+            ? (groupPageSize ?? 0)
+            : (groupRowPageSize ?? 0);
         groupPaging.showMore(size, entry.groupKey);
         if (entry.scope === "rows" && entry.groupKey) {
-          props.onGroupLoadMore?.(entry.groupKey);
+          onGroupLoadMore?.(entry.groupKey);
         }
       },
       expandAll: groupCollapse.expandAll,
@@ -1127,14 +1135,14 @@ export function useTableChrome<TRow>(
     columnLayout.visibleColumns,
     getRowId,
     groupCollapse,
-    props.groupAggregates,
-    props.groupFooters,
-    props.groupSort,
-    props.groupFilter,
-    props.groupPageSize,
-    props.groupRowPageSize,
-    props.onGroupLoadMore,
-    props.extraRows,
+    groupAggregates,
+    groupFooters,
+    groupSort,
+    groupFilter,
+    groupPageSize,
+    groupRowPageSize,
+    onGroupLoadMore,
+    extraRows,
     groupPaging,
     setGroupBy,
   ]);

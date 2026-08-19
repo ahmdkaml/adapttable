@@ -72,7 +72,7 @@ describe("edit lifecycle (mantine)", () => {
               setData((prev) =>
                 prev.map((item) =>
                   item.id === row.id
-                    ? { ...item, title: String(value ?? "") }
+                    ? { ...item, title: typeof value === "string" ? value : "" }
                     : item
                 )
               );
