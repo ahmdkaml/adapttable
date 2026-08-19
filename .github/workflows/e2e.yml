@@ -8,8 +8,8 @@ name: E2E
 # workflow must run — and report — on EVERY pull request: a path filter here
 # leaves the required check permanently "expected" on PRs that don't touch
 # the library (config-only, docs-only), making them unmergeable. The heavy
-# steps instead self-skip via an in-job diff check when nothing the suite
-# covers has changed.
+# work is five shards; that required name is the wrap-up job, same pattern
+# as Salma's "Checks" gate over unit-test shards. Never rename it here.
 on:
   pull_request:
     branches: [main]
@@ -20,12 +20,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e:
-    name: Playwright smoke (showcase)
+  detect:
+    name: E2E detect
     runs-on: ubuntu-latest
-    env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    outputs:
+      run: ${{ steps.changes.outputs.run }}
     steps:
       # Full history: the three-dot diff below needs a merge base, which a
       # shallow clone lacks (that failure once skipped the suite on a branch
@@ -34,7 +33,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Decide whether the diff touches anything this suite exercises.
       # Manual runs (workflow_dispatch) always exercise the full suite.
       # Fail-open: if the diff cannot be computed, run the suite — a required
       # check must never skip blind.
@@ -61,24 +59,35 @@ jobs:
             echo "No library/showcase/e2e changes — smoke suite not needed for this diff."
           fi
 
+  e2e:
+    name: E2E shard ${{ matrix.shard }}/5
+    needs: detect
+    if: needs.detect.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-        if: steps.changes.outputs.run == 'true'
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: steps.changes.outputs.run == 'true'
         with:
           node-version: 24
           cache: pnpm
 
       - name: Install dependencies
-        if: steps.changes.outputs.run == 'true'
         run: pnpm install --frozen-lockfile
 
       # Cache the downloaded browser binary across runs, keyed on the lockfile
       # (which pins @playwright/test, so a version bump busts the cache).
       - name: Cache Playwright browser
         id: pw-cache
-        if: steps.changes.outputs.run == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
@@ -87,17 +96,44 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright Chromium
-        if: steps.changes.outputs.run == 'true'
         run: pnpm exec playwright install --with-deps chromium
 
+      # Five free ubuntu-latest machines × 4 Chromiums (playwright.config.ts)
+      # = 20 tests in flight. Playwright splits the 1200 cases; each box stays
+      # at 4 vCPU so 10–20 browsers on one runner never happen.
       - name: Run E2E smoke suite
-        if: steps.changes.outputs.run == 'true'
-        run: pnpm test:e2e
+        run: pnpm test:e2e -- --shard=${{ matrix.shard }}/5
 
       - name: Upload report on failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7
+
+  # Exact required-check name. Do not rename. Docs-only PRs skip the shards
+  # and this job still reports green, so the ruleset is never left "expected".
+  e2e-gate:
+    name: Playwright smoke (showcase)
+    needs: [detect, e2e]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require shards when the suite ran
+        run: |
+          detect="${{ needs.detect.result }}"
+          run="${{ needs.detect.outputs.run }}"
+          shards="${{ needs.e2e.result }}"
+          if [ "$detect" != "success" ]; then
+            echo "Detect job: $detect"
+            exit 1
+          fi
+          if [ "$run" != "true" ]; then
+            echo "No library/showcase/e2e changes — smoke suite not needed."
+            exit 0
+          fi
+          if [ "$shards" != "success" ]; then
+            echo "Playwright shards: $shards"
+            exit 1
+          fi
