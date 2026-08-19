@@ -66,13 +66,14 @@ Unify the **model**, never the **pixels**. The standing pattern is
 
 ## The quality gate — green before every push, zero suppressions
 
-`pnpm check` is the single source of truth. Husky runs `format:check` on
-every commit (fast) and the full gate on every push:
+`pnpm check` is the single source of truth for the library gate. Husky runs
+`format:check` on every commit (fast) and `pnpm check` then `pnpm test:e2e`
+on every push:
 
 ```
 format:check → lint → lint:root → check:readmes → check:docsurface
 → check:parts → typecheck → test:coverage → test:scripts → build
-→ publint → smoke:dist → budget
+→ publint → smoke:dist → budget → test:e2e
 ```
 
 - **Coverage floors are enforced per package** — do not lower a threshold to
@@ -82,9 +83,11 @@ format:check → lint → lint:root → check:readmes → check:docsurface
   rule. Fix the root cause; if a rule seems genuinely wrong, raise it.
 - Never weaken tests or assertions to pass. If a test fails, the code or the
   test is wrong — find out which.
-- **`pnpm test:e2e` is part of the bar** — the gate does not run it, CI
-  does. Run it before opening a PR whenever the change touches anything a
-  browser can see.
+- **`pnpm test:e2e` is part of the bar** — `pnpm check` does not run it.
+  Pre-push runs `pnpm e2e:if-needed`: skip when the diff vs `origin/main` has
+  no packages/showcase/e2e; run only changed `e2e/*.spec.ts` when that is all
+  that changed; otherwise the full suite. CI already skips the whole job on
+  the same path set. Needs Chromium once: `pnpm exec playwright install chromium`.
 - A change is not done until the gate is green with real command output —
   evidence, not assertions. Anything visual or keyboard-driven is also
   verified in a real browser.

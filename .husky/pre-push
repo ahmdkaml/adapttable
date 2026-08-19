@@ -5,6 +5,8 @@
 # the pinned pnpm either way.
 if command -v pnpm >/dev/null 2>&1; then
   pnpm check
+  pnpm e2e:if-needed
 else
   corepack pnpm check
+  corepack pnpm e2e:if-needed
 fi
