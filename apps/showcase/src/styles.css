@@ -1177,23 +1177,30 @@ a {
 }
 
 /* ---------- the pivot page ---------- */
-/* The panel beside the table, and a table that reads as a spreadsheet: the
-   subtotal and grand-total lines have to be distinguishable from the data
-   lines or the numbers are ambiguous. */
-/* The panel column is sized for the widest kit's controls: a measure row is a
-   caption, an aggregation select and three buttons, and MUI's select is roomier
-   than Mantine's — a column that fits one kit spills in another. */
+/* The three zone cards sit in a row above the table so the grid can use the
+   full width. Subtotal and grand-total lines still have to be distinguishable
+   from the data lines or the numbers are ambiguous. */
 .pivot-layout {
   display: grid;
   gap: 20px;
-  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 .pivot-layout > * {
   min-width: 0;
 }
+/* Kit Surfaces are a vertical flex of the three zones (correct in a docked
+   side panel). On this page they become a row. `!important` beats the kit's
+   own `display: flex` / `flex-direction: column`, including antd's inline
+   styles. Feature Lab does not use `.pivot-layout`, so it stays stacked. */
+.pivot-layout [data-adapttable-part="pivot-panel"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
 @media (max-width: 900px) {
-  .pivot-layout {
+  .pivot-layout [data-adapttable-part="pivot-panel"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }

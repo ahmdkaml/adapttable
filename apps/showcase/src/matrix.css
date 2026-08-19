@@ -264,9 +264,9 @@
   border-radius: var(--r-lg) var(--r-lg) 0 0;
 }
 
-/* A panel beside a table. Unlike the pivot layout, the panel column takes only
-   the width its own card needs — a saved-views list is as wide as its longest
-   view name, and a fixed column beside it is a strip of empty page. */
+/* A panel beside a table. The panel column takes only the width its own
+   card needs — a saved-views list is as wide as its longest view name, and
+   a fixed column beside it is a strip of empty page. */
 .panel-layout {
   display: grid;
   gap: var(--sp-5);
