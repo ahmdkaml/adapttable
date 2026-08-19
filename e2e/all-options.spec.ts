@@ -338,8 +338,7 @@ test("the docked pivot builder pivots the Lab's own table", async ({
   await expect(
     panel.locator('[data-adapttable-part="pivot-panel"]')
   ).toBeVisible();
-  // And it travels: the pivot is in the URL under the Lab's own namespace.
-  await expect(page).toHaveURL(/lab\.pivot=/);
+  await expect(page).not.toHaveURL(/lab\.pivot=/);
 });
 
 test("the docked views panel manages the table's saved views", async ({

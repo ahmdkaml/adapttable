@@ -39,7 +39,7 @@ const money = new Intl.NumberFormat("en", {
 export interface PivotTableViewProps<TRow> {
   /**
    * Which kit renders it. Its theme provider is the caller's — the panel
-   * beside the table needs the same one, so it wraps both.
+   * on this page needs the same one, so it wraps both.
    */
   kit: string;
   /** The rows to pivot — already materialized, filtering happens upstream. */
@@ -131,9 +131,8 @@ export function PivotTableView<TRow>({
           rowClassName={(row) => `pivot-line pivot-line--${row.kind}`}
           labels={labels}
           classNames={kitClassNames(kit)}
-          // A pivot's own state is the pivot — the axes, the measures and the
-          // folds, which the page keeps in the URL. The table's search and
-          // paging would only add a second namespace to the same address.
+          // Only the live demo writes the address bar. This table must not
+          // add search, paging, or a second namespace beside the pivot.
           urlSync={false}
           searchable={false}
           // A pivot is a shape, not a feed: every line of it is meant to be

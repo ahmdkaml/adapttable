@@ -12,9 +12,7 @@ import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Warning } from "./sectionIcons";
 
 /**
- * Where the page starts: two columns nobody wrote code for. They are in the URL
- * from the first paint, so the address bar already shows what a shared link
- * looks like.
+ * Where the page starts: two columns nobody wrote code for.
  */
 const START: readonly FormulaColumnSpec[] = [
   { key: "margin", header: "Margin", formula: "=ROUND(budget * 0.15, 0)" },
@@ -200,13 +198,13 @@ function FormulaBar({
 
 /**
  * The /formulas/ page: one dataset, a formula bar, and the table the formulas
- * become — in whichever kit the reader picks. The formulas live in the URL, so
- * the page reloads into what was typed and the link carries it to someone else.
+ * become — in whichever kit the reader picks. Only the live demo writes the
+ * address bar.
  */
 export function FormulasDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   const Demo = ADAPTERS[adapter] ?? ADAPTERS.mantine;
   const { formulas, onFormulasChange } = useFormulaUrlState({
-    urlKey: "fx",
+    urlSync: false,
     defaultFormulas: START,
   });
   // Rebuilt only when the list changes: the build carries the per-row cache the

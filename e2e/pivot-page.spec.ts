@@ -120,7 +120,7 @@ test("builds a pivot with the keyboard alone", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("puts the whole configuration in the URL", async ({ page }) => {
+test("the address bar stays clean when the pivot changes", async ({ page }) => {
   await page.goto(`/${KIT}/pivot/`);
 
   const remove = page
@@ -129,33 +129,25 @@ test("puts the whole configuration in the URL", async ({ page }) => {
     .first();
   await remove.click();
 
-  await expect(page).toHaveURL(/p\.pivot=/);
-  const url = page.url();
-
-  // The link reproduces the pivot: a fresh page with the same URL agrees.
-  // Assert on the zone's FIELD entries — the add-control still lists Status
-  // as something you could put back, which is not the same as it being on.
-  await page.goto(url);
   await expect(
     page
       .getByRole("group", { name: "Columns" })
       .locator('[data-adapttable-part="pivot-field"]')
   ).toHaveCount(0);
+  await expect(page).not.toHaveURL(/p\.pivot=/);
+  await expect(page).toHaveURL(/\/pivot\/$/);
 });
 
-test("a folded group travels in the link, and comes back folded", async ({
-  page,
-}) => {
-  // Two row dimensions, so there are subtotal lines to fold — and the URL that
-  // asks for them is itself the first half of the round trip.
-  await page.goto(
-    `/${KIT}/pivot/?p.pivot=rows:team,role;cols:status;sum:budget`
-  );
+test("folding a group hides the rows beneath it", async ({ page }) => {
+  await page.goto(`/${KIT}/pivot/`);
+
+  const rows = page.getByRole("group", { name: "Rows" });
+  const add = rows.getByRole("combobox", { name: "Add field" });
+  await add.click();
+  await page.getByRole("option", { name: "Role", exact: true }).click();
 
   const lines = table(page).locator("tbody tr");
   const fold = table(page).getByTestId("pivot-fold").first();
-  // The demo arrives on its own chunk, so the fold control being on screen is
-  // what says the pivot is rendered — counting before that counts nothing.
   await expect(fold).toHaveAttribute("aria-expanded", "true");
   const before = await lines.count();
 
@@ -166,15 +158,7 @@ test("a folded group travels in the link, and comes back folded", async ({
   await expect(fold).toHaveAttribute("aria-expanded", "false");
   const after = await lines.count();
   expect(after).toBeLessThan(before);
-  await expect(page).toHaveURL(/hide%3A|hide:/);
-
-  // The link reproduces it: same rows, same fold, on a fresh load.
-  await page.goto(page.url());
-  await expect(table(page).locator("tbody tr")).toHaveCount(after);
-  await expect(table(page).getByTestId("pivot-fold").first()).toHaveAttribute(
-    "aria-expanded",
-    "false"
-  );
+  await expect(page).not.toHaveURL(/p\.pivot=/);
 });
 
 test("changing a measure's aggregation changes the numbers", async ({
@@ -200,11 +184,15 @@ for (const kit of KITS) {
   test(`${kit}: renders the pivot with its own table`, async ({ page }) => {
     // Two row dimensions, so a subtotal line and its fold control are on
     // screen in every kit rather than only where the default puts them.
-    await page.goto(
-      `/${kit}/pivot/?p.pivot=rows:team,role;cols:status;sum:budget`
-    );
+    await page.goto(`/${kit}/pivot/`);
     const root = page.locator(`[data-adapter="${kit}"]`);
     await expect(root.first()).toBeVisible();
+
+    const add = root
+      .getByRole("group", { name: "Rows" })
+      .getByRole("combobox", { name: "Add field" });
+    await add.click();
+    await page.getByRole("option", { name: "Role", exact: true }).click();
     const pivot = root.getByTestId("pivot-table");
 
     // The engine's numbers, the kit's pixels: the row headers, a measure

@@ -16,14 +16,14 @@ const START = {
 };
 
 /**
- * The pivot page: one dataset, the configuration panel, and the table it
- * produces — in whichever kit the reader picks. Nothing else — the point of the
+ * The pivot page: one dataset, the three zone cards above the table they
+ * produce — in whichever kit the reader picks. Nothing else — the point of the
  * page is the shape of a pivot, not the rest of the table's features.
  */
 export function PivotDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   const { config, onConfigChange, collapsed, onCollapsedChange } =
     usePivotUrlState({
-      urlKey: "p",
+      urlSync: false,
       defaultConfig: START,
     });
   const onToggleFold = (key: string) => {

@@ -80,32 +80,17 @@ test("a typed formula becomes a column of computed values", async ({
   ).toContainText("Doubled");
 });
 
-test("the URL carries the formulas, and a reload keeps them", async ({
-  page,
-}) => {
+test("adding a formula does not write the address bar", async ({ page }) => {
   await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-name").fill("Doubled");
   await page.getByTestId("formula-text").fill("=budget * 2");
   await page.getByTestId("formula-add").click();
 
-  await expect(page).toHaveURL(/fx\.formula=/);
-  const shared = page.url();
-
-  // A reload of that link reproduces the column, formula text included.
-  await page.reload();
   await expect(
     table(page).locator('tbody [data-column-key="Doubled"]').first()
   ).toHaveText("50600");
-  await expect(page.getByTestId("formula-columns")).toContainText(
-    "=budget * 2"
-  );
-
-  // And so does a fresh page opened on it — the link is the state.
-  await page.goto("/");
-  await page.goto(shared);
-  await expect(
-    table(page).locator('tbody [data-column-key="Doubled"]').first()
-  ).toHaveText("50600");
+  await expect(page).not.toHaveURL(/fx\.formula=/);
+  await expect(page).toHaveURL(/\/formulas\/$/);
 });
 
 test("a formula that cannot compute shows its error in the cell", async ({
@@ -172,16 +157,15 @@ test("a text formula column sorts alphabetically from its header", async ({
   );
 });
 
-test("removing a column takes it out of the table and the link", async ({
-  page,
-}) => {
+test("removing a column takes it out of the table", async ({ page }) => {
   await page.goto(`/${KIT}/formulas/`);
   await page.getByTestId("formula-remove-tag").click();
 
   await expect(
     table(page).locator('tbody [data-column-key="tag"]')
   ).toHaveCount(0);
-  await expect(page).toHaveURL(/fx\.formula=margin/);
+  await expect(page).not.toHaveURL(/fx\.formula=/);
+  await expect(page).toHaveURL(/\/formulas\/$/);
 });
 
 for (const kit of KITS) {
