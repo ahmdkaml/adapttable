@@ -109,7 +109,7 @@ export function FilterPopover({
       // off and a 4px offset match the other kits' gap under the button.
       placement={dir === "rtl" ? "bottomRight" : "bottomLeft"}
       arrow={false}
-      autoAdjustOverflow={{ adjustX: true, adjustY: false }}
+      autoAdjustOverflow={{ adjustX: 1, adjustY: 0 }}
       align={{ offset: [0, 4] }}
       content={content}
       styles={{ content: { padding: 12 } }}

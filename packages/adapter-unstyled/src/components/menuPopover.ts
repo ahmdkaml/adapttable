@@ -1,5 +1,11 @@
-import type { CSSProperties, Dispatch, RefObject, SetStateAction } from "react";
-import { useEffect, useRef, useState } from "react";
+import type {
+  CSSProperties,
+  Dispatch,
+  RefCallback,
+  RefObject,
+  SetStateAction,
+} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { OVERLAY_Z, placeOverlayBelowTrigger } from "./overlayPlacement";
 
@@ -26,7 +32,7 @@ export interface MenuPopoverState {
   /** Attach to the trigger — Escape hands keyboard focus back to it. */
   triggerRef: RefObject<HTMLButtonElement | null>;
   /** Attach to the portalled panel — clicks inside it must not count as outside. */
-  panelRef: RefObject<HTMLElement | null>;
+  panelRef: RefCallback<HTMLElement>;
 }
 
 /**
@@ -39,14 +45,17 @@ export function useMenuPopover(): MenuPopoverState {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLElement>(null);
+  const panelNode = useRef<HTMLElement>(null);
+  const panelRef = useCallback<RefCallback<HTMLElement>>((el) => {
+    panelNode.current = el;
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (event: MouseEvent) => {
       const target = event.target as Node;
       if (rootRef.current?.contains(target)) return;
-      if (panelRef.current?.contains(target)) return;
+      if (panelNode.current?.contains(target)) return;
       setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
@@ -64,7 +73,7 @@ export function useMenuPopover(): MenuPopoverState {
 
   useEffect(() => {
     if (!open) return;
-    const panel = panelRef.current;
+    const panel = panelNode.current;
     const trigger = triggerRef.current;
     if (!panel || !trigger) return;
     const dir = getComputedStyle(trigger).direction === "rtl" ? "rtl" : "ltr";
