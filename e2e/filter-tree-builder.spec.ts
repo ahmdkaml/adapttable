@@ -3,7 +3,8 @@ import { expect, type Page, test } from "@playwright/test";
 import { configureFeatureLab } from "./feature-lab";
 
 /**
- * Visual AND/OR filter builder — add a condition, write ft=, hide rows.
+ * Visual AND/OR filter builder — add a condition, hide rows. Feature Lab
+ * keeps the tree in memory (`urlSync: false`); the live demo is the URL path.
  */
 
 const ADAPTERS = [
@@ -88,14 +89,16 @@ test("live demo has no Advanced builder and no Values control", async ({
 
 for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
-    test("Add condition writes ft and keeps Ada", async ({ page }) => {
+    test("Add condition keeps Ada and stays off the address bar", async ({
+      page,
+    }) => {
       await openDemo(page, adapter);
       await enableFilterRecipe(page);
       await openFilters(page);
       await openAdvanced(page);
       await tree(page).getByRole("button", { name: "Add condition" }).click();
       await tree(page).getByLabel("Value").fill("Ada");
-      await expect(page).toHaveURL(/lab\.ft=1\./);
+      await expect(page).not.toHaveURL(/lab\.ft=/);
       const table = demo(page).locator(`[data-adapter="${adapter}"]`);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);

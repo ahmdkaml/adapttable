@@ -14,7 +14,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // GitHub-hosted ubuntu-latest is 4 vCPU. One worker made 1200 tests serial;
+  // 4 Chromiums match the box. 10–20 on this runner contend and go slower.
+  workers: process.env.CI ? 4 : undefined,
   reporter: process.env.CI ? "line" : "list",
   use: {
     baseURL: `http://localhost:${PORT}`,

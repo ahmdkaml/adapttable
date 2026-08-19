@@ -68,7 +68,7 @@ for (const adapter of ADAPTERS) {
         .locator('[data-adapttable-part="filter-checkbox"]')
         .filter({ hasText: /Core/ })
         .click();
-      await expect(page).toHaveURL(/lab\.f_team=/);
+      await expect(page).not.toHaveURL(/lab\.f_team=/);
       const table = demo(page).locator(`[data-adapter="${adapter}"]`);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);

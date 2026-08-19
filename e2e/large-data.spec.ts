@@ -110,7 +110,7 @@ test.describe("large data — the checklist windows its options", () => {
     await expect(box).toBeVisible();
     await box.click();
 
-    await expect(page).toHaveURL(/lab\.f_team=/);
+    await expect(page).not.toHaveURL(/lab\.f_team=/);
     // One team out of 120, chosen from a list that was never fully mounted.
     const table = demo(page).locator('[data-adapter="mantine"]');
     await expect(table).toContainText("Payments 03");

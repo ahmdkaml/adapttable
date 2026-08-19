@@ -47,7 +47,7 @@ for (const adapter of ADAPTERS) {
       const name = page.getByRole("textbox", { name: "Person" });
       await expect(name).toBeVisible();
       await name.fill("Ada");
-      await expect(page).toHaveURL(/lab\.f_name=/);
+      await expect(page).not.toHaveURL(/lab\.f_name=/);
       await expect(table.getByText("Ada Lovelace").first()).toBeVisible();
       await expect(table.getByText("Alan Turing")).toHaveCount(0);
     });
