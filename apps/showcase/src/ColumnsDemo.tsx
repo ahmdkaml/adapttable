@@ -1,8 +1,8 @@
 import { xlsxWriter } from "@adapttable/core/xlsx";
 import { Suspense } from "react";
 
-import { ADAPTERS, DemoFallback } from "./kitDemos";
 import { DemoScenarioProvider } from "./Demo";
+import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Columns, Keyboard, Pin, Resize } from "./sectionIcons";
 

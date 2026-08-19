@@ -1,6 +1,7 @@
 import {
   asGesture,
   autoSizeColumns as autoSizeAllColumns,
+  bodyCellsHaveRowSpan,
   cellFillHandler,
   cellPasteHandler,
   type ColumnDef,
@@ -17,15 +18,11 @@ import {
   makeExportCsvHandler,
   pageSizeOptions,
   partitionPinnedRows,
-  bodyCellsHaveRowSpan,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
+  pinnedRowPart,
   pinnedRowStickyStyle,
   resolveColumnFooter,
   resolveExportCsv,
   resolveFilterMode,
-  showSimpleFilterFields,
-  toolbarShowsFilters,
   resolveLabels,
   type RowExpansionState,
   type RowPinningState,
@@ -34,10 +31,12 @@ import {
   type RowReorderState,
   type SelectionState,
   selectionStats,
+  showSimpleFilterFields,
   type TableErrorState,
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  toolbarShowsFilters,
   type TreeEntry,
   type UrlStateAdapter,
   useChromeScrollReset,
@@ -58,8 +57,8 @@ import {
 } from "@adapttable/core";
 import {
   DEFAULT_CARD_SIZE_PX,
-  EXTRA_ROW_PARTS,
   EXTRA_OVER_SPAN_ROW_STYLE,
+  EXTRA_ROW_PARTS,
   fillSlot,
   GridFocusAnnouncer,
   insertExtraRows,
@@ -67,6 +66,7 @@ import {
   printToolbar,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
+  resolveStickyToolbar,
   rowClickProps,
   rowIsDirty,
   RowReorderAnnouncer,
@@ -74,7 +74,6 @@ import {
   SidePanelLayout,
   tableRenderModel,
   undoRedoToolbar,
-  resolveStickyToolbar,
   useCommandPalette,
   useExportHandler,
   useFullscreen,
@@ -291,8 +290,7 @@ function antdPinnedRowAttrs(
   return {
     ...(sticky ? { style: pinnedRowStickyStyle(pinSide, headerOffset) } : {}),
     "data-row-pin": pinSide,
-    "data-adapttable-part":
-      pinSide === "top" ? PINNED_TOP_PART : PINNED_BOTTOM_PART,
+    "data-adapttable-part": pinnedRowPart(pinSide),
   };
 }
 
@@ -883,11 +881,12 @@ function resolveFiltersNode<TRow>(
   labels: Required<TableLabels>,
   header: boolean,
   filterFields?: boolean
-) {
+): ReactNode {
+  let node: ReactNode = filters;
   if (isDeclarativeFilters(filters) || filters === undefined) {
-    return autoFilterForm(runtime, source, labels, header, filterFields);
+    node = autoFilterForm(runtime, source, labels, header, filterFields);
   }
-  return filters;
+  return node;
 }
 
 /** antd `<Table>` size tokens. */

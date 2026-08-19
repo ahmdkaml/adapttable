@@ -82,7 +82,7 @@ describe("headerGroupRow", () => {
 
 describe("groupedHeaderAlign", () => {
   it("keeps the previous hardcoded center when omit", () => {
-    expect(groupedHeaderAlign(undefined)).toBe("center");
+    expect(groupedHeaderAlign()).toBe("center");
     expect(groupedHeaderAlign("center")).toBe("center");
     expect(groupedHeaderAlign("start")).toBe("start");
     expect(groupedHeaderAlign("end")).toBe("end");

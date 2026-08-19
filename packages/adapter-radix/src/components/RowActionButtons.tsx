@@ -4,8 +4,8 @@ import {
   type RowAction,
   type RowActionsLayout,
   type RowActionsRenderer,
-  type TableLabels,
   runRowAction,
+  type TableLabels,
   visibleRowActions,
 } from "@adapttable/core";
 import { resolveDisabledReason } from "@adapttable/core/adapter";
@@ -147,30 +147,30 @@ export function RowActionButtons<TRow>({
   layout,
   render,
   accentColor,
-}: Readonly<RowActionButtonsProps<TRow>>) {
-  if (render) {
-    return render({ row, actions, confirm, labels });
-  }
+}: Readonly<RowActionButtonsProps<TRow>>): ReactNode {
   const visible = visibleRowActions(actions, row);
-  if (visible.length === 0) return null;
-  if (layout === "menu") {
-    return (
-      <ActionMenu
-        row={row}
-        actions={visible}
-        confirm={confirm}
-        labels={labels}
-        accentColor={accentColor}
-      />
-    );
+  let content: ReactNode = null;
+  if (render) {
+    content = render({ row, actions, confirm, labels });
+  } else if (visible.length > 0) {
+    content =
+      layout === "menu" ? (
+        <ActionMenu
+          row={row}
+          actions={visible}
+          confirm={confirm}
+          labels={labels}
+          accentColor={accentColor}
+        />
+      ) : (
+        <ActionStrip
+          row={row}
+          actions={visible}
+          confirm={confirm}
+          cancelLabel={labels.cancel}
+          accentColor={accentColor}
+        />
+      );
   }
-  return (
-    <ActionStrip
-      row={row}
-      actions={visible}
-      confirm={confirm}
-      cancelLabel={labels.cancel}
-      accentColor={accentColor}
-    />
-  );
+  return content;
 }

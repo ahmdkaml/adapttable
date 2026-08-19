@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ColumnDef } from "../types";
-import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 import {
   applyCollapsedColumnGroups,
-  marriedOrderHolds,
   type ColumnGroupRecord,
+  marriedOrderHolds,
 } from "./columnTree";
+import { FALLBACK_PIN_WIDTH, parsePxWidth } from "./columnWidths";
 import { toggleCollapsedColumnGroup } from "./headerGroups";
 
 /** Edge a column can be pinned to — logical, so it follows the writing

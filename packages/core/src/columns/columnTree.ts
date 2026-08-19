@@ -207,9 +207,13 @@ function inheritedGroup<TRow>(
   node: ColumnDef<TRow>,
   path: readonly string[]
 ): ColumnDef<TRow>["group"] {
-  if (path.length === 0) return node.group;
-  if (path.length === 1) return path[0];
-  return path;
+  let group: ColumnDef<TRow>["group"] = node.group;
+  if (path.length === 1) {
+    group = path[0];
+  } else if (path.length > 1) {
+    group = path;
+  }
+  return group;
 }
 
 function appendCollapsedChrome<TRow>(

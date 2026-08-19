@@ -2,11 +2,11 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { autoSizeColumns as autoSizeAllColumns } from "./columns/autoSizeColumns";
-import { flattenColumnTree } from "./columns/columnTree";
 import {
   ACTIONS_COLUMN_KEY,
   REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
+import { flattenColumnTree } from "./columns/columnTree";
 import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";

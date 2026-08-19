@@ -35,9 +35,9 @@ import {
   columnSelectLabel,
   columnSizeStyle,
   ColumnSpacer,
-  EXTRA_ROW_PARTS,
   EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_OVER_SPAN_STYLE,
+  EXTRA_ROW_PARTS,
   extraHostFillStyle,
   fittedTableStyle,
   groupedHeaderCellStyle,
@@ -48,11 +48,10 @@ import {
   isExtraEntry,
   mergedCellStyle,
   type PinLeads,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
   pinnedColumnWidth,
   pinnedRowCellStyle,
-  pinnedRowStickyStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
   rowClickProps,
@@ -514,6 +513,8 @@ function DesktopRowImpl<TRow>({
   if (!rowPinSide) {
     rowMeasureRef = measureRowPair ? measureRowPair.row(index) : measureElement;
   }
+  const pinPart = pinnedRowPart(rowPinSide);
+  const pinSticky = pinnedRowSticky(rowPinSide, pinRowSticky, rowPinOffset);
   return (
     <>
       <TableRow
@@ -525,23 +526,12 @@ function DesktopRowImpl<TRow>({
         className={className}
         style={{
           ...rowVisualStyle,
-          ...(pinRowSticky && rowPinSide
-            ? pinnedRowStickyStyle(
-                rowPinSide,
-                rowPinSide === "bottom" ? 0 : rowPinOffset
-              )
-            : {}),
+          ...pinSticky,
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         data-stagger=""
         data-row-pin={rowPinSide}
-        data-adapttable-part={
-          rowPinSide === "top"
-            ? PINNED_TOP_PART
-            : rowPinSide === "bottom"
-              ? PINNED_BOTTOM_PART
-              : undefined
-        }
+        data-adapttable-part={pinPart}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         ref={rowMeasureRef}
         hover

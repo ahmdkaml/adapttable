@@ -13,8 +13,8 @@ import { useDataTableShell } from "@adapttable/core/adapter";
 import { act, fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DataTable } from "./DataTable";
 import { FilterHeaderRow } from "./components/kitControls";
+import { DataTable } from "./DataTable";
 import {
   type ColumnDef,
   type DataTableClassNames,

@@ -2,8 +2,8 @@ import { usePivotUrlState } from "@adapttable/core/pivot";
 import { getLabels } from "@adapttable/i18n";
 import { Suspense } from "react";
 
-import { PIVOT_FIELDS } from "./data";
 import { pivotRoster } from "./casts";
+import { PIVOT_FIELDS } from "./data";
 import { kitPivotPanel, KitProvider } from "./kitProviders";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { PivotTableView } from "./PivotTableView";

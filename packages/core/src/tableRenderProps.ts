@@ -35,9 +35,9 @@ import {
   type ExtraRow,
   inflateBodyCellRowSpans,
 } from "./rows/extraRows";
-import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import { incrementalViewOf } from "./rows/incremental";
 import type { MobileCardRenderer } from "./rows/mobileCard";
+import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
@@ -276,6 +276,40 @@ export interface TableRenderModel<TRow> {
   extraCoveredSlots: ReadonlyMap<string, ReadonlySet<number>>;
 }
 
+function pinnedIdSet<TRow>(
+  getRowId: (row: TRow) => string,
+  pinnedTop: readonly TRow[] | undefined,
+  pinnedBottom: readonly TRow[] | undefined
+): Set<string> {
+  const pinnedIds = new Set<string>();
+  for (const row of pinnedTop ?? []) pinnedIds.add(getRowId(row));
+  for (const row of pinnedBottom ?? []) pinnedIds.add(getRowId(row));
+  return pinnedIds;
+}
+
+function extraCoveredSlotMap<TRow>(
+  extraRows: readonly ExtraRow[] | undefined,
+  visualIds: readonly string[],
+  cellsByRow: ReadonlyMap<string, readonly BodyCell<TRow>[]>,
+  leadingCells: number
+): Map<string, ReadonlySet<number>> {
+  const extraCoveredSlots = new Map<string, ReadonlySet<number>>();
+  for (const extra of extraRows ?? []) {
+    if (extra.beforeRowId === undefined) continue;
+    if (extraCoveredSlots.has(extra.beforeRowId)) continue;
+    extraCoveredSlots.set(
+      extra.beforeRowId,
+      extraCoveredTableSlots(extra.beforeRowId, {
+        visualIds,
+        cellsByRow,
+        extraRows,
+        leadingCells,
+      })
+    );
+  }
+  return extraCoveredSlots;
+}
+
 /**
  * Derive the shared render prelude from {@link SharedTableRenderProps} —
  * extracted so each adapter's renderer doesn't repeat the identical block
@@ -323,13 +357,11 @@ export function tableRenderModel<TRow>(
   const hasSelection = Boolean(selection);
   const leadingCells =
     (expandable ? 1 : 0) + (showReorder ? 1 : 0) + (hasSelection ? 1 : 0);
-  const pinnedIds = new Set<string>();
-  for (const row of props.pinnedTopRows ?? []) {
-    pinnedIds.add(props.getRowId(row));
-  }
-  for (const row of props.pinnedBottomRows ?? []) {
-    pinnedIds.add(props.getRowId(row));
-  }
+  const pinnedIds = pinnedIdSet(
+    props.getRowId,
+    props.pinnedTopRows,
+    props.pinnedBottomRows
+  );
   const rawEntries = resolveVirtualRows(
     props.rows,
     props.getRowId,
@@ -392,20 +424,12 @@ export function tableRenderModel<TRow>(
     cellsByRow.clear();
     merge(spannedCells);
   }
-  const extraCoveredSlots = new Map<string, ReadonlySet<number>>();
-  for (const extra of props.extraRows ?? []) {
-    if (extra.beforeRowId === undefined) continue;
-    if (extraCoveredSlots.has(extra.beforeRowId)) continue;
-    extraCoveredSlots.set(
-      extra.beforeRowId,
-      extraCoveredTableSlots(extra.beforeRowId, {
-        visualIds,
-        cellsByRow,
-        extraRows: props.extraRows,
-        leadingCells,
-      })
-    );
-  }
+  const extraCoveredSlots = extraCoveredSlotMap(
+    props.extraRows,
+    visualIds,
+    cellsByRow,
+    leadingCells
+  );
   return {
     columns,
     selection,

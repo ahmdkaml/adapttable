@@ -52,13 +52,12 @@ import {
   logicalAlign,
   mergedCellStyle,
   type PinLeads,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
   pinnedColumnWidth,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
   pinnedRowCellStyle,
-  pinnedRowStickyStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   type PinOffset,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
@@ -439,17 +438,8 @@ function DesktopRowBase<TRow>({
     return { ...column, ...rowPin };
   };
   const focusIndex = sourceIndex;
-  let pinPart: typeof PINNED_TOP_PART | typeof PINNED_BOTTOM_PART | undefined;
-  if (rowPinSide === "top") {
-    pinPart = PINNED_TOP_PART;
-  } else if (rowPinSide === "bottom") {
-    pinPart = PINNED_BOTTOM_PART;
-  }
-  const pinStickyOffset = rowPinSide === "bottom" ? 0 : rowPinOffset;
-  const pinSticky =
-    pinRowSticky && rowPinSide
-      ? pinnedRowStickyStyle(rowPinSide, pinStickyOffset)
-      : undefined;
+  const pinPart = pinnedRowPart(rowPinSide);
+  const pinSticky = pinnedRowSticky(rowPinSide, pinRowSticky, rowPinOffset);
   return (
     <>
       <Table.Row

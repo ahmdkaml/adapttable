@@ -3,8 +3,8 @@ import { createMemoryAdapter, useSavedViews } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
 import { Suspense, useMemo, useState } from "react";
 
+import { layoutFor, rosterFor } from "./casts";
 import { BASE_COLUMNS, type Person } from "./data";
-import { rosterFor, layoutFor } from "./casts";
 import {
   kitClassNames,
   KitProvider,

@@ -63,10 +63,10 @@ const AR_ROLE: Record<string, string> = {
 };
 
 function emailOf(name: string): string {
-  return `${name
-    .toLowerCase()
-    .replaceAll(/[^a-z]+/g, ".")
-    .replaceAll(/^\.+|\.+$/g, "")}@example.com`;
+  let local = name.toLowerCase().replaceAll(/[^a-z]+/g, ".");
+  while (local.startsWith(".")) local = local.slice(1);
+  while (local.endsWith(".")) local = local.slice(0, -1);
+  return `${local}@example.com`;
 }
 
 function p(

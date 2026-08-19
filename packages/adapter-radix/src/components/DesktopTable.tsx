@@ -32,13 +32,14 @@ import {
   bodyCellsHaveRowSpan,
   cellHighlightStyle,
   cellsForRow,
+  cellSpanMark,
   columnFlexShares,
   columnSelectLabel,
   columnSizeStyle,
   ColumnSpacer,
-  EXTRA_ROW_PARTS,
   EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_OVER_SPAN_STYLE,
+  EXTRA_ROW_PARTS,
   extraHostFillStyle,
   groupedHeaderAlign,
   groupedHeaderCellStyle,
@@ -49,15 +50,13 @@ import {
   isExtraEntry,
   logicalAlign,
   mergedCellStyle,
-  cellSpanMark,
   type PinLeads,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
   pinnedColumnWidth,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
   pinnedRowCellStyle,
-  pinnedRowStickyStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   type PinOffset,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
@@ -496,6 +495,8 @@ function DesktopRowBase<TRow>({
     return { ...column, ...rowPin };
   };
   const focusIndex = sourceIndex;
+  const pinPart = pinnedRowPart(rowPinSide);
+  const pinSticky = pinnedRowSticky(rowPinSide, pinRowSticky, rowPinOffset);
   return (
     <>
       <Table.Row
@@ -510,25 +511,14 @@ function DesktopRowBase<TRow>({
         {...(live.rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowPinSide ? undefined : measureRef}
         data-row-pin={rowPinSide}
-        data-adapttable-part={
-          rowPinSide === "top"
-            ? PINNED_TOP_PART
-            : rowPinSide === "bottom"
-              ? PINNED_BOTTOM_PART
-              : undefined
-        }
+        data-adapttable-part={pinPart}
         data-stagger=""
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
         className={className}
         style={{
           background: selected ? "var(--gray-a3)" : undefined,
           ...rowVisualStyle,
-          ...(pinRowSticky && rowPinSide
-            ? pinnedRowStickyStyle(
-                rowPinSide,
-                rowPinSide === "bottom" ? 0 : rowPinOffset
-              )
-            : {}),
+          ...pinSticky,
           ...rowReorderDropStyle(live.rowReorder?.rowAttrs(id, index)),
         }}
         onMouseEnter={() => api.current.prefetch?.(row)}

@@ -1,8 +1,8 @@
 import type { ColumnLayoutState } from "@adapttable/core";
 import { Suspense } from "react";
 
-import { ADAPTERS, DemoFallback } from "./kitDemos";
 import { DemoScenarioProvider } from "./Demo";
+import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 
 const RTL_DEFAULT_LAYOUT = {

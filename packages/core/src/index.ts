@@ -17,8 +17,8 @@ export type {
   CellProps,
   ColorScheme,
   ColumnDef,
-  ColumnGroupShow,
   ColumnFooterContext,
+  ColumnGroupShow,
   ColumnHeaderContext,
   ColumnHeaderController,
   Direction,
@@ -141,13 +141,6 @@ export {
   useTextFilterWidget,
 } from "./filters/filterForm";
 export {
-  bindHeaderFilterDismiss,
-  headerFilterFieldIsComplete,
-  type HeaderFilterSessionProps,
-  useHeaderFilterOverlay,
-  usePointerDismiss,
-} from "./filters/headerFilterOverlay";
-export {
   filterDefForColumn,
   type FilterHeaderClassNames,
   type FilterHeaderRowProps,
@@ -185,6 +178,13 @@ export {
   setFilterTreeCombinator,
   walkFilterTreeConditions,
 } from "./filters/filterTreeMutations";
+export {
+  bindHeaderFilterDismiss,
+  headerFilterFieldIsComplete,
+  type HeaderFilterSessionProps,
+  useHeaderFilterOverlay,
+  usePointerDismiss,
+} from "./filters/headerFilterOverlay";
 export {
   DATE_OP_LABEL_KEYS,
   DATE_OPS,
@@ -504,11 +504,6 @@ export {
 } from "./columns/columnReorder";
 export { columnResizeHandleProps } from "./columns/columnResize";
 export {
-  parsePxWidth,
-  resolveColumnWidth,
-  tableMinWidth,
-} from "./columns/columnWidths";
-export {
   applyCollapsedColumnGroups,
   type ColumnGroupDef,
   type ColumnGroupRecord,
@@ -518,6 +513,11 @@ export {
   isColumnGroup,
   marriedOrderHolds,
 } from "./columns/columnTree";
+export {
+  parsePxWidth,
+  resolveColumnWidth,
+  tableMinWidth,
+} from "./columns/columnWidths";
 export {
   COLUMN_GROUP_ID_SEP,
   COLUMN_GROUP_RENDER_PREFIX,
@@ -610,30 +610,30 @@ export { stableKey } from "./utils/stableKey";
 
 export {
   type BodyCell,
+  bodyCellsHaveRowSpan,
   buildBodyCells,
   cellsForRow,
   type CellSpanAppearance,
-  type CellSpanRequest,
   cellSpanMark,
+  type CellSpanRequest,
   coveredAddressSet,
   type GetCellSpan,
   type GetCellSpanArgs,
   rowSpanSignature,
   spanningArmed,
-  bodyCellsHaveRowSpan,
 } from "./rows/cellSpan";
 export {
   EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_OVER_SPAN_STYLE,
-  extraHostFillStyle,
   EXTRA_ROW_PARTS,
+  extraCountBeforeRowIds,
+  extraCoveredTableSlots,
   type ExtraEntry,
+  extraHostFillStyle,
   type ExtraRow,
   type ExtraRowKind,
   extraRowsArmed,
   extraRowsForSection,
-  extraCountBeforeRowIds,
-  extraCoveredTableSlots,
   extraUncoveredColSpans,
   inflateBodyCellRowSpans,
   insertExtraRows,
@@ -673,6 +673,8 @@ export {
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowCellStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   pinnedRowStickyStyle,
   useOffsetHeight,
 } from "./rows/pinnedRowChrome";

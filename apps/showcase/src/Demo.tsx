@@ -40,6 +40,7 @@ import {
 import {
   BASE_COLUMNS,
   budget,
+  consecutiveTeamSpan,
   DEMO_FILTER_RUNTIME,
   DEMO_GROUP_AGGREGATES,
   demoUrlSync,
@@ -47,8 +48,6 @@ import {
   GROUPS_DEFAULT_LAYOUT,
   isRemote,
   LIVE_DEFAULT_LAYOUT,
-  SPAN_DEFAULT_LAYOUT,
-  consecutiveTeamSpan,
   makeLargeDirectory,
   orderPeopleByTeam,
   PEOPLE,
@@ -58,6 +57,7 @@ import {
   personStatus,
   reportsTo,
   SKILLS,
+  SPAN_DEFAULT_LAYOUT,
   startDate,
   STATUSES,
   TEAMS,
@@ -585,8 +585,16 @@ const EDIT_FIELD: Record<string, keyof Person> = {
 };
 
 function pickOther<T>(choices: readonly T[], current: T): T {
-  const rest = choices.filter((item) => item !== current);
-  return rest[Math.floor(Math.random() * rest.length)] ?? choices[0]!;
+  for (const item of choices) {
+    if (item !== current) return item;
+  }
+  return current;
+}
+
+let incomingNonce = 0;
+function incomingToken(): string {
+  incomingNonce += 1;
+  return incomingNonce.toString(36);
 }
 
 /**
@@ -597,7 +605,7 @@ function incomingEditValue(row: Person, columnKey: string): unknown {
   const field = EDIT_FIELD[columnKey] ?? (columnKey as keyof Person);
   switch (field) {
     case "email":
-      return `incoming.${Math.random().toString(36).slice(2, 8)}@example.com`;
+      return `incoming.${incomingToken()}@example.com`;
     case "name":
       return `Incoming ${row.name}`;
     case "team":
@@ -625,7 +633,7 @@ function incomingEditValue(row: Person, columnKey: string): unknown {
       return [pickOther([...SKILLS], current)];
     }
     default:
-      return `incoming-${Math.random().toString(36).slice(2, 8)}`;
+      return `incoming-${incomingToken()}`;
   }
 }
 

@@ -1,8 +1,8 @@
 import { Suspense, useState } from "react";
 
 import type { PageMode } from "./Demo";
-import { ADAPTERS, DemoFallback } from "./kitDemos";
 import { DemoScenarioProvider } from "./Demo";
+import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Monitor, Phone } from "./sectionIcons";
 

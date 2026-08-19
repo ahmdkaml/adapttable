@@ -105,7 +105,7 @@ describe("<DataTable> (Radix)", () => {
     const { container } = renderHarness({
       override: { classNames: { root: "my-root" } },
     });
-    const root = container.querySelector(".my-root") as HTMLElement;
+    const root = container.querySelector(".my-root")!;
     expect(root.style.border).toBe("");
     expect(container.querySelector(".rt-TableRoot")?.className).not.toContain(
       "rt-variant-surface"

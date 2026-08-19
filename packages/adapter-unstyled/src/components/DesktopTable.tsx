@@ -29,11 +29,12 @@ import {
   type BodyCell,
   bodyCellsHaveRowSpan,
   cellsForRow,
+  cellSpanMark,
   columnSelectLabel,
   ColumnSpacer,
-  EXTRA_ROW_PARTS,
   EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_OVER_SPAN_STYLE,
+  EXTRA_ROW_PARTS,
   extraHostFillStyle,
   fittedTableStyle,
   groupedHeaderCellStyle,
@@ -46,13 +47,11 @@ import {
   isMatchedCell,
   isSelectedCell,
   mergedCellStyle,
-  cellSpanMark,
   type PinLeads,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
   pinnedColumnWidth,
   pinnedRowCellStyle,
-  pinnedRowStickyStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   type PinOffset,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
@@ -346,6 +345,36 @@ function rowMeasureRef(
   return measureElement;
 }
 
+function desktopRowLeads(
+  showReorder: boolean,
+  selected: unknown,
+  showActions: boolean
+): PinLeads {
+  return {
+    start:
+      (showReorder ? REORDER_COLUMN_WIDTH : 0) +
+      (selected === undefined ? 0 : SELECTION_WIDTH),
+    end: showActions ? ACTIONS_WIDTH : 0,
+  };
+}
+
+function bodyPinStyleFor(
+  key: string,
+  pinOffset: ((key: string) => PinOffset | undefined) | undefined,
+  leads: PinLeads,
+  rowPinSide: RowPinSide | undefined,
+  rowPinOffset: number
+): CSSProperties | undefined {
+  const column = pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
+  const rowPin = pinnedRowCellStyle(
+    rowPinSide,
+    rowPinOffset,
+    column !== undefined
+  );
+  if (!column && !rowPin.position) return undefined;
+  return { ...column, ...rowPin };
+}
+
 function DesktopRowBase<TRow>(
   props: Readonly<DesktopRowProps<TRow>>
 ): ReactElement {
@@ -401,24 +430,13 @@ function DesktopRowBase<TRow>(
     measureRowPair,
   } = props;
   const expandable = expanded !== undefined;
-  const leads: PinLeads = {
-    start:
-      (showReorder ? REORDER_COLUMN_WIDTH : 0) +
-      (selected === undefined ? 0 : SELECTION_WIDTH),
-    end: showActions ? ACTIONS_WIDTH : 0,
-  };
-  const bodyPinStyle = (key: string): CSSProperties | undefined => {
-    const column = pinnedCellStyle(pinOffset?.(key), PIN_Z.body, leads);
-    const rowPin = pinnedRowCellStyle(
-      rowPinSide,
-      rowPinOffset,
-      column !== undefined
-    );
-    if (!column && !rowPin.position) return undefined;
-    return { ...column, ...rowPin };
-  };
+  const leads = desktopRowLeads(showReorder, selected, showActions);
+  const bodyPinStyle = (key: string) =>
+    bodyPinStyleFor(key, pinOffset, leads, rowPinSide, rowPinOffset);
   const edgeRowPin = pinnedRowCellStyle(rowPinSide, rowPinOffset, true);
   const focusIndex = sourceIndex;
+  const pinPart = pinnedRowPart(rowPinSide);
+  const pinSticky = pinnedRowSticky(rowPinSide, pinRowSticky, rowPinOffset);
   return (
     <>
       <tr
@@ -429,13 +447,7 @@ function DesktopRowBase<TRow>(
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         ref={rowMeasureRef(rowPinSide, measureRowPair, index, measureElement)}
         data-row-pin={rowPinSide}
-        data-adapttable-part={
-          rowPinSide === "top"
-            ? PINNED_TOP_PART
-            : rowPinSide === "bottom"
-              ? PINNED_BOTTOM_PART
-              : undefined
-        }
+        data-adapttable-part={pinPart}
         data-stagger=""
         data-selected={selected ? "" : undefined}
         data-dirty={rowIsDirty(editing, id) ? "" : undefined}
@@ -443,12 +455,7 @@ function DesktopRowBase<TRow>(
         className={cx(classNames.row, rowClass)}
         style={{
           ...rowVisualStyle,
-          ...(pinRowSticky && rowPinSide
-            ? pinnedRowStickyStyle(
-                rowPinSide,
-                rowPinSide === "bottom" ? 0 : rowPinOffset
-              )
-            : {}),
+          ...pinSticky,
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         onMouseEnter={hasPrefetch ? () => onPrefetch(row) : undefined}

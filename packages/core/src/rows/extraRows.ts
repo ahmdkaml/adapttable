@@ -257,6 +257,58 @@ function visualBodySlots(
   return slots;
 }
 
+function visualSlotIndexes(
+  slots: readonly VisualSlot[],
+  beforeRowId: string
+): { extraIndexes: number[]; rowSlotIndex: Map<string, number> } {
+  const extraIndexes: number[] = [];
+  const rowSlotIndex = new Map<string, number>();
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index]!;
+    if (slot.kind === "extra" && slot.beforeId === beforeRowId) {
+      extraIndexes.push(index);
+    }
+    if (slot.kind === "row") rowSlotIndex.set(slot.id, index);
+  }
+  return { extraIndexes, rowSlotIndex };
+}
+
+function coverContinuingSpans(
+  cellsByRow: ReadonlyMap<
+    string,
+    readonly { columnIndex: number; colSpan: number; rowSpan: number }[]
+  >,
+  extraIndexes: number[],
+  rowSlotIndex: Map<string, number>,
+  leadingCells: number,
+  covered: Set<number>
+): void {
+  for (const [id, cells] of cellsByRow) {
+    const start = rowSlotIndex.get(id);
+    if (start === undefined) continue;
+    for (const cell of cells) {
+      addSpanCoverage(cell, start, extraIndexes, leadingCells, covered);
+    }
+  }
+}
+
+function addSpanCoverage(
+  cell: { columnIndex: number; colSpan: number; rowSpan: number },
+  start: number,
+  extraIndexes: number[],
+  leadingCells: number,
+  covered: Set<number>
+): void {
+  if (cell.rowSpan <= 1) return;
+  const end = start + cell.rowSpan;
+  for (const extraIndex of extraIndexes) {
+    if (extraIndex <= start || extraIndex >= end) continue;
+    for (let offset = 0; offset < cell.colSpan; offset += 1) {
+      covered.add(leadingCells + cell.columnIndex + offset);
+    }
+  }
+}
+
 /**
  * Table-slot indexes (leading chrome + data columns) a continuing row span
  * already owns on extras in front of this person — those extras omit a `<td>`
@@ -276,31 +328,18 @@ export function extraCoveredTableSlots(
 ): ReadonlySet<number> {
   const { visualIds, cellsByRow, extraRows, leadingCells } = options;
   const covered = new Set<number>();
-  const slots = visualBodySlots(visualIds, extraRows);
-  const extraIndexes: number[] = [];
-  const rowSlotIndex = new Map<string, number>();
-  for (let index = 0; index < slots.length; index += 1) {
-    const slot = slots[index]!;
-    if (slot.kind === "extra" && slot.beforeId === beforeRowId) {
-      extraIndexes.push(index);
-    }
-    if (slot.kind === "row") rowSlotIndex.set(slot.id, index);
-  }
+  const { extraIndexes, rowSlotIndex } = visualSlotIndexes(
+    visualBodySlots(visualIds, extraRows),
+    beforeRowId
+  );
   if (extraIndexes.length === 0) return covered;
-  for (const [id, cells] of cellsByRow) {
-    const start = rowSlotIndex.get(id);
-    if (start === undefined) continue;
-    for (const cell of cells) {
-      if (cell.rowSpan <= 1) continue;
-      const end = start + cell.rowSpan;
-      for (const extraIndex of extraIndexes) {
-        if (extraIndex <= start || extraIndex >= end) continue;
-        for (let offset = 0; offset < cell.colSpan; offset += 1) {
-          covered.add(leadingCells + cell.columnIndex + offset);
-        }
-      }
-    }
-  }
+  coverContinuingSpans(
+    cellsByRow,
+    extraIndexes,
+    rowSlotIndex,
+    leadingCells,
+    covered
+  );
   return covered;
 }
 

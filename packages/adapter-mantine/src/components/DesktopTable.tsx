@@ -32,9 +32,9 @@ import {
   cellSpanMark,
   columnSelectLabel,
   ColumnSpacer,
-  EXTRA_ROW_PARTS,
   EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_OVER_SPAN_STYLE,
+  EXTRA_ROW_PARTS,
   extraHostFillStyle,
   fittedTableStyle,
   groupedHeaderAlign,
@@ -46,11 +46,10 @@ import {
   isExtraEntry,
   mergedCellStyle,
   type PinLeads,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
   pinnedColumnWidth,
   pinnedRowCellStyle,
-  pinnedRowStickyStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
   rowClickProps,
@@ -625,31 +624,22 @@ function DesktopRowBase<TRow>({
   if (!rowPinSide) {
     rowMeasureRef = measureRowPair ? measureRowPair.row(index) : measureElement;
   }
+  const pinPart = pinnedRowPart(rowPinSide);
+  const pinSticky = pinnedRowSticky(rowPinSide, pinRowSticky, rowPinOffset);
   return (
     <>
       <Table.Tr
         {...getRowProps(row, focusIndex)}
         {...gridFocus?.getRowPropsAt(focusIndex)}
         data-row-pin={rowPinSide}
-        data-adapttable-part={
-          rowPinSide === "top"
-            ? PINNED_TOP_PART
-            : rowPinSide === "bottom"
-              ? PINNED_BOTTOM_PART
-              : undefined
-        }
+        data-adapttable-part={pinPart}
         {...rowClickProps(row, onRowClick, focusIndex)}
         {...(rowReorder?.dropProps(index, row, windowStart) ?? {})}
         {...(rowReorder?.rowAttrs(id, index) ?? {})}
         className={className}
         style={{
           ...rowVisualStyle,
-          ...(pinRowSticky && rowPinSide
-            ? pinnedRowStickyStyle(
-                rowPinSide,
-                rowPinSide === "bottom" ? 0 : rowPinOffset
-              )
-            : {}),
+          ...pinSticky,
           ...rowReorderDropStyle(rowReorder?.rowAttrs(id, index)),
         }}
         ref={rowMeasureRef}

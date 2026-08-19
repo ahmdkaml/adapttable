@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import type { ConfirmHandler } from "./actions/confirm";
 import type { CommandPaletteOptions } from "./actions/useCommandPalette";
 import type { ContextMenuOptions } from "./actions/useTableContextMenu";
-import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { ColumnInput } from "./columns/columnTree";
+import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { BatchRowEdit } from "./editing/batchEditing";
 import type {
   EditConflictHandler,
@@ -26,14 +26,13 @@ import type { SidePanelEntry } from "./layout/SidePanelChrome";
 import type { CellSpanAppearance, GetCellSpan } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
 import type { MobileCardRenderer } from "./rows/mobileCard";
-import type { RowPinState } from "./rows/rowPinning";
 import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
+import type { RowPinState } from "./rows/rowPinning";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
 import type {
   BulkAction,
-  ColumnDef,
   Direction,
   ExtraFilters,
   PaginationMode,
@@ -461,7 +460,7 @@ export interface BaseDataTableProps<TRow> {
   /**
    * Per-cell row/column span. Return `{ colSpan, rowSpan }` for the origin;
    * covered cells are omitted from the row's cell list. Column-level
-   * {@link ColumnDef.colSpan} / {@link ColumnDef.rowSpan} are the same
+   * `colSpan` / `rowSpan` on the column def are the same
    * thing when every row of a column shares a rule. Omit both and every
    * kit still maps one cell per column.
    *

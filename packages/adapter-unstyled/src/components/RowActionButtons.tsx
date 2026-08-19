@@ -4,8 +4,8 @@ import {
   type RowAction,
   type RowActionsLayout,
   type RowActionsRenderer,
-  type TableLabels,
   runRowAction,
+  type TableLabels,
   visibleRowActions,
 } from "@adapttable/core";
 import { resolveDisabledReason } from "@adapttable/core/adapter";
@@ -117,7 +117,7 @@ function ActionMenu<TRow>({
       ref={detailsRef}
       data-adapttable-part="row-actions-menu"
       className={classNames.rowActionsMenu}
-      onClick={(event) => event.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
     >
       <summary
         data-adapttable-part="row-actions-trigger"
@@ -150,30 +150,30 @@ export function RowActionButtons<TRow>({
   classNames,
   layout,
   render,
-}: Readonly<RowActionButtonsProps<TRow>>) {
-  if (render) {
-    return render({ row, actions, confirm, labels });
-  }
+}: Readonly<RowActionButtonsProps<TRow>>): ReactNode {
   const visible = visibleRowActions(actions, row);
-  if (visible.length === 0) return null;
-  if (layout === "menu") {
-    return (
-      <ActionMenu
-        row={row}
-        actions={visible}
-        confirm={confirm}
-        labels={labels}
-        classNames={classNames}
-      />
-    );
+  let content: ReactNode = null;
+  if (render) {
+    content = render({ row, actions, confirm, labels });
+  } else if (visible.length > 0) {
+    content =
+      layout === "menu" ? (
+        <ActionMenu
+          row={row}
+          actions={visible}
+          confirm={confirm}
+          labels={labels}
+          classNames={classNames}
+        />
+      ) : (
+        <ActionStrip
+          row={row}
+          actions={visible}
+          confirm={confirm}
+          cancelLabel={labels.cancel}
+          className={classNames.actionButton}
+        />
+      );
   }
-  return (
-    <ActionStrip
-      row={row}
-      actions={visible}
-      confirm={confirm}
-      cancelLabel={labels.cancel}
-      className={classNames.actionButton}
-    />
-  );
+  return content;
 }

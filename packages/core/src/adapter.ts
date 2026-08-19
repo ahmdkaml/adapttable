@@ -86,13 +86,13 @@ export {
   type ColumnSizingOptions,
   fittedTableStyle,
 } from "./columns/columnSizing";
-export { pinnedColumnWidth } from "./columns/columnWidths";
 export {
   applyCollapsedColumnGroups,
   type ColumnGroupDef,
   type ColumnInput,
   flattenColumnTree,
 } from "./columns/columnTree";
+export { pinnedColumnWidth } from "./columns/columnWidths";
 export {
   COLUMN_GROUP_ID_SEP,
   COLUMN_GROUP_RENDER_PREFIX,
@@ -305,22 +305,22 @@ export {
 } from "./pivot/PivotPanelChrome";
 export {
   type BodyCell,
+  bodyCellsHaveRowSpan,
+  cellsForRow,
   type CellSpanAppearance,
   cellSpanMark,
-  cellsForRow,
-  bodyCellsHaveRowSpan,
   rowSpanSignature,
 } from "./rows/cellSpan";
 export {
   EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_OVER_SPAN_STYLE,
-  extraHostFillStyle,
   EXTRA_ROW_PARTS,
-  type ExtraEntry,
-  type ExtraRow,
-  extraRowsForSection,
   extraCountBeforeRowIds,
   extraCoveredTableSlots,
+  type ExtraEntry,
+  extraHostFillStyle,
+  type ExtraRow,
+  extraRowsForSection,
   extraUncoveredColSpans,
   inflateBodyCellRowSpans,
   insertExtraRows,
@@ -332,6 +332,8 @@ export {
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowCellStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   pinnedRowStickyStyle,
   useOffsetHeight,
 } from "./rows/pinnedRowChrome";

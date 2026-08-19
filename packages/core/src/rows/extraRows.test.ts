@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  extraRowsArmed,
-  extraRowsForSection,
   extraCoveredTableSlots,
   extraHostFillStyle,
+  type ExtraRow,
+  extraRowsArmed,
+  extraRowsForSection,
   extraUncoveredColSpans,
   inflateBodyCellRowSpans,
   insertExtraRows,
   insertExtrasBeforeRows,
   isExtraEntry,
-  type ExtraRow,
 } from "./extraRows";
 
 const ROWS = [

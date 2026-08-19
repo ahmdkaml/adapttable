@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { ColumnDef } from "../types";
 import {
   applyCollapsedColumnGroups,
+  type ColumnGroupDef,
+  type ColumnInput,
   flattenColumnTree,
   isColumnGroup,
   marriedOrderHolds,
-  type ColumnGroupDef,
-  type ColumnInput,
 } from "./columnTree";
 import {
   COLUMN_GROUP_RENDER_PREFIX,

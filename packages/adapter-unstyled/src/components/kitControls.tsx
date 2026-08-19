@@ -304,9 +304,7 @@ export function FilterHeaderTrigger<TRow>(
       key={resetKey}
       {...sessionProps}
       open={open}
-      onToggle={(event) =>
-        setOpen((event.currentTarget as HTMLDetailsElement).open)
-      }
+      onToggle={(event) => setOpen(event.currentTarget.open)}
       data-adapttable-part="filter-header-trigger"
       className={props.className ?? props.classNames?.filterHeaderTrigger}
       style={{ position: "relative", display: "inline-block" }}

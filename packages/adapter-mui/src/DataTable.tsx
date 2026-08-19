@@ -2,9 +2,9 @@ import { resolveLabels, showSimpleFilterFields } from "@adapttable/core";
 import {
   fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
   SidePanelLayout,
-  resolveStickyToolbar,
   useCommandPalette,
   useDataTableShell,
   useMountStagger,

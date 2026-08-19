@@ -7,8 +7,8 @@ import {
   REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
 import {
-  flattenColumnTree,
   type ColumnGroupRecord,
+  flattenColumnTree,
 } from "./columns/columnTree";
 import { resolveColumns } from "./columns/resolveColumns";
 import { responsiveColumns } from "./columns/responsiveColumns";

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
-import { ADAPTERS, DemoFallback } from "./kitDemos";
 import { DemoScenarioProvider } from "./Demo";
+import { ADAPTERS, DemoFallback } from "./kitDemos";
 import type { FeatureBodyProps } from "./matrix/featureBodies";
 import { Check, Layers } from "./sectionIcons";
 
