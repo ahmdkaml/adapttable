@@ -1,5 +1,5 @@
 import type { SavedView } from "@adapttable/core";
-import { useSavedViews } from "@adapttable/core";
+import { createMemoryAdapter, useSavedViews } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
 import { Suspense, useMemo, useState } from "react";
 
@@ -57,10 +57,15 @@ function useDemoStorage() {
 export function SavedViewsDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
   const storage = useDemoStorage();
   const [migrated, setMigrated] = useState<string[]>([]);
+  // The list and the table both apply a view by writing params into a store.
+  // The address bar used to be that store. This one is the same pipe for this
+  // visit only — refresh starts clean, the URL never changes.
+  const session = useMemo(() => createMemoryAdapter(), []);
   const views = useSavedViews({
     storageKey: "showcase-views",
     storage,
     urlKey: "sv",
+    urlAdapter: session,
     migrate: (view, from) => {
       // One line per view, however many times the load runs — under
       // StrictMode it runs twice, and a note that names the same view twice
@@ -118,8 +123,14 @@ export function SavedViewsDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
                 columns={BASE_COLUMNS}
                 rowKey={(row) => row.id}
                 urlKey="sv"
+                urlAdapter={session}
                 defaultColumnLayout={layoutFor("saved-views")}
-                savedViews={{ storageKey: "showcase-views", storage }}
+                savedViews={{
+                  storageKey: "showcase-views",
+                  storage,
+                  urlAdapter: session,
+                  urlKey: "sv",
+                }}
                 labels={getLabels("en")}
                 classNames={classNames}
               />

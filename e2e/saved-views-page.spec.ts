@@ -238,11 +238,13 @@ for (const kit of KITS) {
     expect(fit.past).toBeLessThanOrEqual(1);
     expect(fit.clipped).toBeLessThanOrEqual(1);
 
-    // Applying a view drives the table beside it: the link carries the search.
+    // Applying a view drives the table beside it. Kit pages do not write
+    // the address bar — only `/` does.
     await rows
       .filter({ hasText: "Legacy view" })
       .getByRole("button", { name: "Legacy view" })
       .click();
-    await expect(page).toHaveURL(/sv\.q=a/);
+    await expect(page.getByPlaceholder("Search...")).toHaveValue("a");
+    await expect(page).not.toHaveURL(/sv\.q=/);
   });
 }
