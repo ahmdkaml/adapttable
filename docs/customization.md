@@ -54,27 +54,28 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Filters
 
-| Part                                                                                                                    | Element                                                                                |
-| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `filtersButton`                                                                                                         | The Filters trigger button.                                                            |
-| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                    |
-| `filtersCount`                                                                                                          | The active-filter count badge.                                                         |
-| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                      |
-| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                       |
-| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.  |
-| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                         |
-| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                   |
-| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                          |
-| `filtersPanel`                                                                                                          | The drawer panel.                                                                      |
-| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                         |
-| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                             |
-| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                  |
-| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                        |
-| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`. |
-| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                          |
-| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                       |
-| `filterHeaderRow` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`                                       | Compact header filter row, one cell, its input, and the multi-select menu.             |
-| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                        |
+| Part                                                                                                                    | Element                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `filtersButton`                                                                                                         | The Filters trigger button.                                                                                        |
+| `filtersIcon`                                                                                                           | The funnel icon inside the trigger.                                                                                |
+| `filtersCount`                                                                                                          | The active-filter count badge.                                                                                     |
+| `exportCsvButton`                                                                                                       | The Export CSV toolbar button (`exportCsv` prop).                                                                  |
+| `exportSpinner`                                                                                                         | The spinner inside that button while a host-handled export runs.                                                   |
+| `cellSelected`                                                                                                          | A cell inside the selected range (`cellNavigation`). Styled kits use their own token.                              |
+| `cellSpan`                                                                                                              | A spanned cell (`getCellSpan`). `data-cell-span` is on the element (`"2x1"`). Default look is centered + one fill. |
+| `filtersAnchor`                                                                                                         | The popover anchor wrapper around the trigger.                                                                     |
+| `filtersPopover`                                                                                                        | The anchored popover card (`filtersMode="popover"`).                                                               |
+| `filtersBackdrop`                                                                                                       | The drawer backdrop (`filtersMode="drawer"`).                                                                      |
+| `filtersPanel`                                                                                                          | The drawer panel.                                                                                                  |
+| `filtersHeader` / `filtersTitle` / `filtersClose`                                                                       | Panel header, its title, and the close button.                                                                     |
+| `filtersBody` / `filtersFooter`                                                                                         | The panel content area and its action row.                                                                         |
+| `filtersClear` / `filtersDone`                                                                                          | The clear-all and done/apply buttons.                                                                              |
+| `filterField` / `filterLabel`                                                                                           | One auto-built field's wrapper and its caption.                                                                    |
+| `filterInput` / `filterSelect` / `filterOperator`                                                                       | Text/date/number inputs, the `select` widget, and a range field's operator `<select>`.                             |
+| `filterCheckboxGroup` / `filterCheckbox`                                                                                | A `multiSelect` checkbox list and one option.                                                                      |
+| `filterChecklist` / `filterChecklistSearch` / `filterChecklistActions` / `filterChecklistList` / `filterChecklistCount` | Excel-style checklist and its search, actions, list, and counts.                                                   |
+| `filterHeaderRow` / `filterHeaderTrigger` / `filterHeaderCell` / `filterHeaderInput` / `filterHeaderMenu`               | Compact header filter row, funnel overlay trigger, one cell, its input, and the multi-select menu.                 |
+| `filterOptionsLoading`                                                                                                  | The placeholder shown while async options load.                                                                    |
 
 ### Chips
 
@@ -114,14 +115,15 @@ plain CSS, Tailwind, and shadcn tokens all work. The full part map:
 
 ### Table
 
-| Part                           | Element                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| `table` / `thead` / `tbody`    | The `<table>` and its sections.                      |
-| `headerRow` / `headerCell`     | The header `<tr>` and one `<th>`.                    |
-| `groupRow` / `groupCell`       | The grouped-header row and one spanning cell.        |
-| `sortButton` / `sortIndex`     | A sortable header's button and its multi-sort badge. |
-| `row` / `cell`                 | One body `<tr>` and one `<td>`.                      |
-| `actionsCell` / `actionButton` | The trailing actions cell and one action button.     |
+| Part                                   | Element                                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `table` / `thead` / `tbody`            | The `<table>` and its sections.                                                              |
+| `headerRow` / `headerCell`             | The header `<tr>` and one `<th>`.                                                            |
+| `groupRow` / `groupCell`               | The grouped-header row and one spanning cell.                                                |
+| `sortButton` / `sortIndex`             | A sortable header's button and its multi-sort badge.                                         |
+| `row` / `cell`                         | One body `<tr>` and one `<td>`.                                                              |
+| `actionsCell` / `actionButton`         | The trailing actions cell and one action button.                                             |
+| `rowActionsTrigger` / `rowActionsMenu` | The 3-dot control and its menu (`rowActionsLayout="menu"`). Menu items reuse `actionButton`. |
 
 ### Row expansion
 
@@ -184,6 +186,24 @@ is dormant these parts are never mounted.
 A few purely structural nodes (`scroll-box`, `virtual-spacer`, the skeleton
 internals) expose only the `data-adapttable-part` attribute.
 
+### The structural parts every adapter names
+
+Seven part names are guaranteed in **every** kit, on the same element in each —
+so one selector works whichever adapter an app mounts:
+
+| Part                        | Element                          |
+| --------------------------- | -------------------------------- |
+| `table` / `thead` / `tbody` | The `<table>` and its sections.  |
+| `row` / `cell`              | One body `<tr>` and one `<td>`.  |
+| `header-cell`               | One header `<th>`.               |
+| `toolbar`                   | The toolbar row above the table. |
+
+Two kit-specific shapes to know: antd owns its `<td>` for the selection column,
+so `selection-cell` sits on a wrapper one element inside it; and a bounded
+height makes antd split the grid into a header table and a body table, both
+named `table`. Everything else in the map above is per-adapter — a themed kit
+names what it renders.
+
 ## Slots
 
 Replace whole sub-components on any adapter:
@@ -198,8 +218,33 @@ Replace whole sub-components on any adapter:
 ```
 
 `skeleton` replaces the first-load skeleton; `empty` replaces the
-empty-state. The error state is built-in (retry button included) — translate it
-via the `errorTitle` / `errorMessage` / `retry` labels.
+empty-state.
+
+### The error state
+
+`error` replaces the load-failure state. It takes a node like the others, and
+it also takes a function — because an error state is _about_ something:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  rowKey={(r) => r.id}
+  slots={{
+    error: ({ error, retry, retrying }) => (
+      <MyAlert message={error.message} onRetry={retry} busy={retrying} />
+    ),
+  }}
+/>
+```
+
+`retry` is `undefined` when the source has nothing to ask again — a static
+`data` array, for instance — so hide your retry control when it is missing
+rather than rendering one that does nothing. `retrying` is true while a retry
+is already in flight.
+
+Leave the slot off and the built-in state renders, retry button included;
+translate it via the `errorTitle` / `errorMessage` / `retry` labels.
 
 ### Two empty states, one optional slot
 
@@ -225,6 +270,263 @@ message — including its own way back:
 Set only `empty` and it still covers both states, exactly as before — but the
 built-in clear-filters action goes with it, so give your replacement a way to
 reset the query.
+
+## Toolbar and status bar
+
+`toolbar` has always filled the middle of the toolbar — between the search
+input and the built-in buttons. `toolbarSlots` fills the two ends:
+
+```tsx
+<DataTable
+  toolbarSlots={{ start: <BackButton />, end: <HelpLink /> }}
+  toolbar={<ViewSwitcher />}
+  …
+/>
+```
+
+The order is the same in every kit: `start` · Search · `toolbar` · Filters ·
+Saved views · Columns · Undo/Redo · Export · Add · Print · Density ·
+Fullscreen · `end` · Rows per page.
+
+`undoRedoButtons` adds Undo and Redo to that row. They render only when
+`editHistory` is armed, and they disable rather than disappear when there is
+nothing to put back — a toolbar that reflows while someone is working is
+worse than a button that is briefly unavailable. The keyboard shortcuts and
+`table.editHistory` are unchanged and stay the always-on path; this is the
+visible one, for users who will not find Ctrl+Z.
+
+```tsx
+<DataTable
+  onCellEdit={saveCell}
+  editHistory
+  undoRedoButtons
+  statusBar
+  …
+/>
+```
+
+`statusBar` puts a strip under the table: the row range, how many rows are
+selected, and — with `selectionStats` armed — what the selected cells add up
+to. The range is the one the pagination footer shows, from the same
+arithmetic, so the two never disagree. The strip hosts the selection figures
+rather than repeating them, so turning it on does not print them twice.
+
+`printButton` adds a Print button beside the view controls. It needs two
+things, not one: the option, and an `onPrint` handler saying what to print.
+Either alone draws nothing — a button that opens no dialog would be worse than
+no button, and a handler on its own stays what it always was, the palette's
+Print command. The caption is `labels.print`, the same string the command
+uses.
+
+```tsx
+import { printTable } from "@adapttable/core/pdf";
+
+<DataTable
+  onPrint={() => printTable({ rows, columns })}
+  printButton
+  …
+/>;
+```
+
+All of them are off unless asked for: omit them and nothing renders and
+nothing is bundled.
+
+## Highlighting a row
+
+After a save or an import, the row that changed is somewhere in a list of a
+thousand. `useHighlight` marks it for a moment:
+
+```tsx
+const highlight = useHighlight(true);
+
+<DataTable
+  rowClassName={(row) =>
+    highlight.isRowHighlighted(row.id) ? "flash" : undefined
+  }
+  …
+/>;
+
+// after a save
+highlight.flashRow(saved.id);
+```
+
+There is no new prop for this on purpose. `rowClassName` already reaches
+every adapter, so the highlight is a class you compute — which means it works
+in all nine kits and looks like the rest of your design system rather than
+like ours.
+
+Marks are keyed by row id, so one survives the sort, filter or page change
+that moves the row. Flashing the same row again restarts its clock rather
+than stacking.
+
+`animated` is false when the user has asked for reduced motion. The mark
+still appears and still clears — it holds steady, and holds longer, because a
+steady mark is easier to miss than one that moves. Reduced motion means less
+movement, not less feedback, so branch on `animated` to pick a class rather
+than to skip the highlight:
+
+```tsx
+rowClassName={(row) =>
+  highlight.isRowHighlighted(row.id)
+    ? highlight.animated
+      ? "flash flash--animated"
+      : "flash"
+    : undefined
+}
+```
+
+`flashCell({ rowId, columnKey })` and `isCellHighlighted` do the same for one
+cell, for a column's `Cell` renderer to read.
+
+## Density and fullscreen
+
+```tsx
+const { density, onDensityChange } = useDensityUrlState();
+
+<DataTable
+  density={density}
+  densityChooser
+  onDensityChange={onDensityChange}
+  fullscreen
+  …
+/>;
+```
+
+`densityChooser` puts the control in the toolbar; `density` is still what
+the table renders, so the host stays in charge. Pairing it with
+`useDensityUrlState` keeps the choice in the URL beside sort and filters, so
+a reload and a shared link both reproduce it.
+
+`fullscreen` adds a toggle. Fullscreen hides everything outside the table,
+which is what makes it useful and also what breaks overlays: a menu
+portalled to `document.body` sits inside the part being hidden, still
+mounted and still focused. The table's own overlays are re-pointed at the
+fullscreen element automatically. If you portal your own, take
+`shell.fullscreen.container` and use it while it is set.
+
+The toggle hides itself where the browser will not allow fullscreen — an
+embedded webview, a sandboxed frame — because a control that cannot work is
+worse than no control.
+
+## Command palette
+
+```tsx
+<DataTable commandPalette onPrint={() => printTable({ rows, columns })} … />
+```
+
+Cmd/Ctrl+K opens a palette listing every action the table can perform. Type
+to filter, arrows to move, Enter to run, Escape to close.
+
+Its entries are the same objects the context menus take. That is the point:
+an action written once appears in both, and cannot gain a condition in one
+and not the other.
+
+```tsx
+<DataTable
+  commandPalette={{
+    commands: [{ key: "audit", label: "Open audit log", onSelect: open }],
+    shortcuts: [{ chord: "ctrl+shift+p", command: "command-palette" }],
+  }}
+  …
+/>
+```
+
+Shortcuts are data, not a key handler, because remapping is not a
+preference — your app may already own Cmd/Ctrl+K. `mod` means Cmd on a Mac
+and Ctrl elsewhere, so one chord is right on both. Pass `shortcuts: []` to
+bind nothing and open the palette from your own control instead.
+
+Print lives here rather than in the toolbar: `printTable` opens a browser
+dialog, so it is the host's call to make. Wire `onPrint` and it becomes a
+command; leave it out and it is not offered.
+
+## Context menus
+
+```tsx
+<DataTable contextMenu … />
+```
+
+Right-click a header and it offers that column's actions — sort, filter, pin,
+hide. Right-click a cell and it offers copy and cut. Each entry appears only
+when the handler behind it is wired and the column allows it: a menu that
+lists "Hide column" over a column locked against hiding reads as broken
+rather than as forbidden.
+
+Every route in works, because a right-click-only menu is one half the people
+who need it cannot reach:
+
+| Route    | Opens with                           |
+| -------- | ------------------------------------ |
+| Pointer  | Right-click                          |
+| Keyboard | Shift+F10, or the dedicated menu key |
+| Touch    | Press and hold                       |
+
+Escape closes it and puts focus back where it came from. A press that travels
+more than a few pixels is a scroll, not a menu.
+
+Add your own entries with `{ items }`. They land behind a divider, so a
+custom action is never mistaken for a built-in one:
+
+```tsx
+<DataTable
+  contextMenu={{
+    items: (target) =>
+      target.kind === "row"
+        ? [{ key: "audit", label: "Open audit log", onSelect: () => open(target.rowId) }]
+        : [],
+  }}
+  …
+/>
+```
+
+## Side panel
+
+A popover is right for a control you touch once and dismiss. It is wrong for
+setting a table up — choosing columns, building a filter, arranging a pivot —
+because that is iterative: change one thing, look at the rows, change
+another. A popover closes when you look away, and the rows are behind it
+while it is open.
+
+`sidePanel` docks that work beside the table instead. It is controlled,
+because the control that opens it is yours — `toolbarSlots` is where it
+usually goes:
+
+```tsx
+const [panel, setPanel] = useState<string | null>(null);
+
+<DataTable
+  toolbarSlots={{
+    end: <button onClick={() => setPanel("filters")}>Settings</button>,
+  }}
+  sidePanel={{
+    panels: [
+      { key: "filters", label: "Filters", content: <MyFilters /> },
+      { key: "columns", label: "Columns", content: <MyColumnList /> },
+    ],
+    open: panel,
+    onOpenChange: setPanel,
+    side: "end",
+  }}
+  …
+/>;
+```
+
+`SidePanelOptions` types it and `SidePanelEntry` is one panel — a `key`, a
+`label` and the `content` to show. With more than one panel the labels
+become a real tab strip: one tab stop for the whole strip, arrow keys that
+wrap and carry the selection, Home and End. Escape closes from anywhere
+inside. Putting focus back afterwards is the opener's job, since only it
+knows where focus was.
+
+`side` picks the edge — `"end"` (the default) is the right in a
+left-to-right table and the left in a right-to-left one. Omit `sidePanel`
+and nothing renders, nothing is bundled, and the table's markup is
+unchanged.
+
+Adapters build their panel over `SidePanelChrome` / `SidePanelSlots` /
+`SidePanelFrameProps` / `SidePanelTabProps` / `SidePanelCloseProps` and dock
+it with `SidePanelLayout` / `SidePanelLayoutProps`, all from
+`@adapttable/core/adapter`.
 
 ## Density
 
@@ -280,6 +582,29 @@ raw output for a non-spreadsheet pipeline.
 - `scope: "all"` — the full filtered+sorted set when the source exposes it
   (frontend does); server-backed sources fall back to the current page unless
   you wire your own download against an export endpoint via `toolbar`.
+
+  **"All" means every row that matched the filters, not every row on screen.**
+  Display state never shrinks an export: a collapsed tree folder still writes
+  the rows inside it, and pagination does not decide what leaves the table.
+  A grouped export keeps its headers and totals around those rows.
+
+  A server-backed table holds one page, so `"all"` has to be answered by
+  fetching. There are two ways, and no third:
+
+  - `request` — hand the whole thing to your backend. The `ExportRequest` it
+    receives carries an `ExportQuery` with `page` and `limit` **undefined** for
+    this scope, precisely so a handler cannot answer with one page.
+  - `fetchAll` — let the table page the query itself and build the file in the
+    browser. It is opt-in because it is a loop of requests, and capped because
+    an unbounded one can hang a tab: `maxRows` defaults to
+    `EXPORT_FETCH_ALL_MAX_ROWS` (50,000), and `onCapped` fires if the cap
+    stopped the export short. `fetchAllExportRows` is the same walk, exported
+    for hand-built downloads.
+
+  With neither, the Export button is **not rendered** and a development warning
+  says why. Writing the current page as if it were everything is the one answer
+  that is always wrong.
+
 - `scope: "selected"` — the ticked rows, in table order. Selection is a set of
   ids, so a row checked on page 1 is still in the file while page 3 is on
   screen. Nothing ticked writes a header-only file.

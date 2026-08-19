@@ -1,9 +1,15 @@
-import { resolveLabels } from "@adapttable/core";
+import { resolveLabels, showSimpleFilterFields } from "@adapttable/core";
 import {
+  fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
+  SidePanelLayout,
+  useCommandPalette,
   useDataTableShell,
   useMountStagger,
+  useStickyToolbarLayout,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import {
   Box,
@@ -19,6 +25,8 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterDrawer } from "./components/FilterDrawer";
@@ -27,7 +35,8 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { SidePanel } from "./components/SidePanel";
+import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
@@ -65,21 +74,30 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const { filtersMode = "popover" } = props;
   // The whole shared orchestration lives in core's shell; MUI adds only its
   // kit's row `size` over the returned bundles.
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        labels={resolveLabels(props.labels)}
-        registry={registry}
-      />
+    <Stack spacing={3} data-adapttable-part="filters-form">
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-    </div>
+      {simpleFiltersOn ? (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          labels={resolveLabels(props.labels)}
+          registry={registry}
+        />
+      ) : null}
+    </Stack>
   ));
   const {
     chrome: c,
@@ -96,11 +114,59 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasRowReorder,
     toolbarProps,
   } = shell;
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(
+      props.stickyHeader,
+      props.stickyToolbar,
+      props.maxHeight != null
+    ),
+    props.stickyTop ?? 0
+  );
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: c.allColumns,
+    labels: labels,
+    rowFor: (rowId) =>
+      shell.source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        shell.source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        c.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        shell.setFiltersOpen(true);
+      },
+    },
+    sortBy: shell.source.sortBy,
+    sortDir: shell.source.sortDir,
+  });
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels: labels,
+    onPrint: props.onPrint,
+    onExport: shell.toolbarProps.onExportCsv,
+    onClearFilters: c.clearFilters,
+    hasFilters: c.activeFilterCount > 0,
+  });
   const { confirm } = c;
-  const tableProps = { ...shell.tableProps, size };
+  const tableProps = {
+    ...shell.tableProps,
+    size,
+    stickyTop: stickyBar.headerOffset,
+  };
   useMountStagger(rootRef, [viewSource.rows.length, c.isMobile], {
     enabled: animate,
   });
@@ -169,6 +235,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <Paper
       ref={rootRef}
+      {...contextMenu.regionProps}
       variant="outlined"
       dir={props.dir}
       className={
@@ -185,7 +252,22 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : null}
       <FindBar find={shell.find} labels={labels} />
       <Stack spacing={1.5}>
-        <Box className={classNames?.toolbar}>
+        <Box
+          data-adapttable-part="toolbar"
+          ref={stickyBar.toolbarRef}
+          className={classNames?.toolbar}
+          sx={
+            stickyBar.toolbarStyle
+              ? {
+                  position: "sticky",
+                  top: stickyBar.toolbarStyle.top,
+                  zIndex: 3,
+                  bgcolor: "background.paper",
+                  pb: 1.5,
+                }
+              : undefined
+          }
+        >
           <Toolbar
             {...toolbarProps}
             savedViewsMenu={savedViewsMenu}
@@ -216,17 +298,49 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             labels={labels}
           />
         )}
-        {viewSource.error ? (
-          <ErrorState
-            error={viewSource.error}
-            labels={labels}
-            onRetry={
-              viewSource.refetch ? () => void viewSource.refetch?.() : undefined
-            }
-          />
-        ) : (
-          body
-        )}
+        <CommandPalette
+          commands={palette.commands}
+          open={palette.open}
+          onClose={palette.close}
+          labels={labels}
+        />
+        <ContextMenu
+          items={contextMenu.items}
+          at={contextMenu.at}
+          onClose={contextMenu.close}
+          container={shell.fullscreen.container}
+          labels={labels}
+        />
+        <SidePanelLayout
+          side={props.sidePanel?.side}
+          body={
+            <>
+              {c.errorState
+                ? (fillSlot(slots?.error, c.errorState) ?? (
+                    <ErrorState
+                      error={c.errorState.error}
+                      labels={labels}
+                      onRetry={c.errorState.retry}
+                    />
+                  ))
+                : body}
+            </>
+          }
+          panel={
+            props.sidePanel?.open != null && (
+              <SidePanel
+                panels={props.sidePanel.panels}
+                openPanel={props.sidePanel.open}
+                onOpenPanel={props.sidePanel.onOpenChange}
+                onClose={() => {
+                  props.sidePanel?.onOpenChange(null);
+                }}
+                side={props.sidePanel.side}
+                labels={labels}
+              />
+            )
+          }
+        />
         {canLoadMore && viewSource.hasNextPage && (
           <Box
             ref={loadMoreRef}
@@ -249,6 +363,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               pagination={table.pagination}
               total={viewSource.total}
               limit={viewSource.limit}
+              defaultLimit={viewSource.defaultLimit}
               setPage={viewSource.setPage}
               setLimit={viewSource.setLimit}
               labels={labels}
@@ -268,7 +383,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={shell.source.rows.length}
+        page={shell.source.page}
+        limit={shell.source.limit}
+        total={shell.source.total}
+        selected={table.selection?.selectedCount ?? 0}
         stats={shell.selectionStats}
         labels={labels}
         locale={props.locale}

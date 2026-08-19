@@ -13,10 +13,30 @@ import type { VirtualTableRow } from "../virtual/useTableVirtualization";
 import { resolveVirtualRows } from "../virtual/useTableVirtualization";
 import type { RowPinSide } from "./rowPinning";
 
-/** `data-adapttable-part` on the sticky tbodies. */
+/** `data-adapttable-part` on a pinned row in the shared tbody. */
 export const PINNED_TOP_PART = "pinned-top";
-/** Bottom sticky section. */
+/** Bottom pin marker on that row. */
 export const PINNED_BOTTOM_PART = "pinned-bottom";
+
+/** Part name for a pinned row, or `undefined` when the row is not pinned. */
+export function pinnedRowPart(
+  side: RowPinSide | undefined
+): typeof PINNED_TOP_PART | typeof PINNED_BOTTOM_PART | undefined {
+  if (side === "top") return PINNED_TOP_PART;
+  if (side === "bottom") return PINNED_BOTTOM_PART;
+  return undefined;
+}
+
+/** Sticky style when the row is pinned and the kit asked for sticky pins. */
+export function pinnedRowSticky(
+  side: RowPinSide | undefined,
+  sticky: boolean,
+  headerOffsetPx: number
+): ReturnType<typeof pinnedRowStickyStyle> | undefined {
+  if (!sticky || !side) return undefined;
+  const offset = side === "bottom" ? 0 : headerOffsetPx;
+  return pinnedRowStickyStyle(side, offset);
+}
 
 /** Sticky style for a pinned-row section (tbody or the row itself). */
 export function pinnedRowStickyStyle(

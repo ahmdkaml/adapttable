@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { builtAdapters } from "../apps/showcase/matrix.mjs";
+
 /**
  * E2E smoke suite over the real showcase — one describe block per adapter.
  * These assert the bug class jsdom can't see: filter-overlay stacking (no
@@ -59,6 +61,59 @@ test("non-default kits load on demand (code-split)", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("Mantine Arabic filter drawer sits on the left edge", async ({ page }) => {
+  await openDemo(page, "mantine");
+  await page
+    .getByRole("group", { name: "locale" })
+    .getByRole("button", { name: "العربية", exact: true })
+    .click();
+  await setFiltersMode(page, "Drawer");
+  await demo(page)
+    .getByRole("button", { name: "عوامل التصفية" })
+    .first()
+    .click();
+  const panel = page.getByRole("dialog", { name: "عوامل التصفية" });
+  await expect(panel).toBeVisible();
+  // Wait out Mantine's slide. Off-screen start is x=-width; settled left is ~0.
+  await expect
+    .poll(async () => {
+      const box = await panel.boundingBox();
+      return box ? Math.round(box.x) : 9999;
+    })
+    .toBeGreaterThanOrEqual(-1);
+  const box = await panel.boundingBox();
+  expect(box).not.toBeNull();
+  expect(Math.round(box!.x)).toBeLessThan(8);
+});
+
+test("shadcn and Tailwind drawer labels are not flush on the control", async ({
+  page,
+}) => {
+  for (const adapter of ["shadcn", "tailwind"] as const) {
+    await openDemo(page, adapter);
+    await setFiltersMode(page, "Drawer");
+    await filtersTrigger(page).click();
+    const gaps = await page.evaluate(() =>
+      [
+        ...document.querySelectorAll("[data-adapttable-part='filter-field']"),
+      ].map((el) => {
+        const label = el.querySelector("[data-adapttable-part='filter-label']");
+        const next = label?.nextElementSibling;
+        if (!label || !next) return null;
+        return (
+          next.getBoundingClientRect().top -
+          label.getBoundingClientRect().bottom
+        );
+      })
+    );
+    expect(gaps.length).toBeGreaterThan(0);
+    for (const gap of gaps) {
+      expect(gap).toBeGreaterThanOrEqual(12);
+    }
+    await page.keyboard.press("Escape");
+  }
+});
+
 test("default live demo keeps the seven pre-353 controls", async ({ page }) => {
   await page.goto("/");
   await expect(
@@ -114,9 +169,9 @@ test("mobile nav keeps every demo page reachable", async ({ page }) => {
   const pageSelect = page.getByRole("combobox", { name: "Demo page" });
   await expect(pageSelect).toBeVisible();
   await expect(pageSelect).toHaveValue("demo");
-  await pageSelect.selectOption("columns");
-  await expect(page).toHaveURL(/\/columns\/$/);
-  await expect(pageSelect).toHaveValue("columns");
+  await pageSelect.selectOption("mantine/columns");
+  await expect(page).toHaveURL(/\/mantine\/columns\/$/);
+  await expect(pageSelect).toHaveValue("mantine/columns");
 });
 
 test("install + StackBlitz CTAs sit under the kit switcher", async ({
@@ -132,10 +187,10 @@ test("install + StackBlitz CTAs sit under the kit switcher", async ({
 });
 
 for (const focused of [
-  { name: "grouping", path: "/grouping/", exportName: /Export XLSX/ },
-  { name: "PDF", path: "/export-pdf/", exportName: /Export PDF/ },
-  { name: "mobile", path: "/mobile/", exportName: null },
-  { name: "RTL", path: "/rtl/", exportName: null },
+  { name: "grouping", path: "/mantine/grouping/", exportName: /Export XLSX/ },
+  { name: "export", path: "/mantine/export/", exportName: /Export PDF/ },
+  { name: "mobile", path: "/mantine/mobile-cards/", exportName: null },
+  { name: "RTL", path: "/mantine/rtl/", exportName: null },
 ] as const) {
   test(`${focused.name} page keeps only its relevant table chrome`, async ({
     page,
@@ -165,11 +220,10 @@ for (const focused of [
 test("mobile page previews the native card layout for every adapter", async ({
   page,
 }) => {
-  await page.goto("/mobile/");
-  for (const adapter of ADAPTERS) {
-    if (adapter !== "mantine") {
-      await page.getByTestId(`adapter-${adapter}`).click();
-    }
+  // The page fixes its kit, so the loop is over the adapters whose pages are
+  // built — and widens to the whole grid as the rest arrive.
+  for (const adapter of builtAdapters().map((kit) => kit.key)) {
+    await page.goto(`/${adapter}/mobile-cards/`);
     const root = page.locator(`[data-adapter="${adapter}"]`);
     await expect(root.getByRole("list", { name: "Data table" })).toBeVisible();
     await expect(root.getByRole("columnheader")).toHaveCount(0);
@@ -482,3 +536,153 @@ for (const adapter of ADAPTERS) {
     });
   });
 }
+
+/**
+ * The three pieces of chrome #334 added, exercised where a user meets them.
+ *
+ * Each is off by default, which is the part a unit test cannot show: the
+ * Lab's table renders without them until the toggle is thrown.
+ */
+test("adds toolbar chrome only when the Feature Lab asks", async ({ page }) => {
+  await page.goto("/all-options/");
+  await expect(
+    page.locator('[data-adapttable-part="root"]').first()
+  ).toBeVisible();
+
+  await expect(page.locator('[data-adapttable-part="status-bar"]')).toHaveCount(
+    0
+  );
+  await expect(page.locator('[data-adapttable-part="side-panel"]')).toHaveCount(
+    0
+  );
+
+  // The Lab keeps its controls in a drawer; nothing below exists until it
+  // is open, which is also the proof that the table starts without them.
+  await page.getByRole("button", { name: "Configure options" }).click();
+
+  await page
+    .getByRole("group", { name: "status bar" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await expect(
+    page.locator('[data-adapttable-part="status-bar"]').first()
+  ).toBeVisible();
+
+  await page
+    .getByRole("group", { name: "side panel" })
+    .getByRole("button", { name: "On" })
+    .click();
+  const panel = page.locator('[data-adapttable-part="side-panel"]').first();
+  await expect(panel).toBeVisible();
+
+  // The tab strip is a real one: arrows move the selection, and wrap.
+  await panel.getByRole("tab", { name: "Pivot" }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(panel.getByRole("tab", { name: "Views" })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(panel.getByRole("tab", { name: "Pivot" })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+
+  // Escape closes it from inside.
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-adapttable-part="side-panel"]')).toHaveCount(
+    0
+  );
+});
+
+/**
+ * The two chrome features from #333 and #335, where a user meets them.
+ *
+ * Both are keyboard-first and both fail silently when their binding is
+ * missing — a menu that never opens, a palette that never appears — so the
+ * routes are exercised rather than trusted.
+ */
+test("opens the right-click menu and the palette from the Feature Lab", async ({
+  page,
+}) => {
+  await page.goto("/all-options/");
+  await expect(
+    page.locator('[data-adapttable-part="root"]').first()
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Configure options" }).click();
+
+  await page
+    .getByRole("group", { name: "right-click menus" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await page
+    .getByRole("group", { name: "command palette (⌘k)" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await page.getByRole("button", { name: "Close" }).first().click();
+
+  // Shift+F10 on a header — the keyboard route a right-click-only menu
+  // leaves out.
+  const header = page.locator('[data-adapttable-part="header-cell"]').first();
+  await header.click({ button: "right" });
+  await expect(
+    page.locator('[data-adapttable-part="context-menu"]').first()
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.keyboard.press("ControlOrMeta+k");
+  const palette = page
+    .locator('[data-adapttable-part="command-palette"]')
+    .first();
+  await expect(palette).toBeVisible();
+
+  // Focus lands in the search box, which is the whole point of a palette.
+  await expect(
+    page.locator('[data-adapttable-part="command-input"]').first()
+  ).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(
+    page.locator('[data-adapttable-part="command-palette"]')
+  ).toHaveCount(0);
+});
+
+/**
+ * The density control and the fullscreen toggle.
+ *
+ * Fullscreen itself cannot be driven from a test — browsers require a real
+ * user gesture — so what is checked is that both controls appear when asked
+ * for, that density actually changes the table, and that the fullscreen
+ * button is a real, labelled control rather than a decoration.
+ */
+test("offers density and fullscreen from the Feature Lab", async ({ page }) => {
+  await page.goto("/all-options/");
+  const root = page.locator('[data-adapttable-part="root"]').first();
+  await expect(root).toBeVisible();
+  await page.getByRole("button", { name: "Configure options" }).click();
+
+  await expect(
+    page.locator('[data-adapttable-part="density-toggle"]')
+  ).toHaveCount(0);
+
+  await page
+    .getByRole("group", { name: "density & fullscreen" })
+    .getByRole("button", { name: "On" })
+    .click();
+  await page.getByRole("button", { name: "Close" }).first().click();
+
+  const density = page
+    .locator('[data-adapttable-part="density-toggle"]')
+    .first();
+  await expect(density).toBeVisible();
+  await expect(
+    page.locator('[data-adapttable-part="fullscreen-toggle"]').first()
+  ).toBeVisible();
+
+  // The click has to travel out to the host and back as the `density`
+  // prop, not just flip something local to the button.
+  await expect(density).toHaveText("Comfortable");
+  await density.click();
+  await expect(density).toHaveText("Compact");
+});

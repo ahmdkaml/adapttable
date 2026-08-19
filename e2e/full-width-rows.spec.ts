@@ -3,8 +3,8 @@ import { expect, type Page, test } from "@playwright/test";
 import { configureFeatureLab } from "./feature-lab";
 
 /**
- * Extra rows across every kit — Extras on inserts a separator and a
- * full-width note. RTL uses the same slots; they are ids, not geometry.
+ * Extra rows across every kit — On inserts a full-width note in front of a
+ * person. RTL uses the same slot; it is an id, not geometry.
  */
 
 const ADAPTERS = [
@@ -36,22 +36,26 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
 
 for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
-    test("inserts a separator and a full-width note", async ({ page }) => {
+    test("inserts a full-width note in front of a person", async ({ page }) => {
       await openDemo(page, adapter);
-      await configureFeatureLab(page, "extra rows", "On");
+      await configureFeatureLab(page, "extra attached to a person", "On");
       await expect(
-        demo(page).locator('[data-adapttable-part="separator-row"]').first()
+        demo(page).locator('[data-adapttable-part="full-width-row"]').first()
       ).toBeVisible();
-      await expect(demo(page).getByText("Section note").first()).toBeVisible();
+      await expect(
+        demo(page)
+          .getByText(/Full-width extra attached/)
+          .first()
+      ).toBeVisible();
     });
 
     test("keeps the same slots under RTL", async ({ page }) => {
       await openDemo(page, adapter);
-      await configureFeatureLab(page, "extra rows", "On");
+      await configureFeatureLab(page, "extra attached to a person", "On");
       await configureFeatureLab(page, "locale", "العربية");
       await expect(demo(page).locator('[dir="rtl"]').first()).toBeVisible();
       await expect(
-        demo(page).locator('[data-adapttable-part="separator-row"]').first()
+        demo(page).locator('[data-adapttable-part="full-width-row"]').first()
       ).toBeVisible();
     });
   });

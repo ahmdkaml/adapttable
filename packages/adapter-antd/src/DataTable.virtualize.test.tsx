@@ -130,3 +130,37 @@ describe("<DataTable> (Ant Design) mobile card windowing", () => {
     expect(within(list).getAllByRole("listitem")).toHaveLength(50);
   });
 });
+
+/**
+ * antd's own virtualizer draws the body as a div grid — its rows are `<div>`s,
+ * not `<tr>`s. Naming that body `tbody` on a `<tbody>` element puts a table
+ * section inside antd's holder div and div rows inside a table section: invalid
+ * both ways, and React says so at runtime. The part name still has to land, so
+ * it lands on the element antd actually renders.
+ */
+describe("<DataTable> (Ant Design) virtual table body", () => {
+  const bodyPart = (container: HTMLElement) => {
+    const parts = container.querySelectorAll('[data-adapttable-part="tbody"]');
+    expect(parts).toHaveLength(1);
+    return parts[0]!;
+  };
+
+  it("names a div when antd virtualizes the body", () => {
+    const { container } = mount({ virtualize: true });
+    expect(bodyPart(container).tagName).toBe("DIV");
+    // The invalid nesting this guards: no table section inside the holder.
+    expect(container.querySelector("tbody")).toBeNull();
+  });
+
+  it("names the real tbody when it is not virtualized", () => {
+    const { container } = mount();
+    expect(bodyPart(container).tagName).toBe("TBODY");
+  });
+
+  it("keeps the tbody when grouping turns antd's virtualizer off", () => {
+    // Grouping and antd's virtual mode are mutually exclusive, so the body is
+    // a real section again even with `virtualize` asked for.
+    const { container } = mount({ virtualize: true, groupBy: "city" });
+    expect(bodyPart(container).tagName).toBe("TBODY");
+  });
+});

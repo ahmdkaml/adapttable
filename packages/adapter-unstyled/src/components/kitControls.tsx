@@ -3,6 +3,13 @@
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
 import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+  type TableSource,
+  useHeaderFilterOverlay,
+} from "@adapttable/core";
+import {
   BatchEditBarChrome,
   type BatchEditBarProps,
   type BatchEditButtonProps,
@@ -46,6 +53,10 @@ import {
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
 import type { ChangeEvent } from "react";
+
+import type { DataTableClassNames } from "../types";
+import { AutoFilterForm } from "./AutoFilterForm";
+import { FiltersIcon } from "./icons";
 
 export type {
   BatchEditBarProps,
@@ -169,11 +180,7 @@ function HeaderMulti({
   onToggle,
 }: FilterHeaderMultiProps) {
   return (
-    <details
-      data-adapttable-part="filter-header-menu"
-      className={menuClassName}
-      style={{ position: "relative", width: "100%" }}
-    >
+    <details style={{ position: "relative", width: "100%" }}>
       <summary
         aria-label={label}
         data-adapttable-part="filter-header-input"
@@ -208,6 +215,8 @@ function HeaderMulti({
       </summary>
       <fieldset
         aria-label={label}
+        data-adapttable-part="filter-header-menu"
+        className={menuClassName}
         style={{
           position: "absolute",
           zIndex: 8,
@@ -266,6 +275,78 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
+}
+
+/** Filters icon on the column header — the same field the Filters panel draws. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<
+    FilterHeaderControlProps<TRow> & { classNames?: DataTableClassNames }
+  >
+) {
+  const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps, resetKey } =
+    useHeaderFilterOverlay(props, { pointerDismiss: false });
+  return (
+    <details
+      key={resetKey}
+      {...sessionProps}
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      data-adapttable-part="filter-header-trigger"
+      className={props.className ?? props.classNames?.filterHeaderTrigger}
+      style={{ position: "relative", display: "inline-block" }}
+    >
+      <summary
+        aria-label={filterLabel(props.def)}
+        data-active={active ? "" : undefined}
+        style={{
+          listStyle: "none",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          padding: 2,
+        }}
+      >
+        <FiltersIcon size={14} />
+      </summary>
+      <div
+        data-adapttable-part="filter-header-cell"
+        className={props.classNames?.filterHeaderCell}
+        style={{
+          position: "absolute",
+          zIndex: 3,
+          insetInlineStart: 0,
+          top: "100%",
+          minWidth: "20rem",
+          padding: "0.5rem",
+          background: "Canvas",
+          color: "CanvasText",
+          border: "1px solid currentColor",
+        }}
+      >
+        <AutoFilterForm
+          defs={[props.def]}
+          source={source as TableSource<TRow>}
+          labels={props.labels}
+          registry={props.registry}
+          classNames={props.classNames}
+        />
+      </div>
+    </details>
+  );
 }
 
 function FindSearch({

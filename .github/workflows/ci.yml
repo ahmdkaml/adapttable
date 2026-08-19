@@ -177,6 +177,12 @@ jobs:
         if: needs.changes.outputs.dedupe != 'true'
         run: pnpm check:docsurface
 
+      # Reads packages/*/src only, so it follows the code steps rather than
+      # the doc guards: a docs-only diff cannot change which parts a kit names.
+      - name: Check every structural part is named in every kit
+        if: needs.changes.outputs.run-packages == 'true'
+        run: pnpm check:parts
+
       - name: Lint
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm lint
@@ -184,6 +190,13 @@ jobs:
       - name: Lint root tooling
         if: needs.changes.outputs.run-packages == 'true'
         run: pnpm lint:root
+
+      # Root tooling has its own suite under `node --test`: the showcase page
+      # manifest against the pages on disk, and the sitemap route arithmetic
+      # both the docs build and the composed-site check run on.
+      - name: Test root tooling
+        if: needs.changes.outputs.run-packages == 'true'
+        run: pnpm test:scripts
 
       - name: Typecheck
         if: needs.changes.outputs.run-packages == 'true'
@@ -253,6 +266,14 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # The committed etc/*.api.md reports are the reviewable form of the
+      # public surface — one per entry point every library package advertises,
+      # core's seven subpaths included. This byte-compares a fresh extraction
+      # against all of them, so an export that changes shape has to arrive with
+      # the report that shows it.
+      - name: Check the extracted API reports are current
+        run: pnpm api:check
 
       - name: Validate published package configs
         run: pnpm publint

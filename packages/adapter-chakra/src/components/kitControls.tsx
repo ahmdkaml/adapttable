@@ -3,6 +3,12 @@
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
 import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+  useHeaderFilterOverlay,
+} from "@adapttable/core";
+import {
   BatchEditBarChrome,
   type BatchEditBarProps,
   type BatchEditButtonProps,
@@ -54,6 +60,8 @@ import {
   Stack,
 } from "@chakra-ui/react";
 
+import { FiltersIcon } from "../icons";
+import { AutoFilterForm } from "./AutoFilterForm";
 import { Checkbox, NativeSelect } from "./primitives";
 
 export type {
@@ -226,6 +234,68 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
+}
+
+/** Funnel on the column header — the same field the Filters panel draws. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(props);
+  return (
+    <Popover.Root
+      open={open}
+      onOpenChange={(event) => setOpen(event.open)}
+      positioning={{ placement: "bottom-start" }}
+      closeOnInteractOutside={false}
+      lazyMount
+    >
+      <Popover.Trigger asChild>
+        <IconButton
+          {...sessionProps}
+          type="button"
+          size="xs"
+          variant={active ? "solid" : "ghost"}
+          aria-label={filterLabel(props.def)}
+          data-adapttable-part="filter-header-trigger"
+          data-active={active ? "" : undefined}
+        >
+          <FiltersIcon size={14} />
+        </IconButton>
+      </Popover.Trigger>
+      <Portal>
+        <Popover.Positioner>
+          <Popover.Content
+            {...sessionProps}
+            width="max-content"
+            minWidth="20rem"
+            p={2}
+            data-adapttable-part="filter-header-cell"
+          >
+            <AutoFilterForm
+              defs={[props.def]}
+              source={source}
+              labels={props.labels}
+              registry={props.registry}
+            />
+          </Popover.Content>
+        </Popover.Positioner>
+      </Portal>
+    </Popover.Root>
+  );
 }
 
 function FindSearch({

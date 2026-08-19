@@ -13,13 +13,41 @@
  */
 
 export { LiveRegion, type LiveRegionProps } from "./a11y/LiveRegion";
+export {
+  CommandPaletteChrome,
+  type CommandPaletteChromeProps,
+  type CommandPaletteInputProps,
+  type CommandPaletteItemProps,
+  type CommandPaletteSlots,
+  type CommandPaletteSurfaceProps,
+} from "./actions/CommandPaletteChrome";
 export { resolveDisabledReason } from "./actions/confirm";
+export {
+  ContextMenuChrome,
+  type ContextMenuChromeProps,
+  type ContextMenuItemProps,
+  type ContextMenuSlots,
+  type ContextMenuSurfaceProps,
+} from "./actions/ContextMenuChrome";
+export {
+  resolveContextTarget,
+  type ResolvedContextTarget,
+  ROW_ID_ATTRIBUTE,
+} from "./actions/contextMenuRegion";
 export { bulkActionErrorMessage } from "./actions/useBulkActionRunner";
 export {
   type BulkBarState,
   useBulkBarState,
   type UseBulkBarStateOptions,
 } from "./actions/useBulkBarState";
+export {
+  type TableCommandPalette,
+  useCommandPalette,
+} from "./actions/useCommandPalette";
+export {
+  type TableContextMenu,
+  useTableContextMenu,
+} from "./actions/useTableContextMenu";
 export {
   type ColumnGroupToggleButtonProps,
   ColumnGroupToggleChrome,
@@ -58,15 +86,33 @@ export {
   type ColumnSizingOptions,
   fittedTableStyle,
 } from "./columns/columnSizing";
-export { pinnedColumnWidth } from "./columns/columnWidths";
 export {
   applyCollapsedColumnGroups,
+  type ColumnGroupDef,
+  type ColumnInput,
+  flattenColumnTree,
+} from "./columns/columnTree";
+export { pinnedColumnWidth } from "./columns/columnWidths";
+export {
   COLUMN_GROUP_ID_SEP,
+  COLUMN_GROUP_RENDER_PREFIX,
+  COLUMN_GROUP_STUB_PREFIX,
+  COLUMN_GROUP_STUB_WIDTH,
+  columnGroupHeaderCaption,
   columnGroupId,
   columnGroupPath,
+  columnGroupStubStyle,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  groupedHeaderChildRule,
   type HeaderGroupCell,
   headerGroupRow,
   headerGroupRows,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
+  isColumnGroupRenderKey,
+  isColumnGroupStubKey,
+  isColumnGroupSummaryKey,
   toggleCollapsedColumnGroup,
 } from "./columns/headerGroups";
 export { EyeIcon, GripIcon, PinIcon } from "./columns/icons";
@@ -85,6 +131,7 @@ export {
   isMatchedCell,
   isSelectedCell,
   logicalAlign,
+  mergedCellStyle,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
   resolveMobileLabel,
@@ -182,6 +229,13 @@ export {
   type FindSearchProps,
 } from "./find/FindBar";
 export {
+  ColumnSelectCheckboxChrome,
+  type ColumnSelectCheckboxChromeProps,
+  type ColumnSelectCheckboxProps,
+  columnSelectLabel,
+  type ColumnSelectSlots,
+} from "./focus/ColumnSelectCheckbox";
+export {
   FillHandleChrome,
   type FillHandleChromeProps,
   type FillHandleSlotProps,
@@ -199,6 +253,13 @@ export {
   type SelectionStatsSlots,
 } from "./focus/SelectionStatsBar";
 export {
+  StatusBarChrome,
+  type StatusBarChromeProps,
+  type StatusBarItem,
+  type StatusBarSlotProps,
+  type StatusBarSlots,
+} from "./focus/StatusBarChrome";
+export {
   GroupMoreButtonChrome,
   type GroupMoreButtonChromeProps,
   type GroupMoreButtonProps,
@@ -212,17 +273,58 @@ export {
 } from "./hooks/useMountStagger";
 export { ExpandChevron, FiltersIcon, SearchIcon } from "./icons";
 export {
+  SidePanelChrome,
+  type SidePanelChromeProps,
+  type SidePanelCloseProps,
+  type SidePanelFrameProps,
+  SidePanelLayout,
+  type SidePanelLayoutProps,
+  type SidePanelSlots,
+  type SidePanelTabProps,
+} from "./layout/SidePanelChrome";
+export { type FullscreenState, useFullscreen } from "./layout/useFullscreen";
+export {
+  resolveStickyToolbar,
+  useStickyToolbarLayout,
+} from "./layout/useStickyToolbarLayout";
+export {
   type PaginationItem,
   paginationItems,
   type PaginationSlot,
   paginationSlots,
 } from "./pagination/paginationMath";
-export { type BodyCell, cellsForRow, rowSpanSignature } from "./rows/cellSpan";
 export {
+  type PivotAddProps,
+  type PivotAggProps,
+  type PivotFieldProps,
+  PivotPanelChrome,
+  type PivotPanelChromeProps,
+  type PivotPanelSlots,
+  type PivotPanelSurfaceProps,
+  type PivotZoneProps,
+} from "./pivot/PivotPanelChrome";
+export {
+  type BodyCell,
+  bodyCellsHaveRowSpan,
+  cellsForRow,
+  type CellSpanAppearance,
+  cellSpanMark,
+  rowSpanSignature,
+} from "./rows/cellSpan";
+export {
+  EXTRA_OVER_SPAN_ROW_STYLE,
+  EXTRA_OVER_SPAN_STYLE,
   EXTRA_ROW_PARTS,
+  extraCountBeforeRowIds,
+  extraCoveredTableSlots,
   type ExtraEntry,
+  extraHostFillStyle,
   type ExtraRow,
+  extraRowsForSection,
+  extraUncoveredColSpans,
+  inflateBodyCellRowSpans,
   insertExtraRows,
+  insertExtrasBeforeRows,
   isExtraEntry,
 } from "./rows/extraRows";
 export {
@@ -230,6 +332,8 @@ export {
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowCellStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   pinnedRowStickyStyle,
   useOffsetHeight,
 } from "./rows/pinnedRowChrome";
@@ -264,6 +368,7 @@ export {
 } from "./rows/rowStyle";
 export { deriveSortByOptions } from "./sort/sortByOptions";
 export { type DataModeProps } from "./source/useTableData";
+export { fillSlot, tableErrorState } from "./state/errorState";
 export {
   type SharedTableRenderProps,
   type TableRenderModel,
@@ -288,6 +393,17 @@ export {
   type TreeToggleSlots,
 } from "./tree/TreeToggle";
 export { useResolvedAdapter } from "./url/adapter";
+export {
+  type SavedViewControlKey,
+  type SavedViewRowControl,
+  SavedViewsPanelChrome,
+  type SavedViewsPanelChromeProps,
+  type SavedViewsPanelEmptyProps,
+  type SavedViewsPanelInputProps,
+  type SavedViewsPanelRowProps,
+  type SavedViewsPanelSlots,
+  type SavedViewsPanelSurfaceProps,
+} from "./url/SavedViewsPanelChrome";
 export { type SearchInputState } from "./useDataTable/useSearchInput";
 export {
   type DataTableShellProps,
@@ -296,8 +412,12 @@ export {
 export {
   type BulkBarChromeProps,
   type FilterTriggerToggle,
+  printToolbar,
   type TableBodyRegion,
   type ToolbarChromeProps,
+  undoRedoToolbar,
+  type ViewControlsToolbar,
+  viewControlsToolbar,
 } from "./useTableChrome";
 export { ColumnSpacer, type ColumnSpacerProps } from "./virtual/ColumnSpacer";
 export {

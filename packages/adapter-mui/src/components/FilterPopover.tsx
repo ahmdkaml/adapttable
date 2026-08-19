@@ -94,6 +94,7 @@ export function FilterPopover({
       <Paper
         ref={paperRef}
         elevation={8}
+        dir={dir}
         sx={{
           width: 380,
           maxWidth: "calc(100vw - 32px)",

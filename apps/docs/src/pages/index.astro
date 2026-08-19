@@ -178,7 +178,23 @@ const JSON_LD = JSON.stringify({
             set:html={`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', 'G-FT8LY7Z15Y');`}
+gtag('config', 'G-FT8LY7Z15Y');
+(function () {
+  function report(type, fatal) {
+    if (typeof gtag !== 'function') return;
+    gtag('event', 'web_exception', {
+      exception_type: type,
+      fatal: fatal,
+      non_interaction: true
+    });
+  }
+  window.addEventListener('error', function (event) {
+    report(event.error && event.error.name ? event.error.name : 'Error', true);
+  });
+  window.addEventListener('unhandledrejection', function (event) {
+    report(event.reason && event.reason.name ? event.reason.name : 'UnhandledRejection', false);
+  });
+})();`}
           />
           <script
             is:inline

@@ -50,11 +50,11 @@ Behavior lives in `@adapttable/core`; this package only renders Base UI primitiv
 
 ## Features
 
-- **Automatic mobile cards** — below the mobile breakpoint every row renders as a card (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mobile/).
+- **Automatic mobile cards** — below the mobile breakpoint every row renders as a card (same filters, search, selection and URL state) and infinite scroll replaces the pager; tune per column with `mobileLabel` / `hideOnMobile`, pin either layout with `forceMobile`. [See it flip live](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/).
 - **Client or server data** through one `TableSource` contract — same props either way.
 - **URL-synced** search / sort / filters / page — shareable, deep-linkable links.
 - **Sorting** via sortable headers.
-- **Filtering** — a `Popover` or `Dialog` of filters plus removable chips, with a filter count on the trigger.
+- **Filtering** — a `Popover` or `Dialog` of filters plus removable chips, with a filter count on the trigger. Nested AND/OR filter tree in the same panel.
 - **Selection + bulk actions** using Base UI `Checkbox`es, with confirm dialogs (`bulkActions`).
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — inline detail panels via `renderRowDetail`.
@@ -68,8 +68,10 @@ Behavior lives in `@adapttable/core`; this package only renders Base UI primitiv
 - **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
   ARIA grid semantics and screen-reader announcements.
 - **Row grouping** (`groupBy`) with per-group aggregates sharing the `summaryRow` mapper.
+- **Pivot tables** — rows, columns and measures with subtotals, from the optional
+  `@adapttable/core/pivot` entry.
 - **Tree data** (`getChildren` / `getParentId`) — hierarchical rows with expand/collapse, on desktop and on cards.
-- **Column management** — show/hide, reorder, pin (sticky) and resize, from a built-in menu.
+- **Column management** — show/hide, reorder, pin (sticky) and resize, plus collapsible column groups.
 - **Sparkline columns** (`@adapttable/core/sparkline`) — bar, line and area as inline SVG. The base bundle never pays for it.
 - **PDF export and print layout** (`@adapttable/core/pdf`) — optional entry; `pdfWriter()` on `exportCsv`, `printTable` for the browser dialog.
 - **Formula engine** (`@adapttable/core/formula`) — spreadsheet formulas over rows and aggregates; circular refs report `#CYCLE!`.

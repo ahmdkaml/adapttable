@@ -42,12 +42,20 @@ export function ColumnGroupToggleChrome({
   const Button = slots.Button;
   return (
     <Button
-      label={
-        cell.collapsed ? labels.expandColumnGroup : labels.collapseColumnGroup
-      }
+      label={toggleLabel(cell, labels)}
       expanded={!cell.collapsed}
       className={className}
       onClick={() => onToggle(id)}
     />
   );
+}
+
+function toggleLabel(
+  cell: HeaderGroupCell,
+  labels: Required<TableLabels>
+): string {
+  const action = cell.collapsed
+    ? labels.expandColumnGroup
+    : labels.collapseColumnGroup;
+  return cell.label ? `${action}: ${cell.label}` : action;
 }

@@ -1,10 +1,16 @@
-import { type TableSource } from "@adapttable/core";
+import { showSimpleFilterFields, type TableSource } from "@adapttable/core";
 import {
   ExportAnnouncer,
+  fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
+  SidePanelLayout,
+  useCommandPalette,
   useDataTableShell,
   useMountStagger,
+  useStickyToolbarLayout,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
@@ -12,6 +18,8 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterPanel } from "./components/FilterPanel";
@@ -22,7 +30,8 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer, RowsPerPageSelect } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { SidePanel } from "./components/SidePanel";
+import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { cx } from "./cx";
 import type { DataTableClassNames, DataTableProps } from "./types";
@@ -128,6 +137,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     bulkActions,
     classNames = NO_CLASSNAMES,
     toolbar,
+    toolbarSlots,
     animate = false,
   } = props;
 
@@ -136,22 +146,35 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration — data tier, filter runtime, chrome,
   // scroll reset, body windowing — lives in core's shell; this file renders
   // only semantic markup with class hooks over it.
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form" className={classNames.filtersForm}>
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        classNames={classNames}
-        labels={props.labels}
-        registry={registry}
-      />
+    <div
+      data-adapttable-part="filters-form"
+      className={classNames.filtersForm}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         classNames={classNames}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
+      {simpleFiltersOn ? (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          classNames={classNames}
+          labels={props.labels}
+          registry={registry}
+        />
+      ) : null}
     </div>
   ));
   const {
@@ -164,11 +187,59 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     filtersTrigger,
     rootRef,
     canLoadMore,
-    tableProps,
+    tableProps: shellTableProps,
   } = shell;
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(
+      props.stickyHeader,
+      props.stickyToolbar,
+      props.maxHeight != null
+    ),
+    props.stickyTop ?? 0
+  );
+  const tableProps = {
+    ...shellTableProps,
+    stickyTop: stickyBar.headerOffset,
+  };
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: chrome.allColumns,
+    labels,
+    rowFor: (rowId) =>
+      viewSource.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        viewSource.setSort(key, dir);
+      },
+      onHide: (key) => {
+        chrome.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        setFiltersOpen(true);
+      },
+    },
+    sortBy: viewSource.sortBy,
+    sortDir: viewSource.sortDir,
+  });
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels: labels,
+    onPrint: props.onPrint,
+    onExport: shell.toolbarProps.onExportCsv,
+    onClearFilters: chrome.clearFilters,
+    hasFilters: chrome.activeFilterCount > 0,
+  });
   const chromeProps: ResolvedDataTableProps<TRow> = {
     ...props,
     source: viewSource,
@@ -230,12 +301,25 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     exportLabel,
     onAddRow,
     addRowLabel,
+    onUndo,
+    onRedo,
+    density: toolbarDensity,
+    onDensityChange,
+    onToggleFullscreen,
+    isFullscreen,
+    canUndo,
+    canRedo,
+    undoLabel,
+    redoLabel,
+    onPrint,
+    printLabel,
   } = shell.toolbarProps;
 
   return (
     <div
       ref={rootRef}
       dir={dir}
+      {...contextMenu.regionProps}
       data-adapttable-part="root"
       data-mobile={chrome.isMobile || undefined}
       data-density={density}
@@ -254,14 +338,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <FindBar find={shell.find} labels={labels} />
       <div
         data-adapttable-part="toolbar"
+        ref={stickyBar.toolbarRef}
         className={classNames.toolbar}
         style={{
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           rowGap: 8,
+          ...stickyBar.toolbarStyle,
         }}
       >
+        {toolbarSlots?.start}
         {props.searchable !== false && (
           <span
             data-adapttable-part="search-field"
@@ -360,6 +447,28 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             sortDir={viewSource.sortDir}
           />
         )}
+        {onUndo && onRedo && (
+          <>
+            <button
+              type="button"
+              data-adapttable-part="undo-button"
+              className={classNames.undoButton}
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </button>
+            <button
+              type="button"
+              data-adapttable-part="redo-button"
+              className={classNames.redoButton}
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </button>
+          </>
+        )}
         {onExportCsv && (
           <>
             <button
@@ -398,6 +507,49 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             {addRowLabel}
           </button>
         )}
+        {onPrint && (
+          <button
+            type="button"
+            data-adapttable-part="print-button"
+            className={classNames.printButton}
+            onClick={onPrint}
+          >
+            {printLabel}
+          </button>
+        )}
+        {onDensityChange && (
+          <button
+            type="button"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            className={classNames.densityToggle}
+            onClick={() => {
+              onDensityChange(
+                toolbarDensity === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {toolbarDensity === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </button>
+        )}
+        {onToggleFullscreen && (
+          <button
+            type="button"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            className={classNames.fullscreenToggle}
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </button>
+        )}
+        {toolbarSlots?.end}
         {canLoadMore && !chrome.grouping && (
           <RowsPerPageSelect
             source={viewSource}
@@ -452,24 +604,61 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         />
       )}
 
-      {viewSource.error ? (
-        <ErrorState
-          error={viewSource.error}
-          labels={labels}
-          onRetry={
-            viewSource.refetch ? () => void viewSource.refetch?.() : undefined
-          }
-          classNames={classNames}
-        />
-      ) : (
-        <DataTableBody
-          chrome={chrome}
-          props={chromeProps}
-          classNames={classNames}
-          labels={labels}
-          tableProps={tableProps}
-        />
-      )}
+      <CommandPalette
+        commands={palette.commands}
+        open={palette.open}
+        onClose={palette.close}
+        labels={labels}
+        classNames={classNames}
+      />
+      <ContextMenu
+        items={contextMenu.items}
+        at={contextMenu.at}
+        onClose={contextMenu.close}
+        container={shell.fullscreen.container}
+        labels={labels}
+        classNames={classNames}
+      />
+      <SidePanelLayout
+        side={props.sidePanel?.side}
+        body={
+          <>
+            {chrome.errorState ? (
+              (fillSlot(props.slots?.error, chrome.errorState) ?? (
+                <ErrorState
+                  error={chrome.errorState.error}
+                  labels={labels}
+                  onRetry={chrome.errorState.retry}
+                  classNames={classNames}
+                />
+              ))
+            ) : (
+              <DataTableBody
+                chrome={chrome}
+                props={chromeProps}
+                classNames={classNames}
+                labels={labels}
+                tableProps={tableProps}
+              />
+            )}
+          </>
+        }
+        panel={
+          props.sidePanel?.open != null && (
+            <SidePanel
+              panels={props.sidePanel.panels}
+              openPanel={props.sidePanel.open}
+              onOpenPanel={props.sidePanel.onOpenChange}
+              onClose={() => {
+                props.sidePanel?.onOpenChange(null);
+              }}
+              side={props.sidePanel.side}
+              labels={labels}
+              classNames={classNames}
+            />
+          )
+        }
+      />
 
       {canLoadMore && viewSource.hasNextPage && (
         <div
@@ -507,10 +696,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           showRowsPerPage={!chrome.grouping}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={viewSource.rows.length}
+        page={viewSource.page}
+        limit={viewSource.limit}
+        total={viewSource.total}
+        selected={table.selection?.selectedCount ?? 0}
         stats={shell.selectionStats}
         labels={labels}
         locale={props.locale}
+        classNames={classNames}
       />
     </div>
   );

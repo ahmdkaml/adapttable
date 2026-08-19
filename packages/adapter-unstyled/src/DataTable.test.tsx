@@ -104,6 +104,32 @@ describe("<DataTable> (unstyled)", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps an off-list default page size after switching to 10", () => {
+    adapter = createMemoryAdapter("");
+    function ScaleHarness() {
+      const source = useFrontendData<Row>({
+        data: ROWS,
+        urlAdapter: adapter,
+        columns,
+        paginationMode: "infinite",
+        defaults: { limit: 500 },
+      });
+      return (
+        <DataTable source={source} columns={columns} rowKey={(r) => r.id} />
+      );
+    }
+    render(<ScaleHarness />);
+    const select = screen.getByLabelText("Rows per page");
+    expect(
+      within(select).getByRole("option", { name: "500" })
+    ).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: "10" } });
+    expect(select).toHaveValue("10");
+    expect(
+      within(select).getByRole("option", { name: "500" })
+    ).toBeInTheDocument();
+  });
+
   it("activates onRowClick from a row, but never from row actions", () => {
     const onRowClick = vi.fn();
     const onAction = vi.fn();
@@ -379,6 +405,34 @@ describe("<DataTable> (unstyled)", () => {
     renderHarness({ error: new Error("boom") });
     expect(screen.getByRole("alert")).toHaveTextContent("boom");
     expect(screen.queryByText("Retry")).toBeNull();
+  });
+
+  it("lets the host replace the error state, error and retry in hand", () => {
+    const refetch = vi.fn();
+    renderHarness({
+      error: new Error("boom"),
+      refetch,
+      override: {
+        slots: {
+          error: (state) => (
+            <output>
+              mine: {state.error.message}
+              <button type="button" onClick={state.retry}>
+                again
+              </button>
+            </output>
+          ),
+        },
+      },
+    });
+
+    // The built-in went away entirely — not layered under the replacement.
+    expect(screen.getByText(/mine: boom/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+
+    // And the retry it was handed is the source's, not a decoration.
+    fireEvent.click(screen.getByRole("button", { name: "again" }));
+    expect(refetch).toHaveBeenCalled();
   });
 
   it("clears all active filters from the chip strip", () => {
@@ -932,6 +986,50 @@ describe("<DataTable> (unstyled)", () => {
     expect(screen.getAllByLabelText("DisabledAct")[0]!).toBeDisabled();
   });
 
+  it("collapses row actions into a 3-dot menu when layout is menu", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="row-actions-trigger"]'
+    );
+    expect(trigger).toHaveAttribute("aria-label", "Row actions");
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-menu"]')
+    ).not.toBeNull();
+    fireEvent.click(trigger!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it("lets renderRowActions replace the actions cell", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+        renderRowActions: ({ row }) => (
+          <button
+            type="button"
+            aria-label="custom-e"
+            onClick={() => onEdit(row)}
+          >
+            Custom
+          </button>
+        ),
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-trigger"]')
+    ).toBeNull();
+    fireEvent.click(screen.getAllByLabelText("custom-e")[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
+  });
+
   it("merges extraChips with label chips", () => {
     renderHarness(
       {
@@ -1068,21 +1166,126 @@ describe("custom header and footer", () => {
   });
 });
 
-describe("header filter row", () => {
-  it("writes a compact name filter under the header", () => {
+describe("header filter trigger", () => {
+  it("puts a filter icon on the column header instead of a second row", () => {
     renderHarness({
       override: {
         headerFilters: true,
         filters: [{ key: "name", type: "text", label: "Name" }],
       },
     });
-    const input = screen.getByLabelText("Name");
-    fireEvent.change(input, { target: { value: "Ali" } });
+    expect(screen.queryByRole("row", { name: "Column filters" })).toBeNull();
+    const trigger = document.querySelector(
+      '[data-adapttable-part="filter-header-trigger"]'
+    );
+    expect(trigger).not.toBeNull();
+    fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+    const input = document.querySelector(
+      '[data-adapttable-part="filter-input"]'
+    );
+    expect(input).not.toBeNull();
+    fireEvent.change(input!, { target: { value: "Ali" } });
     expect(input).toHaveValue("Ali");
-    expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
   });
 
-  it("hides the header filter row on mobile cards", () => {
+  it("opens the same AutoFilterForm field for every built-in widget", () => {
+    const option = { value: "a", label: "A" };
+    const extraColumns: ColumnDef<Row>[] = [
+      { key: "city", header: "City", accessor: (r) => r.city },
+      { key: "tags", header: "Tags", accessor: () => "a" },
+      { key: "skills", header: "Skills", accessor: () => "a" },
+      { key: "core", header: "Core", accessor: () => true },
+      { key: "budget", header: "Budget", accessor: () => 100 },
+      { key: "hired", header: "Hired", accessor: () => "2026-01-01" },
+    ];
+    renderHarness({
+      override: {
+        headerFilters: true,
+        columns: [
+          { key: "name", header: "Name", accessor: (r) => r.name },
+          ...extraColumns,
+        ],
+        filters: [
+          { key: "name", type: "text", label: "Name" },
+          {
+            key: "city",
+            type: "select",
+            label: "City",
+            options: [{ value: "Dubai", label: "Dubai" }],
+          },
+          {
+            key: "tags",
+            type: "multiSelect",
+            label: "Tags",
+            options: [option],
+          },
+          {
+            key: "skills",
+            type: "checklist",
+            label: "Skills",
+            options: [option],
+          },
+          { key: "core", type: "boolean", label: "Core" },
+          { key: "budget", type: "numberRange", label: "Budget" },
+          { key: "hired", type: "dateRange", label: "Hired" },
+        ],
+      },
+    });
+    const expectedPart: Record<string, string> = {
+      name: "filter-operator",
+      city: "filter-select",
+      tags: "filter-checkbox-group",
+      skills: "filter-checklist-search",
+      core: "filter-select",
+      budget: "filter-operator",
+      hired: "filter-operator",
+    };
+    for (const key of Object.keys(expectedPart)) {
+      const header = document.querySelector(`thead [data-column-key="${key}"]`);
+      expect(header, key).not.toBeNull();
+      const trigger = header!.querySelector(
+        '[data-adapttable-part="filter-header-trigger"]'
+      );
+      expect(trigger, key).not.toBeNull();
+      fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+      const panel = trigger!.querySelector(
+        '[data-adapttable-part="filter-header-cell"]'
+      );
+      expect(
+        panel!.querySelector(`[data-adapttable-part="${expectedPart[key]}"]`),
+        key
+      ).not.toBeNull();
+      expect(
+        panel!.querySelector('[data-adapttable-part="filter-header-input"]'),
+        key
+      ).toBeNull();
+    }
+  });
+
+  it("stays open after picking a text operator so the value can still be typed", () => {
+    renderHarness({
+      override: {
+        headerFilters: true,
+        filters: [{ key: "name", type: "text", label: "Name" }],
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="filter-header-trigger"]'
+    );
+    expect(trigger).not.toBeNull();
+    fireEvent.click(trigger!.querySelector("summary") ?? trigger!);
+    const operator = document.querySelector(
+      '[data-adapttable-part="filter-operator"]'
+    );
+    expect(operator).not.toBeNull();
+    fireEvent.change(operator!, { target: { value: "eq" } });
+    expect(trigger).toHaveAttribute("open");
+    expect(
+      document.querySelector('[data-adapttable-part="filter-input"]')
+    ).not.toBeNull();
+  });
+
+  it("hides the header filter trigger on mobile cards", () => {
     renderHarness({
       isMobile: true,
       override: {
@@ -1091,7 +1294,7 @@ describe("header filter row", () => {
       },
     });
     expect(
-      document.querySelector('[data-adapttable-part="filter-header-row"]')
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
     ).toBeNull();
   });
 });

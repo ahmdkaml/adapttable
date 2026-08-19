@@ -66,6 +66,11 @@ export interface UseTableUrlStateResult extends TableStateMutators {
   page: number;
   /** Current page size. */
   limit: number;
+  /**
+   * Page size applied when the URL has no `limit` param (`defaults.limit`,
+   * or 25). Stable across `setLimit` so the rows-per-page list can keep it.
+   */
+  defaultLimit: number;
   /** Current committed search term. */
   search: string;
   /** Active sort column key, if any. */
@@ -403,6 +408,7 @@ export function useTableUrlState(
   return {
     page,
     limit,
+    defaultLimit: initialLimit,
     search: searchTerm,
     sortBy,
     sortDir,

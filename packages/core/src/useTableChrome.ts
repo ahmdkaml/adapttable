@@ -6,7 +6,12 @@ import {
   ACTIONS_COLUMN_KEY,
   REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
+import {
+  type ColumnGroupRecord,
+  flattenColumnTree,
+} from "./columns/columnTree";
 import { resolveColumns } from "./columns/resolveColumns";
+import { responsiveColumns } from "./columns/responsiveColumns";
 import {
   useColumnLayout,
   type UseColumnLayoutResult,
@@ -16,6 +21,7 @@ import { useBatchEditing } from "./editing/batchEditing";
 import { useDirtyCells } from "./editing/dirtyCells";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import { useEditConflict } from "./editing/editConflict";
+import type { EditHistoryState } from "./editing/editHistory";
 import { useEditLifecycle } from "./editing/editingEvents";
 import { useRowEditing } from "./editing/rowEditing";
 import { useCellSaveState } from "./editing/saveState";
@@ -47,7 +53,8 @@ import { useEventCallback } from "./hooks/useEventCallback";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useScrollToTableTop } from "./hooks/useScrollToTableTop";
-import type { BaseDataTableProps } from "./props";
+import { useElementWidth } from "./layout/useElementWidth";
+import type { BaseDataTableProps, ToolbarSlots } from "./props";
 import { insertExtraRows } from "./rows/extraRows";
 import {
   configureIncrementalView,
@@ -70,6 +77,7 @@ import {
 import type { SelectionState } from "./selection/useSelection";
 import { serverGroupEntries } from "./source/queryGroups";
 import type { TableSource } from "./source/TableSource";
+import { type TableErrorState, tableErrorState } from "./state/errorState";
 import { nestedTableDetail } from "./tree/nestedTable";
 import {
   buildTreeEntries,
@@ -99,6 +107,7 @@ import {
   useTableVirtualization,
   windowGroupedEntries,
 } from "./virtual/useTableVirtualization";
+import { useMeasuredWindowScrollMargin } from "./virtual/windowScrollMargin";
 
 /**
  * The shared prop surface every adapter's toolbar sub-component needs.
@@ -117,8 +126,47 @@ export interface ToolbarChromeProps<TRow> {
   searchPlaceholder?: string;
   /** Options for an explicit sort-by control. */
   sortByOptions?: SortByOption[];
-  /** Extra caller-supplied toolbar content. */
+  /** Extra caller-supplied toolbar content, in the middle region. */
   toolbar?: ReactNode;
+  /** Caller-supplied content for the two ends of the toolbar. */
+  toolbarSlots?: ToolbarSlots;
+  /**
+   * Put the last edit back. Set only when the host asked for the buttons
+   * (`undoRedoButtons`) AND `editHistory` is armed, so an adapter renders
+   * the pair on presence and never has to check two things.
+   */
+  onUndo?: () => void;
+  /** Do the last undone edit again. Present with {@link onUndo}. */
+  onRedo?: () => void;
+  /**
+   * Whether there is anything to undo. The button is disabled, not
+   * hidden — a control that vanishes moves the ones beside it, and a
+   * toolbar that reflows while someone is working is worse than a button
+   * that is briefly unavailable.
+   */
+  canUndo?: boolean;
+  /** Whether there is anything to redo. */
+  canRedo?: boolean;
+  /** `labels.undoEdit` — the undo button's caption. */
+  undoLabel?: string;
+  /** `labels.redoEdit` — the redo button's caption. */
+  redoLabel?: string;
+  /**
+   * Open the print dialog. Set only when the host asked for the button
+   * (`printButton`) AND wired `onPrint`, so an adapter renders on presence
+   * and never has to check two things.
+   */
+  onPrint?: () => void;
+  /** `labels.print` — the print button's caption. */
+  printLabel?: string;
+  /** The density the table is rendering, when the chooser is shown. */
+  density?: "comfortable" | "compact";
+  /** Change it. Present iff the host asked for the chooser. */
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  /** Toggle fullscreen. Present iff asked for AND the browser allows it. */
+  onToggleFullscreen?: () => void;
+  /** Whether the table is fullscreen right now, for the button's state. */
+  isFullscreen?: boolean;
   /** Whether a filters affordance should render. */
   hasFilters: boolean;
   /** Number shown on the filters badge. */
@@ -238,8 +286,21 @@ export interface TableChrome<TRow> {
   activeFilterCount: number;
   /** Whether the resolved pagination mode is `"paged"`. */
   isPaged: boolean;
+  /**
+   * The table root. Owned here so the width that drives progressive column
+   * hiding is measured on the table itself, in both wiring paths.
+   */
+  rootRef: RefObject<HTMLDivElement | null>;
+  /** Column keys progressive hiding gave up at the current width. */
+  droppedColumns: readonly string[];
   /** Which body region to render. */
   body: TableBodyRegion;
+  /**
+   * The load failure to show in place of the body, or `undefined` when the
+   * source is fine. Derived here so every adapter offers a retry on exactly
+   * the same terms — one the source can actually perform.
+   */
+  errorState?: TableErrorState;
   /**
    * Why the body is empty: `"noResults"` when an active search/filter
    * produced zero rows (offer a clear-filters CTA), `"noData"` when the
@@ -361,6 +422,8 @@ export interface TableChrome<TRow> {
   showFooter: boolean;
   /** User column-layout state + mutators (visibility, order, …). */
   columnLayout: UseColumnLayoutResult<TRow>;
+  /** Tree groups for the declared columns — collapse options, header align. */
+  columnGroups: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
   /** All declared columns (pre layout/device filtering) for the column menu. */
   allColumns: ColumnDef<TRow>[];
 }
@@ -375,6 +438,97 @@ export interface TableChrome<TRow> {
  * @param props - The adapter's {@link BaseDataTableProps}.
  * @returns The {@link TableChrome} orchestration result.
  */
+/**
+ * The undo/redo half of a toolbar's props, or nothing at all.
+ *
+ * Two conditions have to hold — the host asked for the buttons, and there
+ * is a history for them to drive — and resolving both here means an
+ * adapter renders the pair on `onUndo` being present and never has to
+ * know that `editHistory` exists. Off, the object is empty and the props
+ * are absent, which is what keeps an opted-out toolbar identical.
+ */
+/**
+ * The density chooser and the fullscreen toggle, or nothing.
+ *
+ * Both resolve to present-or-absent rather than present-and-disabled, so an
+ * adapter renders on presence. The fullscreen half folds in whether the
+ * browser will allow it at all: a toggle that cannot work is worse than no
+ * toggle, and an embedded webview is a real place where it cannot.
+ */
+export interface ViewControlsToolbar {
+  density?: "comfortable" | "compact";
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
+}
+
+export function viewControlsToolbar(
+  props: {
+    densityChooser?: boolean;
+    density?: "comfortable" | "compact";
+    onDensityChange?: (next: "comfortable" | "compact") => void;
+    fullscreen?: boolean;
+  },
+  fullscreen: { supported: boolean; active: boolean; toggle: () => void }
+): ViewControlsToolbar {
+  return {
+    ...(props.densityChooser === true
+      ? {
+          density: props.density ?? "comfortable",
+          onDensityChange: props.onDensityChange,
+        }
+      : {}),
+    ...(props.fullscreen === true && fullscreen.supported
+      ? {
+          onToggleFullscreen: fullscreen.toggle,
+          isFullscreen: fullscreen.active,
+        }
+      : {}),
+  };
+}
+
+export function undoRedoToolbar<TRow>(
+  wanted: boolean | undefined,
+  history: EditHistoryState<TRow>,
+  labels: TableLabels
+): Partial<ToolbarChromeProps<TRow>> {
+  if (wanted !== true || !history.enabled) return {};
+  return {
+    onUndo: history.undo,
+    onRedo: history.redo,
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
+    undoLabel: labels.undoEdit,
+    redoLabel: labels.redoEdit,
+  };
+}
+
+/** The print button's half of a toolbar's props. */
+export interface PrintToolbar {
+  onPrint?: () => void;
+  printLabel?: string;
+}
+
+/**
+ * The print button's half of a toolbar's props, or nothing at all.
+ *
+ * Two conditions again — the host asked for the button, and there is a handler
+ * for it to call — resolved here so an adapter renders on `onPrint` being
+ * present. `onPrint` alone stays what it has always been: a palette command.
+ *
+ * Not generic, unlike {@link undoRedoToolbar}: neither prop mentions the row
+ * type, and a `Partial<ToolbarChromeProps<TRow>>` return with no `TRow` in the
+ * arguments infers `unknown` and widens the whole spread at every call site.
+ */
+export function printToolbar(
+  wanted: boolean | undefined,
+  onPrint: (() => void) | undefined,
+  labels: TableLabels
+): PrintToolbar {
+  if (wanted !== true || onPrint === undefined) return {};
+  return { onPrint, printLabel: labels.print };
+}
+
 export function useTableChrome<TRow>(
   props: BaseDataTableProps<TRow>
 ): TableChrome<TRow> {
@@ -386,6 +540,7 @@ export function useTableChrome<TRow>(
     labels,
     dir,
     forceMobile,
+    mobileBreakpoint,
     mobileIdentityColumns,
     onRowsChange,
     bulkActions,
@@ -402,25 +557,33 @@ export function useTableChrome<TRow>(
     defaultColumnLayout,
   } = props;
 
-  const autoMobile = useIsMobile();
+  const autoMobile = useIsMobile(mobileBreakpoint);
   const isMobile = forceMobile ?? autoMobile;
   const confirm = confirmProp ?? defaultConfirm;
 
   // Declarative defaults (auto headers, dot-path accessors) resolve once
   // here, so the layout, the column menu and the table all see them.
+  const flattened = useMemo(() => flattenColumnTree(columns), [columns]);
   const resolvedColumns = useMemo(
-    () => resolveColumns(columns, props.locale),
-    [columns, props.locale]
+    () => resolveColumns(flattened.leaves, props.locale),
+    [flattened.leaves, props.locale]
   );
 
   // User column layout (hide/order/…) applied on top of the declared columns,
   // before device filtering inside useDataTable. The menu uses `allColumns`.
+  // The chrome owns the root ref so both wiring paths measure the same
+  // element: the width that decides progressive hiding has to be the table's
+  // own, not the window's.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const rootWidth = useElementWidth(rootRef);
+
   const columnLayout = useColumnLayout<TRow>({
     columns: resolvedColumns,
     layout: columnLayoutProp,
     onLayoutChange: onColumnLayoutChange,
     defaultColumnLayout,
     collapsibleColumnGroups: props.collapsibleColumnGroups === true,
+    columnGroups: flattened.groups,
   });
 
   // Effective groupBy: prop wins when provided (including `null` to force
@@ -459,9 +622,22 @@ export function useTableChrome<TRow>(
     };
   }, [groupingArmed, source]);
 
+  // Progressive hiding sits between the user's own hidden set and what is
+  // rendered: it is a fact about the viewport, not a choice the user made,
+  // so it never reaches the layout state, the URL or a saved view.
+  const responsive = useMemo(
+    () =>
+      responsiveColumns({
+        columns: columnLayout.visibleColumns,
+        available: rootWidth,
+        widths: columnLayout.state.widths,
+      }),
+    [columnLayout.visibleColumns, columnLayout.state.widths, rootWidth]
+  );
+
   const table = useDataTable<TRow>({
     source: viewSource,
-    columns: columnLayout.visibleColumns,
+    columns: responsive.columns,
     rowKey,
     tableLabel,
     labels,
@@ -527,6 +703,7 @@ export function useTableChrome<TRow>(
 
   const isPaged = source.paginationMode === "paged";
 
+  const errorState = tableErrorState(viewSource);
   let body: TableBodyRegion;
   if (viewSource.isLoading && viewSource.rows.length === 0) body = "skeleton";
   else if (table.isEmpty) body = "empty";
@@ -555,7 +732,7 @@ export function useTableChrome<TRow>(
 
   // Hooks run unconditionally; the state is simply unused (and unexposed)
   // when the caller renders no row details.
-  const expansionState = useRowExpansion();
+  const expansionState = useRowExpansion(props.defaultExpandedRowIds);
   // A declared nested table IS the detail panel; a row without one falls back
   // to whatever the host builds itself.
   const { nestedTable, density, labels: hostLabels } = props;
@@ -656,6 +833,7 @@ export function useTableChrome<TRow>(
               message: table.labels.editConflict,
               keepMine: table.labels.keepMine,
               takeTheirs: table.labels.takeTheirs,
+              theirsValue: table.labels.theirsValue,
             },
           }
         : undefined,
@@ -675,6 +853,7 @@ export function useTableChrome<TRow>(
       table.labels.editConflict,
       table.labels.keepMine,
       table.labels.takeTheirs,
+      table.labels.theirsValue,
     ]
   );
   // Half-configured editing is a silent trap: `editable: true` on a column
@@ -793,10 +972,49 @@ export function useTableChrome<TRow>(
       props.hasChildren,
     ]
   );
+  /**
+   * The same hierarchy with every node open.
+   *
+   * An export scoped to "all" means all the data, and a folded folder is a
+   * display state — the rows inside it matched the filters just the same. The
+   * rendered entries stop at every collapsed node, so exporting from them
+   * silently drops whole subtrees. This is what the export reads instead.
+   */
+  const treeExportEntries = useMemo(
+    () =>
+      treeEntries
+        ? buildTreeEntries<TRow>({
+            rows: source.rows,
+            getRowId,
+            // Every node id: a rendered entry carries its whole subtree in
+            // `descendantIds` whether or not it is open, and roots are always
+            // rendered — so the walked entries name every node in the tree.
+            expandedIds: new Set(
+              treeEntries.flatMap((entry) => [
+                entry.key,
+                ...entry.descendantIds,
+              ])
+            ),
+            getChildren: props.getChildren,
+            getParentId: props.getParentId,
+            hasChildren: props.hasChildren,
+          })
+        : undefined,
+    [
+      treeEntries,
+      source.rows,
+      getRowId,
+      props.getChildren,
+      props.getParentId,
+      props.hasChildren,
+    ]
+  );
   const tree = useMemo(() => {
     if (!treeEntries) return undefined;
     return {
       entries: treeEntries,
+      /** Every node, folded ones included — what an "all" export writes. */
+      allEntries: treeExportEntries,
       // Opening a node fetches its children on the way: the row opens at once
       // and fills when they land, so the chevron never feels stuck behind a
       // request.
@@ -815,6 +1033,7 @@ export function useTableChrome<TRow>(
     };
   }, [
     treeEntries,
+    treeExportEntries,
     treeExpansion,
     lazyChildren,
     props.treeColumn,
@@ -1030,7 +1249,10 @@ export function useTableChrome<TRow>(
     mergedChips,
     activeFilterCount,
     isPaged,
+    rootRef,
+    droppedColumns: responsive.dropped,
     body,
+    errorState,
     emptyVariant,
     isRefreshing,
     clearFilters,
@@ -1047,6 +1269,7 @@ export function useTableChrome<TRow>(
     editingRows,
     showFooter,
     columnLayout,
+    columnGroups: flattened.groups,
     allColumns: resolvedColumns,
   };
 }
@@ -1112,10 +1335,21 @@ export function useChromeBodyData<TRow>(
     }
   }, [source]);
   const scrollBoxRef = useRef<HTMLElement | null>(null);
-  const virtualScrollRef = useCallback((node: HTMLElement | null) => {
-    scrollBoxRef.current = node;
-  }, []);
   const inScrollBox = props.maxHeight != null;
+  // Window mode needs the list's document Y as TanStack `scrollMargin`.
+  // Without it, page chrome above the table is treated as already-scrolled
+  // rows and the body opens with a blank gap. An explicit prop wins.
+  const measureWindowOffset =
+    virtualize && !inScrollBox && props.virtualScrollMargin == null;
+  const { scrollMargin: measuredScrollMargin, observe: observeWindowList } =
+    useMeasuredWindowScrollMargin(measureWindowOffset, chrome.rootRef);
+  const virtualScrollRef = useCallback(
+    (node: HTMLElement | null) => {
+      scrollBoxRef.current = node;
+      observeWindowList(node);
+    },
+    [observeWindowList]
+  );
   const bodyEligible = isBodyEligible(chrome);
   const groupingArmed = Boolean(chrome.grouping);
   const groupKeys = entryKeys(chrome.grouping?.entries);
@@ -1135,7 +1369,7 @@ export function useChromeBodyData<TRow>(
   const estimateSize = estimateBodyItemSize(chrome, props, partitioned.scroll);
   const scrollOpts = {
     overscan: props.virtualOverscan,
-    scrollMargin: props.virtualScrollMargin,
+    scrollMargin: props.virtualScrollMargin ?? measuredScrollMargin,
     getScrollElement: inScrollBox ? () => scrollBoxRef.current : undefined,
     onEndReached: fetchNext,
     estimateSize,

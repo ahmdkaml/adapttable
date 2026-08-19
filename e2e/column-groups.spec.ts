@@ -3,8 +3,8 @@ import { expect, type Page, test } from "@playwright/test";
 import { configureFeatureLab } from "./feature-lab";
 
 /**
- * Collapsible column groups across every kit — the Delivery group
- * collapses to its first leaf. RTL uses the same control.
+ * Collapsible column groups across every kit — Delivery keeps its name
+ * and folds to a short brief. RTL uses the same control.
  */
 
 const ADAPTERS = [
@@ -38,7 +38,7 @@ async function openDemo(page: Page, adapter: string): Promise<void> {
 
 for (const adapter of ADAPTERS) {
   test.describe(adapter, () => {
-    test("collapses a column group to its summary leaf", async ({ page }) => {
+    test("collapses a column group", async ({ page }) => {
       await openDemo(page, adapter);
       const root = demo(page).locator(`[data-adapter="${adapter}"]`);
       const toggle = root

@@ -98,6 +98,9 @@ export function FilterPopover({
             fields are painted off-screen and cannot be reached — a scroll to
             reach them dismisses the popover instead. */}
         <Popover.Dropdown
+          // The card portals to `<body>`, so it loses the table's direction
+          // unless we hand it over — same reason ColumnMenu sets `dir` here.
+          dir={dir}
           mah="min(70vh, 560px)"
           maw="calc(100vw - 32px)"
           style={{ overflowY: "auto" }}

@@ -20,7 +20,11 @@ import type { TableSource } from "../source/TableSource";
 import type { ColumnDef } from "../types";
 import { resetDevWarnings } from "../utils/devWarn";
 import { ExportAnnouncer } from "./ExportAnnouncer";
-import { type ExportRequest, makeExportCsvHandler } from "./tableCsv";
+import {
+  type ExportRequest,
+  fetchAllExportRows,
+  makeExportCsvHandler,
+} from "./tableCsv";
 import { useExportHandler } from "./useExportHandler";
 
 interface Row {
@@ -47,6 +51,7 @@ function source(): TableSource<Row> {
     paginationMode: "paged",
     page: 3,
     limit: 25,
+    defaultLimit: 25,
     search: "ada",
     sortBy: "name",
     sortDir: "desc",
@@ -65,6 +70,155 @@ function source(): TableSource<Row> {
     clearAll: () => undefined,
   };
 }
+
+/** A server-tier source: one page in hand, no full set. */
+function serverSource(over: Partial<TableSource<Row>> = {}): TableSource<Row> {
+  return { ...source(), allFilteredRows: undefined, ...over };
+}
+
+describe('scope "all" over a server source', () => {
+  it("asks the backend for the set, not for a page", () => {
+    const request = vi.fn();
+    const handler = makeExportCsvHandler(
+      { scope: "all", request },
+      serverSource(),
+      COLUMNS
+    );
+    handler?.();
+    const info = request.mock.calls[0]?.[0] as ExportRequest<Row>;
+    // Everything that shapes the set travels; the window into it does not.
+    expect(info.query).toMatchObject({
+      search: "ada",
+      sortBy: "name",
+      sortDir: "desc",
+      filters: { team: "Core" },
+    });
+    expect(info.query.page).toBeUndefined();
+    expect(info.query.limit).toBeUndefined();
+    expect(info.scope).toBe("all");
+  });
+
+  it("still sends the page window for a page-scoped export", () => {
+    const request = vi.fn();
+    makeExportCsvHandler(
+      { scope: "page", request },
+      serverSource(),
+      COLUMNS
+    )?.();
+    const info = request.mock.calls[0]?.[0] as ExportRequest<Row>;
+    expect(info.query.page).toBe(3);
+    expect(info.query.limit).toBe(25);
+  });
+
+  it("offers no button at all when it cannot answer honestly", () => {
+    // Neither `request` nor `fetchAll`, and no rows to read: the wrong answer
+    // is a button that writes the current page and calls it everything.
+    const handler = makeExportCsvHandler(
+      { scope: "all" },
+      serverSource(),
+      COLUMNS
+    );
+    expect(handler).toBeUndefined();
+  });
+
+  it("keeps the button for a frontend source, which can answer", () => {
+    expect(
+      makeExportCsvHandler({ scope: "all" }, source(), COLUMNS)
+    ).toBeDefined();
+  });
+});
+
+describe("exportCsv.fetchAll", () => {
+  /** A source of `total` rows, answered `limit` at a time. */
+  const pager = (total: number) =>
+    vi.fn((query: { page?: number; limit?: number }) => {
+      const limit = query.limit ?? 100;
+      const start = ((query.page ?? 1) - 1) * limit;
+      return Promise.resolve(
+        Array.from(
+          { length: Math.max(0, Math.min(limit, total - start)) },
+          (_, i) => ({
+            id: String(start + i + 1),
+            name: `Row ${start + i + 1}`,
+          })
+        )
+      );
+    });
+
+  it("walks every page and stops at the short one", async () => {
+    const fetchPage = pager(25);
+    const rows = await fetchAllExportRows(serverSource(), {
+      fetchPage,
+      pageSize: 10,
+    });
+    expect(rows).toHaveLength(25);
+    // 10, 10, 5 — the short page ends it, with no extra request after.
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+    expect(fetchPage.mock.calls[0]?.[0]).toMatchObject({ page: 1, limit: 10 });
+    expect(fetchPage.mock.calls[2]?.[0]).toMatchObject({ page: 3, limit: 10 });
+  });
+
+  it("stops at the cap and says so rather than writing a partial file quietly", async () => {
+    const onCapped = vi.fn();
+    const rows = await fetchAllExportRows(serverSource(), {
+      fetchPage: pager(1000),
+      pageSize: 10,
+      maxRows: 25,
+      onCapped,
+    });
+    expect(rows).toHaveLength(25);
+    expect(onCapped).toHaveBeenCalledExactlyOnceWith({ rows: 25, maxRows: 25 });
+  });
+
+  it("reports the cap even when a page lands exactly on it", async () => {
+    // 3 pages of 10 is exactly 30, and a full last page proves nothing about
+    // what comes after it — silence here would be a truncated file.
+    const onCapped = vi.fn();
+    const rows = await fetchAllExportRows(serverSource(), {
+      fetchPage: pager(1000),
+      pageSize: 10,
+      maxRows: 30,
+      onCapped,
+    });
+    expect(rows).toHaveLength(30);
+    expect(onCapped).toHaveBeenCalledExactlyOnceWith({ rows: 30, maxRows: 30 });
+  });
+
+  it("stays quiet when the set genuinely ended before the cap", async () => {
+    const onCapped = vi.fn();
+    const rows = await fetchAllExportRows(serverSource(), {
+      fetchPage: pager(25),
+      pageSize: 10,
+      maxRows: 1000,
+      onCapped,
+    });
+    expect(rows).toHaveLength(25);
+    expect(onCapped).not.toHaveBeenCalled();
+  });
+
+  it("uses the table's own page size when none is given", async () => {
+    const fetchPage = pager(5);
+    await fetchAllExportRows(serverSource(), { fetchPage });
+    expect(fetchPage.mock.calls[0]?.[0]).toMatchObject({ limit: 25 });
+  });
+
+  it("gives the button back, and exports what it fetched", async () => {
+    const onAfterExport = vi.fn();
+    const handler = makeExportCsvHandler(
+      {
+        scope: "all",
+        fetchAll: { fetchPage: pager(3), pageSize: 10 },
+        onAfterExport,
+      },
+      serverSource(),
+      COLUMNS
+    );
+    expect(handler).toBeDefined();
+    await handler?.();
+    expect(onAfterExport).toHaveBeenCalledOnce();
+    expect(onAfterExport.mock.calls[0]?.[0].rows).toHaveLength(3);
+  });
+});
 
 describe("exportCsv.request", () => {
   it("sends the current view instead of building a file", () => {

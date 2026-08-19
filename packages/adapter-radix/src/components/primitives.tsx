@@ -5,7 +5,7 @@ import {
   Text,
   Tooltip as RadixTooltip,
 } from "@radix-ui/themes";
-import { type ReactNode } from "react";
+import { type KeyboardEvent, type ReactNode } from "react";
 
 import type { RadixAccentColor } from "../types";
 
@@ -45,8 +45,13 @@ export function Checkbox({
   color,
   id,
   value,
+  className,
+  inputRef,
+  onKeyDown,
   "aria-label": ariaLabel,
+  "data-adapttable-part": dataPart,
   children,
+  ...rest
 }: Readonly<{
   checked: boolean;
   indeterminate?: boolean;
@@ -55,25 +60,48 @@ export function Checkbox({
   color?: RadixAccentColor;
   id?: string;
   value?: string;
+  className?: string;
+  /** Hands the control out, so a cell editor can take focus on mount. */
+  inputRef?: (node: { focus: () => void } | null) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
   children?: ReactNode;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
+  // The part and the class name the WHOLE control, so with a visible label
+  // they belong to the wrapper that holds box and text together — the same
+  // element MUI tags — and only to the box when there is nothing else.
   const box = (
     <RadixCheckbox
       id={id}
       value={value}
       size={size}
       color={color}
+      ref={inputRef}
+      className={children == null ? className : undefined}
+      onKeyDown={onKeyDown}
       aria-label={ariaLabel}
+      data-adapttable-part={children == null ? dataPart : undefined}
       checked={indeterminate ? "indeterminate" : checked}
       onCheckedChange={onToggle ? () => onToggle() : undefined}
+      {...rest}
     />
   );
   if (children == null) return box;
   // A labelled checkbox: the visible text and the box share one `<label>`, so
   // clicking the text toggles the box and the name reads through the label.
   return (
-    <Text as="label" size="2">
+    <Text
+      as="label"
+      size="2"
+      className={className}
+      data-adapttable-part={dataPart}
+    >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
         {box}
         {children}
@@ -110,31 +138,53 @@ export function NativeSelect({
   value,
   placeholder,
   onValueChange,
+  onKeyDown,
+  triggerRef,
   options,
   width,
+  className,
   "aria-label": ariaLabel,
   "data-adapttable-part": part,
+  ...rest
 }: Readonly<{
   size?: "1" | "2" | "3";
   value: string;
   placeholder?: string;
   onValueChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
+  /** Hands the trigger out, so a cell editor can take focus on mount. */
+  triggerRef?: (node: { focus: () => void } | null) => void;
   options: readonly SelectOption[];
   width?: string;
+  className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
+  // Radix reads `""` as "nothing selected" and paints the placeholder, which
+  // is what a cleared select should show. The sentinel is only for a list that
+  // offers an empty CHOICE ("Any"), because `Select.Item` forbids an empty
+  // value — naming it when no such item exists left the trigger blank instead.
+  const offersEmpty = options.some((option) => option.value === "");
   return (
     <Select.Root
       size={size}
-      value={value === "" ? EMPTY_VALUE : value}
+      value={value === "" && offersEmpty ? EMPTY_VALUE : value}
       onValueChange={(next) => onValueChange(next === EMPTY_VALUE ? "" : next)}
     >
       <Select.Trigger
+        ref={triggerRef}
         aria-label={ariaLabel}
         data-adapttable-part={part}
+        className={className}
         placeholder={placeholder}
+        onKeyDown={onKeyDown}
         style={width ? { width } : undefined}
+        {...rest}
       />
       <Select.Content position="popper">
         {options.map((option) => (
@@ -163,7 +213,7 @@ export function FormField({
   children,
 }: Readonly<{ label: ReactNode; children: ReactNode }>) {
   return (
-    <Flex direction="column" gap="1">
+    <Flex direction="column" gap="4">
       <Text as="span" size="2">
         {label}
       </Text>

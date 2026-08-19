@@ -1,0 +1,631 @@
+/* ============================================================================
+   The adapter-first pages — "AdaptTable for Mantine" and its eighteen features.
+
+   Every rule here is page chrome. Nothing below styles a table: the demo
+   surface is a bordered box with padding, and what happens inside it belongs
+   to the adapter. The tokens and the reasoning are in `tokens.css`; this is
+   the layout that spends them.
+   ========================================================================= */
+
+/* The page owns the adapter tint. One assignment on the wrapper, and the
+   heading, the seam, the cards and the rail are all that kit's colour. */
+.mx {
+  padding-bottom: var(--sp-8);
+}
+
+/* ---------- the hero ---------- */
+/* Two columns: the argument, and the datasheet that backs it. The plate is
+   sized to its own content — a spec sheet that stretches is a table. */
+.mx-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+  gap: var(--sp-6) var(--sp-7);
+  align-items: start;
+  padding-block: var(--sp-7) var(--sp-6);
+}
+/* A feature page has no plate — the install line belongs to the kit, and the
+   kit is one click up. So its hero is one column, and the heading is free to
+   run the width the copy is measured against rather than sitting in a lane
+   that holds nothing beside it. */
+.mx-hero--solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+.mx-hero__body {
+  min-width: 0;
+}
+
+/* The eyebrow: a monospace key with the kit's mark in front of it. This is the
+   page's smallest type and the one that sets the datasheet register. */
+.mx-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--track-key);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.mx-kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--kit);
+  box-shadow: 0 0 0 3px var(--kit-glow);
+}
+.mx-kicker a {
+  color: inherit;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-state) var(--ease);
+}
+.mx-kicker a:hover {
+  color: var(--kit-ink);
+}
+.mx-kicker__sep {
+  color: var(--page-border);
+}
+
+.mx-title {
+  margin: 0;
+  font-size: var(--fs-display);
+  font-weight: 800;
+  line-height: var(--lh-display);
+  letter-spacing: var(--track-display);
+  color: var(--ink);
+  text-wrap: balance;
+}
+/* The kit's name inside the heading, in the kit's colour. Display size and
+   800 weight, which is where the accent clears contrast on its own. */
+.mx-title em {
+  font-style: normal;
+  color: var(--kit-ink);
+}
+.mx-lead {
+  margin: var(--sp-4) 0 0;
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+.mx-lead + .mx-lead {
+  margin-top: var(--sp-3);
+}
+.mx-lead code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--page-surface-2);
+  border: 1px solid var(--page-border-soft);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--ink);
+}
+
+.mx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+.mx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-sm);
+  background: var(--page-surface);
+  color: var(--ink);
+  font-size: var(--fs-small);
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-state) var(--ease),
+    transform var(--dur-state) var(--ease),
+    box-shadow var(--dur-state) var(--ease);
+}
+.mx-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--kit-line);
+  box-shadow: 0 4px 14px var(--kit-glow);
+}
+.mx-btn--primary {
+  border-color: transparent;
+  background: var(--ink);
+  color: var(--page-bg);
+}
+.mx-btn--primary:hover {
+  border-color: transparent;
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.18);
+}
+
+/* ---------- the spec plate ---------- */
+/* The three facts a developer needs before they read anything else: what to
+   install, what to import, what stays a peer. Set entirely in monospace,
+   because that is the form they will paste it in. */
+.mx-plate {
+  min-width: 0;
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-lg);
+  background: var(--page-surface);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+.mx-plate__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--page-border-soft);
+  background: var(--kit-wash);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.mx-plate__row {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--page-border-soft);
+  min-width: 0;
+}
+.mx-plate__row:last-child {
+  border-bottom: 0;
+}
+.mx-plate__key {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--track-key);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* Install lines and imports wrap rather than scroll: a command whose tail is
+   hidden behind a scrollbar is a command someone copies half of. */
+.mx-plate__val {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- the seam ---------- */
+/* The signature. A hairline where the chrome stops and the kit starts, broken
+   by the name of the package that draws everything below it. */
+.mx-seam {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-6) 0 var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--track-key);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+/* A package name is an identifier, so it keeps its own case — only the labels
+   around it are set as spec-sheet keys. */
+.mx-seam__pkg,
+.mx-kicker__pkg,
+.mx-plate__head span:first-child {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.mx-seam::before,
+.mx-seam::after {
+  content: "";
+  height: 1px;
+  background: var(--kit-line);
+}
+.mx-seam::before {
+  width: var(--sp-5);
+  flex: none;
+}
+.mx-seam::after {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mx-seam__pkg {
+  color: var(--kit-ink);
+}
+
+/* ---------- the demo surface ---------- */
+/* A box with a border and padding. Everything inside is the adapter's, and
+   nothing here reaches into it. `overflow: visible` because the unstyled
+   adapter anchors its filter popover rather than portaling it. */
+.mx-demo {
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-lg);
+  background: var(--page-surface);
+  box-shadow: var(--shadow-card);
+  overflow: visible;
+  min-width: 0;
+}
+.mx-demo__body {
+  padding: var(--sp-4);
+  min-width: 0;
+}
+/* The demo's own hint strip sits flush against the top of the box, so it takes
+   the box's corners — a square band inside a rounded card reads as a mistake. */
+.mx-demo > .hint-row:first-child {
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+/* A panel beside a table. The panel column takes only the width its own
+   card needs — a saved-views list is as wide as its longest view name, and
+   a fixed column beside it is a strip of empty page. */
+.panel-layout {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: minmax(15rem, max-content) minmax(0, 1fr);
+  align-items: start;
+}
+.panel-layout > * {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .panel-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- section headings ---------- */
+.mx-section {
+  padding-top: var(--sp-8);
+}
+.mx-section__head {
+  max-width: var(--measure);
+  margin-bottom: var(--sp-5);
+}
+.mx-h2 {
+  margin: 0;
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.mx-section__lead {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* ---------- the feature grid ---------- */
+/* Twelve cards, unnumbered: the features are a set, and numbering them would
+   claim an order they do not have. */
+.mx-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+.mx-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: var(--sp-4);
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-md);
+  background: var(--page-surface);
+  color: var(--ink-2);
+  transition:
+    border-color var(--dur-state) var(--ease),
+    transform var(--dur-move) var(--ease),
+    box-shadow var(--dur-move) var(--ease);
+}
+.mx-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--kit-line);
+  box-shadow: 0 10px 30px var(--kit-glow);
+}
+.mx-card:focus-visible {
+  outline: 2px solid var(--kit);
+  outline-offset: 2px;
+}
+.mx-card__name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.mx-card__name svg {
+  flex: none;
+  color: var(--kit-ink);
+}
+.mx-card__desc {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+/* The card's own footer line: the URL segment it goes to, in monospace, so a
+   reader can see the address without hovering for the status bar. */
+.mx-card__path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--ink-3);
+  transition: color var(--dur-state) var(--ease);
+}
+.mx-card:hover .mx-card__path {
+  color: var(--kit-ink);
+}
+
+/* ---------- the other kits ---------- */
+.mx-kits {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.mx-kit {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-md);
+  background: var(--page-surface);
+  transition:
+    border-color var(--dur-state) var(--ease),
+    transform var(--dur-state) var(--ease);
+}
+.mx-kit:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklch, var(--c) 55%, var(--page-border));
+}
+.mx-kit__name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  font-weight: 650;
+  color: var(--ink);
+}
+.mx-kit__name::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--c) 20%, transparent);
+}
+.mx-kit__blurb {
+  font-size: var(--fs-micro);
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.mx-kit[aria-current="page"] {
+  border-color: var(--c);
+  background: color-mix(in oklab, var(--c) 7%, var(--page-surface));
+}
+
+/* ---------- the code block ---------- */
+/* A titled window rather than a bare `pre`: the bar names the file the code
+   belongs in, which is the question a snippet without one always raises. */
+.mx-code {
+  min-width: 0;
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-md);
+  background: var(--page-surface);
+  overflow: hidden;
+}
+.mx-code__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--page-border-soft);
+  background: var(--kit-wash);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.mx-code__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-sm);
+  background: var(--page-surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition:
+    color var(--dur-state) var(--ease),
+    border-color var(--dur-state) var(--ease);
+}
+.mx-code__copy:hover {
+  color: var(--ink);
+  border-color: var(--kit-line);
+}
+.mx-code__copy.is-done {
+  color: var(--kit-ink);
+  border-color: var(--kit-line);
+}
+.mx-code pre {
+  margin: 0;
+  padding: var(--sp-4);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  line-height: 1.72;
+  color: var(--ink-2);
+  scrollbar-width: thin;
+  tab-size: 2;
+}
+.mx-code code {
+  font: inherit;
+}
+
+/* ---------- the kit note ---------- */
+/* What is true about this feature in THIS kit — the one paragraph on the page
+   that could not be written for any other adapter, so it is marked as such. */
+.mx-note {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--kit-line);
+  border-radius: var(--r-md);
+  background: var(--kit-wash);
+}
+.mx-note__key {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--track-key);
+  text-transform: uppercase;
+  color: var(--kit-ink);
+}
+.mx-note p {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* The feature page's top block: the code on one side, the kit note and the
+   reference links on the other. */
+.mx-brief {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+  margin-top: var(--sp-5);
+}
+.mx-brief__side {
+  display: grid;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.mx-refs {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--page-border);
+  border-radius: var(--r-md);
+  background: var(--page-surface-2);
+}
+.mx-refs__key {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--track-key);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.mx-refs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mx-refs__list a {
+  padding: 4px 10px;
+  border: 1px solid var(--page-border);
+  border-radius: 999px;
+  background: var(--page-surface);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--ink-2);
+  transition:
+    color var(--dur-state) var(--ease),
+    border-color var(--dur-state) var(--ease);
+}
+.mx-refs__list a:hover {
+  color: var(--kit-ink);
+  border-color: var(--kit-line);
+}
+
+/* ---------- the sibling rail ---------- */
+/* Where to go next, on a feature page: the other eleven, at the size of a
+   footnote. It is navigation, not a second feature grid. */
+.mx-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mx-rail a {
+  padding: 6px 12px;
+  border: 1px solid var(--page-border);
+  border-radius: 999px;
+  background: var(--page-surface);
+  font-size: var(--fs-small);
+  font-weight: 550;
+  color: var(--ink-2);
+  transition:
+    color var(--dur-state) var(--ease),
+    border-color var(--dur-state) var(--ease),
+    background var(--dur-state) var(--ease);
+}
+.mx-rail a:hover {
+  color: var(--ink);
+  border-color: var(--kit-line);
+  background: var(--kit-wash);
+}
+.mx-rail a[aria-current="page"] {
+  color: var(--kit-ink);
+  border-color: var(--kit-line);
+  background: var(--kit-wash);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 1080px) {
+  .mx-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-5);
+  }
+  .mx-plate {
+    max-width: 34rem;
+  }
+  .mx-brief {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mx-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .mx-hero {
+    padding-block: var(--sp-6) var(--sp-5);
+  }
+  .mx-section {
+    padding-top: var(--sp-7);
+  }
+  .mx-grid,
+  .mx-kits {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mx-actions .mx-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

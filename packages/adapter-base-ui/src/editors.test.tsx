@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -82,9 +82,10 @@ describe("editor set (base-ui)", () => {
   it("commits a boolean in one gesture", () => {
     const { onCellEdit } = table();
     open(0);
-    expect(editor()).toHaveAttribute("type", "checkbox");
-    expect(editor()).not.toBeChecked();
-    fireEvent.click(editor());
+    // The kit's checkbox, not a native input: state reads off aria-checked.
+    const box = screen.getByRole("checkbox", { name: "Edit cell" });
+    expect(box).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(box);
     // A checkbox has one gesture: no Enter, no blur.
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(
       ROWS[0],
@@ -135,17 +136,19 @@ describe("editor set (base-ui)", () => {
     );
   });
 
+  /** This kit's select holds one value, so several values is a checkbox group. */
+  const tag = (name: string) => screen.getByRole("checkbox", { name });
+
   it("commits a multi-select as the array it chose", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
-    expect(select.multiple).toBe(true);
+    expect(screen.getByRole("group", { name: "Edit cell" })).toBe(editor());
     // Seeded from the stored array — no `editValue` needed for the round trip.
-    expect([...select.selectedOptions].map((o) => o.value)).toEqual(["urgent"]);
+    expect(tag("urgent")).toHaveAttribute("aria-checked", "true");
+    expect(tag("billable")).toHaveAttribute("aria-checked", "false");
 
-    select.options[1]!.selected = true;
-    fireEvent.change(select);
-    fireEvent.blur(select);
+    fireEvent.click(tag("billable"));
+    fireEvent.blur(tag("billable"), { relatedTarget: document.body });
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", [
       "urgent",
       "billable",
@@ -155,10 +158,8 @@ describe("editor set (base-ui)", () => {
   it("commits an empty multi-select as an empty array, not an empty string", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
-    select.options[0]!.selected = false;
-    fireEvent.change(select);
-    fireEvent.blur(select);
+    fireEvent.click(tag("urgent"));
+    fireEvent.blur(tag("urgent"), { relatedTarget: document.body });
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", []);
   });
 });

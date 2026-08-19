@@ -51,7 +51,30 @@ describe("cell spanning (unstyled)", () => {
     const cells = first?.querySelectorAll("td[data-adapttable-part='cell']");
     expect(cells).toHaveLength(1);
     expect(cells?.[0]?.getAttribute("colspan")).toBe("2");
+    expect(cells?.[0]?.getAttribute("data-cell-span")).toBe("2x1");
+    expect(cells?.[0]).toHaveStyle({ textAlign: "center" });
     expect(first?.textContent).toContain("Ship");
     expect(first?.textContent).not.toContain("Core");
+  });
+
+  it("skips the merge paint when appearance is plain", () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLS}
+        rowKey={(r) => r.id}
+        urlSync={false}
+        cellSpanAppearance="plain"
+        getCellSpan={({ column, rowIndex }) =>
+          column.key === "title" && rowIndex === 0 ? { colSpan: 2 } : undefined
+        }
+      />
+    );
+    const cell = container.querySelector(
+      "tbody tr td[data-adapttable-part='cell']"
+    );
+    expect(cell).toHaveAttribute("colspan", "2");
+    expect(cell).toHaveAttribute("data-cell-span", "2x1");
+    expect(cell).not.toHaveStyle({ textAlign: "center" });
   });
 });

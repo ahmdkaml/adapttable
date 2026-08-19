@@ -1,13 +1,13 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { configureFeatureLab } from "./feature-lab";
 
 /**
  * Add / duplicate / delete across every kit — the class of bug jsdom cannot
  * see: the toolbar control actually appearing, a blank row landing at the top
- * and opening an editor, Duplicate copying the row it sits on, Delete asking
- * first through the showcase dialog, and the host's own actions staying ahead
- * of the synthesized ones.
+ * and opening an editor, Duplicate copying the row it sits on, and Delete
+ * asking first through the showcase dialog. Host Edit/Delete stay off while
+ * mutations are on — those are a different demo path.
  */
 
 const ADAPTERS = [
@@ -69,38 +69,18 @@ for (const adapter of ADAPTERS) {
           .first()
       ).toBeVisible();
 
-      // Host Edit / Delete stay ahead of the synthesized Duplicate / Delete row.
-      const actionNames = await rows
-        .first()
-        .evaluate((row) =>
-          [...row.querySelectorAll("button")]
-            .map((b) =>
-              (b.getAttribute("aria-label") ?? b.textContent ?? "").trim()
-            )
-            .filter((name) =>
-              /^(Edit|Delete|Duplicate row|Delete row)$/.test(name)
-            )
-        );
-      expect(actionNames).toEqual([
-        "Edit",
-        "Delete",
-        "Duplicate row",
-        "Delete row",
-      ]);
-
       const namedRow = demo(page).locator("[data-stagger]", {
         hasText: original,
       });
-      await namedRow.getByRole("button", { name: "Duplicate row" }).click();
+      await clickRowAction(page, namedRow, "Duplicate row");
       await expect(
         demo(page).locator("[data-stagger]", { hasText: original })
       ).toHaveCount(2);
 
       const deleteOnCopy = demo(page)
         .locator("[data-stagger]", { hasText: original })
-        .first()
-        .getByRole("button", { name: "Delete row" });
-      await deleteOnCopy.click();
+        .first();
+      await clickRowAction(page, deleteOnCopy, "Delete row");
       const dialog = page.getByRole("dialog", { name: "Delete row" });
       await expect(dialog).toBeVisible();
       await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -109,7 +89,7 @@ for (const adapter of ADAPTERS) {
         demo(page).locator("[data-stagger]", { hasText: original })
       ).toHaveCount(2);
 
-      await deleteOnCopy.click();
+      await clickRowAction(page, deleteOnCopy, "Delete row");
       await page
         .getByRole("dialog", { name: "Delete row" })
         .getByRole("button", { name: "Delete row" })
@@ -131,4 +111,35 @@ for (const adapter of ADAPTERS) {
       ).toBeVisible();
     });
   });
+}
+
+async function clickRowAction(
+  page: Page,
+  row: Locator,
+  name: string
+): Promise<void> {
+  const trigger = row.locator('[data-adapttable-part="row-actions-trigger"]');
+  if ((await trigger.count()) === 0) {
+    await row.getByRole("button", { name }).click();
+    return;
+  }
+
+  // Portaled kits (radix) leave a menu "open" with no content after the
+  // confirm overlay; unstyled kits put `row-actions-menu` on <details>,
+  // which stays in the layout even when closed. Drive the items, not the
+  // wrapper: Escape leftover menus, open this row, retry if the first
+  // click toggled a stuck menu shut.
+  await page.keyboard.press("Escape");
+  const item = page
+    .getByRole("menuitem", { name })
+    .or(row.getByRole("button", { name, exact: true }))
+    .filter({ visible: true });
+  await trigger.click();
+  try {
+    await expect(item.first()).toBeVisible({ timeout: 2000 });
+  } catch {
+    await trigger.click();
+    await expect(item.first()).toBeVisible();
+  }
+  await item.first().click();
 }

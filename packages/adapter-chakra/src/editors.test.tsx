@@ -1,5 +1,5 @@
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
@@ -85,9 +85,12 @@ describe("editor set (chakra)", () => {
   it("commits a boolean in one gesture", () => {
     const { onCellEdit } = table();
     open(0);
-    expect(editor()).toHaveAttribute("type", "checkbox");
-    expect(editor()).not.toBeChecked();
-    fireEvent.click(editor());
+    // Chakra's Checkbox keeps the real input hidden inside its root, so the
+    // part lands on the root and the box is reached by its accessible name.
+    const box = screen.getByLabelText("Edit cell");
+    expect(box).toHaveAttribute("type", "checkbox");
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
     // A checkbox has one gesture: no Enter, no blur.
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(
       ROWS[0],

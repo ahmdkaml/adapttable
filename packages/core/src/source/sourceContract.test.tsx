@@ -220,6 +220,7 @@ describe.each(TIERS)("source contract — %s", (_name, mount) => {
     expect(tier.source().isFetching).toBe(false);
     expect(tier.source().rows).toEqual(pageOf(1));
     expect(tier.source().total).toBe(ALL.length);
+    expect(tier.source().defaultLimit).toBe(LIMIT);
   });
 
   it("keeps isLoading down for background refreshes — even row-emptying ones", () => {

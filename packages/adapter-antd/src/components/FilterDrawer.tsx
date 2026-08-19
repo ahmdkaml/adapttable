@@ -29,17 +29,19 @@ export function FilterDrawer({
       placement={dir === "rtl" ? "left" : "right"}
       size={360}
       footer={
-        <Flex justify="space-between">
-          <Button disabled={activeFilterCount === 0} onClick={onClearFilters}>
-            {labels.clearAll}
-          </Button>
-          <Button type="primary" onClick={onClose}>
-            {labels.filtersDone}
-          </Button>
-        </Flex>
+        <div dir={dir}>
+          <Flex justify="space-between">
+            <Button disabled={activeFilterCount === 0} onClick={onClearFilters}>
+              {labels.clearAll}
+            </Button>
+            <Button type="primary" onClick={onClose}>
+              {labels.filtersDone}
+            </Button>
+          </Flex>
+        </div>
       }
     >
-      {filters}
+      <div dir={dir}>{filters}</div>
     </Drawer>
   );
 }

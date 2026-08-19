@@ -30,6 +30,19 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
+  onPrint,
+  printLabel,
+  density,
+  onDensityChange,
+  onToggleFullscreen,
+  isFullscreen,
   hasFilters,
   activeFilterCount,
   filters,
@@ -74,6 +87,7 @@ export function Toolbar<TRow>({
 
   return (
     <Flex gap="small" wrap align="center" justify="space-between">
+      {toolbarSlots?.start}
       {searchable !== false && (
         <Input
           type="search"
@@ -123,6 +137,24 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <>
             {/* antd's own loading Button: the spinner replaces its icon slot
@@ -147,15 +179,57 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {onPrint && (
+          <Button
+            size="small"
+            data-adapttable-part="print-button"
+            onClick={onPrint}
+          >
+            {printLabel}
+          </Button>
+        )}
+        {onDensityChange && (
+          <Button
+            size="small"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            onClick={() => {
+              onDensityChange(
+                density === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {density === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </Button>
+        )}
+        {onToggleFullscreen && (
+          <Button
+            size="small"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </Button>
+        )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <Select
             style={{ minWidth: 110 }}
             aria-label={labels.rowsPerPage}
             value={source.limit}
-            options={pageSizeOptions(source.limit).map((n) => ({
-              value: n,
-              label: String(n),
-            }))}
+            options={pageSizeOptions([source.limit, source.defaultLimit]).map(
+              (n) => ({
+                value: n,
+                label: String(n),
+              })
+            )}
             onChange={(value: number) => source.setLimit(value)}
           />
         )}

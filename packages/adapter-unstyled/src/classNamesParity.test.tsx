@@ -13,8 +13,13 @@ import { useDataTableShell } from "@adapttable/core/adapter";
 import { act, fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FilterHeaderRow } from "./components/kitControls";
 import { DataTable } from "./DataTable";
-import type { ColumnDef, DataTableClassNames } from "./index";
+import {
+  type ColumnDef,
+  type DataTableClassNames,
+  defaultLabels,
+} from "./index";
 
 vi.mock("@adapttable/core/adapter", async (importOriginal) => {
   const actual = await importOriginal<typeof AdapterModule>();
@@ -169,10 +174,32 @@ const A11Y_PARTS = new Set([
  * the test would put two parts on one element. It is verified in
  * `selectedCells.test.tsx`, which drives a real Shift+arrow selection;
  * `cellMatch` / `cellMatchCurrent` are the same shape for find hits and are
- * verified in `findInTable.test.tsx`.
+ * verified in `findInTable.test.tsx`. `cellSpan` is the same shape for a
+ * merged cell (`data-cell-span`) and is verified in `cellSpan.test.tsx`.
  */
+/**
+ * Parts core's own chrome draws, which no kit can carry a class for.
+ *
+ * The layout host, the side panel's inner structure and the context menu's
+ * anchor are rendered by core, not by this adapter: a kit supplies the frame and the controls and
+ * gets ONE class hook for each, while the region, the header and the body
+ * between them are structure core owns outright. There is nothing here for
+ * an adapter to name, so the two directions of this test cannot apply —
+ * unlike everything else in it, where a missing key is a real gap.
+ */
+const CORE_OWNED = new Set([
+  "table-region",
+  "table-region-main",
+  "side-panel-header",
+  "side-panel-tabs",
+  "side-panel-body",
+  "context-menu-anchor",
+  "command-list",
+]);
+
 const STATE_CLASSES = new Set([
   "cellSelected",
+  "cellSpan",
   "groupFooterRow",
   "groupFooterCell",
   "groupMoreRow",
@@ -241,6 +268,30 @@ function Harness(props: {
       groupAggregates={() => ({ qty: "agg" })}
       renderRowDetail={(r) => <div>{r.name}</div>}
       onCellEdit={vi.fn()}
+      editHistory
+      undoRedoButtons
+      printButton
+      cellNavigation
+      columnSelectionCheckbox
+      statusBar
+      commandPalette
+      densityChooser
+      onDensityChange={vi.fn()}
+      fullscreen
+      onPrint={vi.fn()}
+      contextMenu={{
+        // A host entry, so the divider that separates it from the built-ins
+        // renders too.
+        items: () => [{ key: "audit", label: "Audit", onSelect: vi.fn() }],
+      }}
+      sidePanel={{
+        panels: [
+          { key: "one", label: "One", content: <p>one</p> },
+          { key: "two", label: "Two", content: <p>two</p> },
+        ],
+        open: "one",
+        onOpenChange: vi.fn(),
+      }}
       {...props.override}
     />
   );
@@ -250,7 +301,19 @@ const part = (name: string): Element | null =>
   document.body.querySelector(`[data-adapttable-part="${name}"]`);
 
 /** Mount every state the table can render and union the parts seen. */
+/**
+ * jsdom reports no fullscreen support, and the toggle correctly hides
+ * itself when the browser will not allow it — so the harness says it would.
+ */
+function allowFullscreen() {
+  Object.defineProperty(document, "fullscreenEnabled", {
+    value: true,
+    configurable: true,
+  });
+}
+
 async function renderAllStates(classNames?: DataTableClassNames) {
+  allowFullscreen();
   const seen = new Map<string, Element[]>();
   const absorb = () => {
     for (const [name, els] of collectParts()) {
@@ -285,6 +348,17 @@ async function renderAllStates(classNames?: DataTableClassNames) {
     fireEvent.click(headerBox);
     absorb();
   }
+  // The palette exists only once its shortcut is pressed.
+  fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+  absorb();
+  // The empty state exists only for a query that matches nothing.
+  fireEvent.change(part("command-input")!, { target: { value: "zzzz" } });
+  absorb();
+  fireEvent.keyDown(part("command-input")!, { key: "Escape" });
+
+  // A right-click, which is the only way the context menu exists at all.
+  fireEvent.contextMenu(part("cell")!, { clientX: 5, clientY: 5 });
+  absorb();
   fireEvent.click(part("column-menu-button")!);
   absorb();
   const more = part("column-menu-more");
@@ -316,6 +390,45 @@ async function renderAllStates(classNames?: DataTableClassNames) {
   fireEvent.click(sortButtons[1]!, { shiftKey: true });
   absorb();
   desktop.unmount();
+
+  // Compact header-filter row is a public kit control DataTable no longer
+  // mounts (headerFilters is the overlay trigger). Render it here so the
+  // `filter-header-row` / `filter-header-input` / `filter-header-menu`
+  // class hooks stay in the contract.
+  const compactRow = render(
+    <table>
+      <thead>
+        <FilterHeaderRow
+          columns={columns}
+          defs={filters}
+          source={{
+            extra: {},
+            setExtra: () => undefined,
+            setExtras: () => undefined,
+          }}
+          labels={defaultLabels}
+          classNames={classNames}
+        />
+      </thead>
+    </table>
+  );
+  absorb();
+  compactRow.unmount();
+
+  // Panel AutoFilterForm (multiSelect group + async loading placeholder).
+  // `headerFilters` hides those fields from the toolbar form.
+  const compactHeader = mount({ override: { headerFilters: false } });
+  fireEvent.click(part("filters-button")!);
+  absorb();
+  compactHeader.unmount();
+
+  // The 3-dot layout only mounts `row-actions-trigger` / `row-actions-menu`.
+  const menuLayout = mount({
+    override: { rowActionsLayout: "menu" },
+  });
+  fireEvent.click(part("row-actions-trigger")!);
+  absorb();
+  menuLayout.unmount();
 
   // A host-handled export mid-flight → the busy button's spinner. The promise
   // is left unsettled on purpose: the affordance only exists while it is.
@@ -487,6 +600,23 @@ const KEYS = [
   "treeToggle",
   "treeSpacer",
   "addRow",
+  "densityToggle",
+  "fullscreenToggle",
+  "commandPalette",
+  "commandInput",
+  "commandItem",
+  "commandEmpty",
+  "contextMenu",
+  "contextMenuItem",
+  "contextMenuSeparator",
+  "sidePanel",
+  "sidePanelTab",
+  "sidePanelClose",
+  "statusBar",
+  "statusItem",
+  "undoButton",
+  "redoButton",
+  "printButton",
   "exportCsvButton",
   "exportSpinner",
   "filtersAnchor",
@@ -565,7 +695,9 @@ const KEYS = [
   "thead",
   "headerRow",
   "headerCell",
+  "columnSelect",
   "filterHeaderRow",
+  "filterHeaderTrigger",
   "filterHeaderCell",
   "filterHeaderInput",
   "filterHeaderMenu",
@@ -577,6 +709,7 @@ const KEYS = [
   "tbody",
   "row",
   "cell",
+  "cellSpan",
   "cellSelected",
   "groupFooterRow",
   "groupFooterCell",
@@ -593,6 +726,8 @@ const KEYS = [
   "actionsHeader",
   "actionsCell",
   "actionButton",
+  "rowActionsTrigger",
+  "rowActionsMenu",
   "reorderHeader",
   "reorderCell",
   "rowReorderHandle",
@@ -677,6 +812,7 @@ describe("classNames \u2194 part parity (unstyled)", () => {
     const unmappedParts: string[] = [];
     const unclassed: string[] = [];
     for (const [name, els] of seen) {
+      if (CORE_OWNED.has(name)) continue;
       const key = camel(name) as Key;
       if (!KEYS.includes(key)) {
         unmappedParts.push(name);

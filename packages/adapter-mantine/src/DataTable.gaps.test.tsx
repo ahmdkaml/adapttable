@@ -123,22 +123,35 @@ describe("<DataTable> gaps", () => {
     expect(screen.queryByRole("searchbox")).toBeNull();
   });
 
-  it("stickyToolbar parks the toolbar at stickyTop; off by default", () => {
-    // Aligned contract: stickyTop alone is the sticky-header inset (as in
-    // every other adapter) — the toolbar only sticks when asked to.
+  it("stickyHeader parks the toolbar at stickyTop unless stickyToolbar is false", () => {
     const plain = render(<Harness override={{ stickyTop: 42 }} />);
     expect(
-      plain.container.querySelector('[style*="position: sticky"]')
+      plain.container.querySelector(
+        '[data-adapttable-part="toolbar"][style*="position: sticky"]'
+      )
     ).toBeNull();
     plain.unmount();
 
-    const { container } = render(
-      <Harness override={{ stickyTop: 42, stickyToolbar: true }} />
+    const pinned = render(
+      <Harness override={{ stickyHeader: true, stickyTop: 42 }} />
     );
-    const toolbar = container.querySelector<HTMLElement>(
-      '[style*="position: sticky"]'
+    const toolbar = pinned.container.querySelector<HTMLElement>(
+      '[data-adapttable-part="toolbar"]'
     );
+    expect(toolbar?.style.position).toBe("sticky");
     expect(toolbar?.style.top).toBe("42px");
+    pinned.unmount();
+
+    const optedOut = render(
+      <Harness
+        override={{ stickyHeader: true, stickyTop: 42, stickyToolbar: false }}
+      />
+    );
+    expect(
+      optedOut.container.querySelector(
+        '[data-adapttable-part="toolbar"][style*="position: sticky"]'
+      )
+    ).toBeNull();
   });
 
   it("mobile: renders selection checkboxes and row actions with confirm", () => {

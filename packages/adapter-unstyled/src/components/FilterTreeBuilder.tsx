@@ -28,7 +28,7 @@ function TreeSelect({
       onChange={(event: ChangeEvent<HTMLSelectElement>) =>
         onChange(event.target.value)
       }
-      style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+      style={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>
@@ -94,9 +94,9 @@ function TreeDisclosure({
       data-adapttable-part="filter-tree"
       onToggle={(event) => onExpandedChange(event.currentTarget.open)}
       style={{
-        marginBlockStart: 4,
-        paddingBlockStart: 8,
-        borderBlockStart:
+        marginBlockEnd: 4,
+        paddingBlockEnd: 16,
+        borderBlockEnd:
           "1px solid color-mix(in srgb, currentColor 14%, transparent)",
       }}
     >

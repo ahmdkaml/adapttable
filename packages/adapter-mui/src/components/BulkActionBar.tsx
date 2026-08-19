@@ -40,6 +40,7 @@ export function BulkBar({
   const showBanner = headerState === "all" && total > visibleIds.length;
   return (
     <Stack
+      data-adapttable-part="bulk-bar"
       direction="row"
       spacing={1}
       useFlexGap
@@ -53,6 +54,7 @@ export function BulkBar({
         direction="row"
         spacing={1}
         useFlexGap
+        data-adapttable-part="select-all-banner"
         sx={{ alignItems: "center", flexWrap: "wrap" }}
       >
         <Typography variant="body2">
@@ -61,12 +63,17 @@ export function BulkBar({
         {showBanner &&
           (allMatching ? (
             <>
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                data-adapttable-part="select-all-text"
+              >
                 {labels.allMatchingSelected(total)}
               </Typography>
               <Button
                 size="small"
                 variant="text"
+                data-adapttable-part="select-all-button"
                 onClick={clear}
                 disabled={pending !== null}
               >
@@ -75,12 +82,17 @@ export function BulkBar({
             </>
           ) : (
             <>
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                data-adapttable-part="select-all-text"
+              >
                 {labels.pageSelected(visibleIds.length)}
               </Typography>
               <Button
                 size="small"
                 variant="text"
+                data-adapttable-part="select-all-button"
                 onClick={selectAllMatching}
                 disabled={pending !== null}
               >
@@ -104,6 +116,7 @@ export function BulkBar({
             <Tooltip key={action.key} title={reason ?? ""}>
               <span>
                 <Button
+                  data-adapttable-part="bulk-button"
                   size="small"
                   variant="contained"
                   color={action.color as "primary" | undefined}
@@ -124,7 +137,12 @@ export function BulkBar({
           );
         })}
         {errorMessage !== null && (
-          <Typography variant="body2" color="error" role="alert">
+          <Typography
+            data-adapttable-part="bulk-error"
+            variant="body2"
+            color="error"
+            role="alert"
+          >
             {`${labels.errorTitle}: ${errorMessage}`}
           </Typography>
         )}

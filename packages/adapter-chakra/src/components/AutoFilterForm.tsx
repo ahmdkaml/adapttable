@@ -47,7 +47,7 @@ function GroupField({
   children,
 }: Readonly<{ label: ReactNode; id: string; children: ReactNode }>) {
   return (
-    <Stack gap={1}>
+    <Stack gap={4}>
       <Text id={id} as="span" fontSize="sm">
         {label}
       </Text>
@@ -150,6 +150,8 @@ function RangeField<TRow>({
           size="sm"
           flex="0 0 8.5rem"
           w="8.5rem"
+          aria-label={labels.operator}
+          data-adapttable-part="filter-operator"
           placeholder={labels.operator}
           value={op ?? ""}
           onChange={(e) => {
@@ -423,7 +425,7 @@ export function AutoFilterForm<TRow>({
 }: Readonly<AutoFilterFormProps<TRow>>) {
   const resolved = resolveLabels(labels);
   return (
-    <Stack gap={3}>
+    <Stack gap={6}>
       {defs.map((def) => (
         <AutoFilterField
           key={def.key}

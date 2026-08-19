@@ -15,25 +15,8 @@ import {
 } from "@mui/material";
 import { type ReactNode, useRef } from "react";
 
+import { FiltersIcon } from "../icons";
 import { FilterPopover } from "./FilterPopover";
-
-function FiltersIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z" />
-    </svg>
-  );
-}
 
 /** Magnifying-glass glyph for the search field (currentColor, no icon-lib). */
 function SearchIcon() {
@@ -78,6 +61,19 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
+  onPrint,
+  printLabel,
+  density,
+  onDensityChange,
+  onToggleFullscreen,
+  isFullscreen,
   hasFilters,
   activeFilterCount,
   showRowsPerPage,
@@ -133,6 +129,7 @@ export function Toolbar<TRow>({
         justifyContent: "space-between",
       }}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <TextField
           size="small"
@@ -196,6 +193,28 @@ export function Toolbar<TRow>({
         )}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              variant="outlined"
+              size="small"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <>
             {/* MUI's own progress indicator in the button's icon slot rather
@@ -229,6 +248,49 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {onPrint && (
+          <Button
+            variant="outlined"
+            size="small"
+            data-adapttable-part="print-button"
+            onClick={onPrint}
+          >
+            {printLabel}
+          </Button>
+        )}
+        {onDensityChange && (
+          <Button
+            variant="outlined"
+            size="small"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            onClick={() => {
+              onDensityChange(
+                density === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {density === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </Button>
+        )}
+        {onToggleFullscreen && (
+          <Button
+            variant="outlined"
+            size="small"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </Button>
+        )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <TextField
             select
@@ -238,7 +300,7 @@ export function Toolbar<TRow>({
             onChange={(e) => source.setLimit(Number(e.target.value))}
             sx={{ minWidth: 132 }}
           >
-            {pageSizeOptions(source.limit).map((n) => (
+            {pageSizeOptions([source.limit, source.defaultLimit]).map((n) => (
               <MenuItem key={n} value={n}>
                 {n}
               </MenuItem>

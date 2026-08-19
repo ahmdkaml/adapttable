@@ -77,7 +77,7 @@ function TextFilter<TRow>({
     useTextFilterWidget(def, source);
   return (
     <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
-      <FormLabel component="legend" sx={{ mb: 0.75 }}>
+      <FormLabel component="legend" sx={{ mb: 3 }}>
         {label}
       </FormLabel>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
@@ -313,7 +313,7 @@ function RangeFilter<TRow>({
   }
   return (
     <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
-      <FormLabel component="legend" sx={{ mb: 0.75 }}>
+      <FormLabel component="legend" sx={{ mb: 3 }}>
         {label}
       </FormLabel>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
@@ -326,6 +326,7 @@ function RangeFilter<TRow>({
             setOp(next);
             write(next, a, b);
           }}
+          data-adapttable-part="filter-operator"
           slotProps={{
             select: { native: false },
             htmlInput: { "aria-label": labels.operator },
@@ -390,7 +391,7 @@ export function AutoFilterForm<TRow>({
   registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
-    <Stack spacing={1.5}>
+    <Stack spacing={3}>
       {defs.map((def) => (
         <FilterField
           key={def.key}

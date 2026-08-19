@@ -1,8 +1,16 @@
 /* ============================================================
-   AdaptTable showcase — marketing chrome (recreated from the
-   design handoff). The chrome is constant; only the table area
-   swaps to the real adapter's components.
+   AdaptTable showcase — marketing chrome. The chrome is
+   constant; only the table area swaps to the real adapter's
+   components.
+
+   `tokens.css` holds the design system — the palette, the type
+   scale, the space grid and the adapter tint every rule below
+   reads from, with the reasoning behind each. `matrix.css`
+   holds the adapter-first pages built on it.
    ============================================================ */
+
+@import "./tokens.css";
+@import "./matrix.css";
 
 html {
   scroll-behavior: smooth;
@@ -26,35 +34,6 @@ a {
 }
 ::selection {
   background: color-mix(in oklch, var(--brand) 26%, transparent);
-}
-
-:root,
-[data-theme="light"] {
-  --page-bg: oklch(0.985 0.004 264);
-  --page-surface: oklch(1 0 0);
-  --page-surface-2: oklch(0.975 0.004 264);
-  --page-border: oklch(0.91 0.005 264);
-  --page-border-soft: oklch(0.945 0.004 264);
-  --ink: oklch(0.22 0.014 264);
-  --ink-2: oklch(0.46 0.012 264);
-  --ink-3: oklch(0.62 0.01 264);
-  --brand: oklch(0.55 0.19 274);
-  --brand-soft: oklch(0.95 0.04 274);
-  --shadow-card:
-    0 1px 2px oklch(0.2 0.02 264 / 0.04), 0 8px 28px oklch(0.2 0.02 264 / 0.06);
-}
-[data-theme="dark"] {
-  --page-bg: oklch(0.16 0.007 264);
-  --page-surface: oklch(0.2 0.008 264);
-  --page-surface-2: oklch(0.235 0.009 264);
-  --page-border: oklch(0.3 0.01 264);
-  --page-border-soft: oklch(0.26 0.009 264);
-  --ink: oklch(0.95 0.005 264);
-  --ink-2: oklch(0.72 0.01 264);
-  --ink-3: oklch(0.56 0.01 264);
-  --brand: oklch(0.72 0.15 274);
-  --brand-soft: oklch(0.3 0.06 274);
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 10px 34px oklch(0 0 0 / 0.4);
 }
 
 /* Sticky footer: short pages pin it to the viewport bottom, long pages
@@ -87,24 +66,192 @@ a {
 .nav__inner {
   display: flex;
   align-items: center;
-  gap: 28px;
-  height: 62px;
+  gap: 24px;
+  min-height: 62px;
+  padding-block: 6px;
 }
+/* Five things across the bar — two links and three menus — so the strip is one
+   line at every desktop width and the sticky chrome is a constant 63px. The
+   sixteen feature pages live inside the menus, where a panel is free to be
+   taller than the bar it hangs from. */
 .nav__links {
   display: flex;
-  gap: 22px;
+  align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  column-gap: 18px;
   margin-inline-start: 14px;
 }
-.nav__links a {
+/* The wordmark and the actions keep their intrinsic width; nothing in the bar
+   has to shrink at the widths this strip is shown at. */
+.nav__inner > .wm,
+.nav__right {
+  flex: 0 0 auto;
+}
+.nav__links > a,
+.nav__trigger {
   color: var(--ink-2);
   font-size: 14px;
   font-weight: 500;
+  /* Every top-level item is one line; the strip never wraps. */
+  white-space: nowrap;
   transition: color 0.15s;
 }
-.nav__links a:hover {
+.nav__links > a:hover,
+.nav__trigger:hover {
   color: var(--ink);
 }
-.nav__links a.is-on {
+.nav__links > a.is-on,
+.nav__trigger.is-on {
+  color: var(--brand);
+  font-weight: 650;
+}
+
+/* ---------- nav dropdowns ---------- */
+.nav__group {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.nav__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+.nav__chev {
+  flex: none;
+  color: var(--ink-3);
+  transition: rotate 0.15s ease;
+}
+.nav__trigger[aria-expanded="true"] {
+  color: var(--ink);
+}
+.nav__trigger[aria-expanded="true"] .nav__chev {
+  rotate: 180deg;
+}
+.nav__trigger.is-on .nav__chev {
+  color: currentcolor;
+}
+/* The panel sits inside `.nav`, whose own stacking context (sticky, z-index 40)
+   already floats the whole bar over the page — this index only settles the
+   order against the bar's own children. `visibility` is what hides it: the
+   links stay in the markup for a crawler and a middle click, while a hidden
+   subtree is out of the tab order and out of the accessibility tree. */
+.nav__menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  inset-inline-start: -12px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 186px;
+  /* Real interior padding, on every panel: the item boxes are what fill the
+     content box, so the panel's own padding IS the clearance between a hover
+     row and the rounded border. `nav-menu.spec.ts` holds every descendant to
+     12px of it. */
+  padding: 12px;
+  border: 1px solid var(--page-border);
+  border-radius: 12px;
+  background: var(--page-surface);
+  box-shadow: var(--shadow-card);
+  visibility: hidden;
+  opacity: 0;
+  translate: 0 -5px;
+  pointer-events: none;
+  transition:
+    opacity 0.14s ease,
+    translate 0.14s ease,
+    visibility 0s linear 0.14s;
+}
+.nav__menu[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+  transition:
+    opacity 0.14s ease,
+    translate 0.14s ease,
+    visibility 0s;
+}
+.nav__menu a {
+  display: grid;
+  gap: 1px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+/* The Adapters menu: eight kits read as a list of eight product names, so each
+   one carries its own mark and its own one-line description, in two columns.
+   The panel is measured and slid back from the viewport edge like every other
+   one — `nav-menu.spec.ts` holds it to that at 1024px.
+
+   The panel sizes to its content: the taglines set the column width, so the box
+   is as wide as what it holds rather than a guessed figure the content then
+   overshoots. `max-width` is the ceiling on a narrow window, and the wrapping
+   below is what makes that ceiling hold — a track that cannot wrap spills its
+   text past the panel edge instead of shrinking. */
+.nav__menu--wide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: 16px;
+  width: max-content;
+  max-width: min(40rem, calc(100vw - 32px));
+}
+/* A tagline is a phrase, not a label — it wraps inside its own column. The
+   labels above keep the `nowrap` every other menu item has. */
+.nav__menu--wide .nav__item-hint {
+  white-space: normal;
+  text-wrap: pretty;
+}
+.nav__item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav__dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c, var(--brand));
+  box-shadow: 0 0 0 2px
+    color-mix(in oklch, var(--c, var(--brand)) 20%, transparent);
+}
+.nav__item-hint {
+  font-size: 11.5px;
+  font-weight: 450;
+  line-height: 1.3;
+  color: var(--ink-3);
+  padding-inline-start: 15px;
+}
+.nav__menu a:hover {
+  background: var(--page-surface-2);
+  color: var(--ink);
+}
+.nav__menu a:focus-visible {
+  background: var(--page-surface-2);
+  color: var(--ink);
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.nav__menu a.is-on {
+  background: var(--brand-soft);
   color: var(--brand);
   font-weight: 650;
 }
@@ -643,6 +790,126 @@ a {
 .pad-surface__body {
   padding: 14px;
 }
+/* ---------- the formulas page's own bar ----------
+   Host chrome, not table chrome: the table renders the columns it is handed,
+   and typing the formula belongs to the page the way a real app's formula bar
+   belongs to that app. Styled from the page tokens, so it follows dark mode
+   without knowing which kit is mounted. */
+.fx {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--page-border);
+  background: var(--page-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fx__form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.fx__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+}
+.fx__field--wide {
+  flex: 1 1 22rem;
+}
+.fx__field input {
+  min-height: 34px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 450;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 8px;
+}
+.fx__form button {
+  min-height: 34px;
+  padding: 0 13px;
+  color: var(--page-bg);
+  background: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+.fx__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fx__examples button {
+  padding: 4px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--ink-2);
+  background: var(--page-surface);
+  border: 1px dashed var(--page-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.fx__examples button:hover,
+.fx__form button:hover {
+  opacity: 0.85;
+}
+.fx__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fx__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Logical, so the remove control keeps the narrow side under RTL too. */
+  padding-block: 3px;
+  padding-inline: 9px 4px;
+  font-size: 12px;
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: 999px;
+}
+.fx__chips code {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.fx__chips button {
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.fx__chips .fx__empty {
+  border-style: dashed;
+  color: var(--ink-2);
+}
+.fx__report {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .hint-row {
   display: flex;
   flex-wrap: wrap;
@@ -683,8 +950,22 @@ a {
   font: inherit;
   font-weight: 650;
 }
-.demo-live-update button:hover {
+.demo-live-update button:hover:not(:disabled) {
   opacity: 0.88;
+}
+.demo-live-update button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.demo-live-update--feed {
+  align-items: baseline;
+  padding-block: 7px;
+}
+.demo-live-update--feed ol {
+  margin: 0;
+  padding-inline-start: 1.15em;
+  display: grid;
+  gap: 1px;
 }
 
 /* ---------- footer ---------- */
@@ -895,6 +1176,148 @@ a {
   }
 }
 
+/* ---------- the pivot page ---------- */
+/* The three zone cards sit in a row above the table so the grid can use the
+   full width. Subtotal and grand-total lines still have to be distinguishable
+   from the data lines or the numbers are ambiguous. */
+.pivot-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.pivot-layout > * {
+  min-width: 0;
+}
+/* Kit Surfaces are a vertical flex of the three zones (correct in a docked
+   side panel). On this page they become a row. `!important` beats the kit's
+   own `display: flex` / `flex-direction: column`, including antd's inline
+   styles. Feature Lab does not use `.pivot-layout`, so it stays stacked. */
+.pivot-layout [data-adapttable-part="pivot-panel"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .pivot-layout [data-adapttable-part="pivot-panel"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pivot-table-wrap {
+  min-width: 0;
+}
+/* The table itself is the kit's — these only mark the lines that are totals
+   rather than data, through `rowClassName`, the seam every adapter honours.
+   Without it a subtotal reads as one more row of the data it sums. */
+.pivot-line--subtotal {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+}
+.pivot-line td {
+  font-variant-numeric: tabular-nums;
+}
+/* The control that folds a group away. A button rather than a click handler on
+   the cell: folding is an action, and one a keyboard has to reach. */
+.pivot-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.pivot-fold__mark {
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+
+/* ---------- a host's own mobile card ---------- */
+/* What `renderCard` replaces the built-in stack with: the identity as a
+   headline, the rest as a compact grid. */
+.demo-person-card__name {
+  margin: 0 0 8px;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.demo-person-card__grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+.demo-person-card__grid dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+.demo-person-card__grid dd {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* ---------- a host's own error state ---------- */
+/* What `slots.error` replaces the built-in with. Plain and unmistakably not
+   the kit's, so the Feature Lab's Built-in / Replaced switch reads at a
+   glance. */
+.demo-error {
+  border: 1px solid color-mix(in srgb, crimson 40%, transparent);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.demo-error strong {
+  font-size: 0.95rem;
+}
+.demo-error p {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+.demo-error button {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 6px 12px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+}
+.demo-error button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+/* ---------- the flash on a row that just changed ---------- */
+/* `useHighlight` decides WHICH row is marked and for how long; what the mark
+   looks like is the host's, which is why this lives in the demo's own
+   stylesheet and not in any adapter. */
+.demo-flash > td,
+.demo-flash > th,
+.demo-flash[data-adapttable-part="mobile-card"] {
+  background-color: color-mix(in srgb, var(--c) 18%, transparent);
+}
+.demo-flash--animated > td,
+.demo-flash--animated > th,
+.demo-flash--animated[data-adapttable-part="mobile-card"] {
+  animation: demo-flash-fade 1.5s ease-out;
+}
+@keyframes demo-flash-fade {
+  from {
+    background-color: color-mix(in srgb, var(--c) 45%, transparent);
+  }
+  to {
+    background-color: color-mix(in srgb, var(--c) 18%, transparent);
+  }
+}
+
 /* ---------- mobile demo: the phone frame ---------- */
 /* A desktop visitor sees the phone experience without resizing: the table
    renders inside a phone-sized bezel while `forceMobile` pins the card
@@ -926,4 +1349,18 @@ a {
   margin: 12px auto 0;
   border-radius: 999px;
   background: var(--page-border);
+}
+
+/* Announced, never drawn — the live region that follows the reader between
+   the options drawer and the preview. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

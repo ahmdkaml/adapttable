@@ -16,4 +16,16 @@ describe("pageSizeOptions", () => {
     expect(pageSizeOptions(5, [20, 40])).toEqual([5, 20, 40]);
     expect(pageSizeOptions(20, [20, 40])).toEqual([20, 40]);
   });
+
+  it("keeps an off-list default after the active limit returns to the standard set", () => {
+    expect(pageSizeOptions([10, 500])).toEqual([500, ...PAGE_SIZE_OPTIONS]);
+  });
+
+  it("prepends several off-list sizes in the order given, unique", () => {
+    expect(pageSizeOptions([15, 500, 15])).toEqual([
+      15,
+      500,
+      ...PAGE_SIZE_OPTIONS,
+    ]);
+  });
 });

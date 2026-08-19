@@ -1,12 +1,15 @@
 import {
   asGesture,
   autoSizeColumns as autoSizeAllColumns,
+  bodyCellsHaveRowSpan,
   cellFillHandler,
   cellPasteHandler,
   type ColumnDef,
   columnsHaveFooter,
   type ConfirmHandler,
+  type EditHistoryState,
   type FilterRuntime,
+  flattenColumnTree,
   type GridFocusState,
   type GroupByInput,
   type GroupCollapseState,
@@ -15,8 +18,7 @@ import {
   makeExportCsvHandler,
   pageSizeOptions,
   partitionPinnedRows,
-  PINNED_BOTTOM_PART,
-  PINNED_TOP_PART,
+  pinnedRowPart,
   pinnedRowStickyStyle,
   resolveColumnFooter,
   resolveExportCsv,
@@ -29,9 +31,12 @@ import {
   type RowReorderState,
   type SelectionState,
   selectionStats,
+  showSimpleFilterFields,
+  type TableErrorState,
   type TableLabels,
   tableMinWidth,
   type TableSource,
+  toolbarShowsFilters,
   type TreeEntry,
   type UrlStateAdapter,
   useChromeScrollReset,
@@ -52,22 +57,33 @@ import {
 } from "@adapttable/core";
 import {
   DEFAULT_CARD_SIZE_PX,
+  EXTRA_OVER_SPAN_ROW_STYLE,
   EXTRA_ROW_PARTS,
+  fillSlot,
   GridFocusAnnouncer,
   insertExtraRows,
   isExtraEntry,
+  printToolbar,
   REORDER_COLUMN_WIDTH,
   resolveRowStyle,
+  resolveStickyToolbar,
   rowClickProps,
   rowIsDirty,
   RowReorderAnnouncer,
   rowReorderDropStyle,
+  SidePanelLayout,
   tableRenderModel,
+  undoRedoToolbar,
+  useCommandPalette,
   useExportHandler,
+  useFullscreen,
   useKeyedVirtualization,
   useMountStagger,
   useOffsetHeight,
   useResolvedAdapter,
+  useStickyToolbarLayout,
+  useTableContextMenu,
+  viewControlsToolbar,
 } from "@adapttable/core/adapter";
 import {
   Button,
@@ -92,7 +108,6 @@ import {
   type UIEventHandler,
   useCallback,
   useMemo,
-  useRef,
   useState,
 } from "react";
 
@@ -105,6 +120,8 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
+import { ContextMenu } from "./components/ContextMenu";
 import { ErrorState } from "./components/ErrorState";
 import { ExpandToggle } from "./components/ExpandToggle";
 import { FilterDrawer } from "./components/FilterDrawer";
@@ -121,8 +138,9 @@ import {
 import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { SidePanel } from "./components/SidePanel";
 import { SkeletonTable } from "./components/SkeletonTable";
+import { StatusBar } from "./components/StatusBar";
 import { Toolbar } from "./components/Toolbar";
 import type { DataTableProps } from "./types";
 
@@ -257,6 +275,7 @@ function resolveScroll(
 type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
   "data-row-pin"?: RowPinSide;
   "data-adapttable-part"?: string;
+  "data-row-id"?: string;
   "data-stagger"?: string;
   "data-dirty"?: string;
   "data-collapsed"?: string;
@@ -264,14 +283,14 @@ type AntdRowHtmlAttrs = HTMLAttributes<HTMLElement> & {
 
 function antdPinnedRowAttrs(
   pinSide: RowPinSide | undefined,
-  headerOffset: number
+  headerOffset: number,
+  sticky: boolean
 ): AntdRowHtmlAttrs {
   if (!pinSide) return {};
   return {
-    style: pinnedRowStickyStyle(pinSide, headerOffset),
+    ...(sticky ? { style: pinnedRowStickyStyle(pinSide, headerOffset) } : {}),
     "data-row-pin": pinSide,
-    "data-adapttable-part":
-      pinSide === "top" ? PINNED_TOP_PART : PINNED_BOTTOM_PART,
+    "data-adapttable-part": pinnedRowPart(pinSide),
   };
 }
 
@@ -281,6 +300,8 @@ function antdOnRow<TRow>(options: {
   getRowId: (row: TRow) => string;
   rowPinning: RowPinningState<TRow> | undefined;
   headerOffset: number;
+  /** Sticky pin chrome — off when a cell span would overlay the next rows. */
+  pinRowSticky: boolean;
   rowReorder: RowReorderState<TRow> | undefined;
   windowStart: number;
   gridFocus: GridFocusState | undefined;
@@ -296,6 +317,7 @@ function antdOnRow<TRow>(options: {
     getRowId,
     rowPinning,
     headerOffset,
+    pinRowSticky,
     rowReorder,
     windowStart,
     gridFocus,
@@ -309,6 +331,7 @@ function antdOnRow<TRow>(options: {
     return {
       "data-adapttable-part": EXTRA_ROW_PARTS[record.extraKind].row,
       role: record.extraKind === "separator" ? "separator" : undefined,
+      style: EXTRA_OVER_SPAN_ROW_STYLE,
     };
   }
   if (isAdaptTableGroupRow(record)) {
@@ -319,7 +342,11 @@ function antdOnRow<TRow>(options: {
     };
   }
   const id = getRowId(record);
-  const pin = antdPinnedRowAttrs(rowPinning?.sideOf(id), headerOffset);
+  const pin = antdPinnedRowAttrs(
+    rowPinning?.sideOf(id),
+    headerOffset,
+    pinRowSticky
+  );
   const visual = resolveRowStyle(rowStyle, rowHeight, record, rowIndex ?? 0);
   const reorderStyle =
     rowReorder && rowIndex !== undefined
@@ -336,6 +363,12 @@ function antdOnRow<TRow>(options: {
     // antd builds its own <tr>, so the absolute aria-rowindex arrives
     // here rather than through a spread on the element.
     ...(rowIndex === undefined ? {} : gridFocus?.getRowPropsAt(rowIndex)),
+    // antd builds its own <tr>, so the part name and the row id arrive here
+    // rather than through a spread on the element. The part goes BEFORE the
+    // pin attrs on purpose: antd owns one tbody, so a pinned row marks its
+    // section through this same attribute and has to keep winning it.
+    "data-adapttable-part": "row",
+    "data-row-id": id,
     ...pin,
     style: { ...visual, ...reorderStyle, ...pin.style },
     "data-stagger": "",
@@ -454,6 +487,9 @@ function selectionCellNode<TRow>(
 ): ReactNode {
   if (isAdaptTableExtraRow(record)) return null;
   if (isAdaptTableGroupRow(record)) {
+    // A group's footer closes the group its header opened, so a checkbox here
+    // would be a second control toggling the same rows. The header owns it.
+    if (record.footer === true) return null;
     return (
       <GroupSelectionCheckbox
         group={record}
@@ -490,13 +526,22 @@ function buildRowSelection<TRow>(
       };
     },
     // Group headers render a tri-state over leaf ids; leaf rows keep antd's node.
-    renderCell: (_checked, record, _index, originNode) =>
-      selectionCellNode(record, selection, labels, originNode),
+    //
+    // The part goes on a wrapper INSIDE the cell, not on the cell: antd owns
+    // the selection column's <td> and `rowSelection` exposes only its content.
+    // Every other adapter tags the cell itself, so this is the one placement
+    // that differs — findable, but one element in.
+    renderCell: (_checked, record, _index, originNode) => (
+      <span data-adapttable-part="selection-cell">
+        {selectionCellNode(record, selection, labels, originNode)}
+      </span>
+    ),
     // Select-all is driven by the custom `columnTitle` checkbox below; with
     // `columnTitle` set antd never renders its own header checkbox, so an
     // `onSelectAll` callback could never fire.
     columnTitle: (
       <Checkbox
+        data-adapttable-part="selection-header"
         aria-label={labels.selectAll}
         checked={selection.headerState === "all"}
         indeterminate={selection.headerState === "some"}
@@ -741,10 +786,12 @@ function PagedFooter<TRow>({
               aria-label={labels.rowsPerPage}
               value={source.limit}
               onChange={(value: number) => source.setLimit(value)}
-              options={pageSizeOptions(source.limit).map((n) => ({
-                value: n,
-                label: n,
-              }))}
+              options={pageSizeOptions([source.limit, source.defaultLimit]).map(
+                (n) => ({
+                  value: n,
+                  label: n,
+                })
+              )}
             />
           </>
         )}
@@ -796,25 +843,52 @@ function PagedFooter<TRow>({
 function autoFilterForm<TRow>(
   runtime: FilterRuntime<TRow>,
   source: TableSource<TRow>,
-  labels: Required<TableLabels>
+  labels: Required<TableLabels>,
+  header: boolean,
+  filterFields?: boolean
 ) {
   if (runtime.defs.length === 0) return undefined;
+  const simpleFiltersOn = showSimpleFilterFields(header, filterFields);
   return (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={runtime.defs}
-        source={source}
-        labels={labels}
-        registry={runtime.registry}
-      />
+    <div
+      data-adapttable-part="filters-form"
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <FilterTreeBuilder
         defs={runtime.defs}
         source={source}
         labels={labels}
         registry={runtime.registry}
+        defaultExpanded={!simpleFiltersOn}
       />
+      {simpleFiltersOn ? (
+        <AutoFilterForm
+          defs={runtime.defs}
+          source={source}
+          labels={labels}
+          registry={runtime.registry}
+        />
+      ) : null}
     </div>
   );
+}
+
+/** Declarative `filters` become the auto form; JSX passes through. */
+function resolveFiltersNode<TRow>(
+  filters: DataTableProps<TRow>["filters"],
+  runtime: FilterRuntime<TRow>,
+  source: TableSource<TRow>,
+  labels: Required<TableLabels>,
+  header: boolean,
+  filterFields?: boolean
+): ReactNode {
+  let node: ReactNode;
+  if (isDeclarativeFilters(filters) || filters === undefined) {
+    node = autoFilterForm(runtime, source, labels, header, filterFields);
+  } else {
+    node = filters;
+  }
+  return node;
 }
 
 /** antd `<Table>` size tokens. */
@@ -925,6 +999,8 @@ function useGroupingWindow<TRow>(options: {
 /** Props shared by mobile and desktop body regions. */
 interface DataTableBodyRegionProps<TRow> {
   chromeBody: string;
+  /** The load failure to show instead of the body, when there is one. */
+  errorState?: TableErrorState;
   source: TableSource<TRow>;
   /** Editing row universe from chrome — grouped leaf set or page slice. */
   editingRows: readonly TRow[];
@@ -932,6 +1008,8 @@ interface DataTableBodyRegionProps<TRow> {
   slots: DataTableProps<TRow>["slots"];
   columns: ReturnType<typeof buildColumns<TRow>>;
   rowActions: DataTableProps<TRow>["rowActions"];
+  rowActionsLayout: DataTableProps<TRow>["rowActionsLayout"];
+  renderRowActions: DataTableProps<TRow>["renderRowActions"];
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   labels: Required<TableLabels>;
@@ -953,6 +1031,7 @@ interface DataTableBodyRegionProps<TRow> {
   rowHeight: DataTableProps<TRow>["rowHeight"];
   cardClassName: string | undefined;
   summaryRow: DataTableProps<TRow>["summaryRow"];
+  renderCard: DataTableProps<TRow>["renderCard"];
   skeletonRows: number | undefined;
   size: AntdTableSize;
   bordered: boolean;
@@ -974,6 +1053,7 @@ interface DataTableBodyRegionProps<TRow> {
   pinnedTopRows: readonly TRow[];
   pinnedBottomRows: readonly TRow[];
   extraRows: DataTableProps<TRow>["extraRows"];
+  pinRowSticky: boolean;
 }
 
 /** Desktop antd `<Table>` body — extracted to keep `DataTable` flat. */
@@ -1006,6 +1086,7 @@ function DesktopTableBody<TRow>({
   rowReorder,
   windowStart,
   rowPinning,
+  pinRowSticky,
 }: Readonly<{
   /** Cell-navigation getters; inert unless `cellNavigation` is on. */
   gridFocus?: GridFocusState;
@@ -1037,6 +1118,7 @@ function DesktopTableBody<TRow>({
   rowReorder: RowReorderState<TRow> | undefined;
   windowStart: number;
   rowPinning: RowPinningState<TRow> | undefined;
+  pinRowSticky: boolean;
 }>) {
   const [theadRef, headerHeight] = useOffsetHeight();
   let stickyHeaderOffset: number | undefined;
@@ -1044,32 +1126,41 @@ function DesktopTableBody<TRow>({
   else if (sticky) stickyHeaderOffset = sticky.offsetHeader ?? 0;
   const headerOffset =
     stickyHeaderOffset === undefined ? 0 : stickyHeaderOffset + headerHeight;
-  // antd owns the <table> element, so `role="grid"` and the ARIA dimensions
-  // reach it through the `components` seam. Memoized: a new component identity
-  // here would remount the whole table on every render.
+  // antd owns the <table>, <thead> and <tbody> elements, so their part names —
+  // and `role="grid"` with the ARIA dimensions — reach them through the
+  // `components` seam. Memoized: a new component identity here would remount
+  // the whole table on every render.
   const gridEnabled = gridFocus?.enabled ?? false;
   const getGridProps = gridFocus?.getGridProps;
   // Depends on the GETTER, not the whole state: the announcement changes on
   // every focus move, and rebuilding `components` would remount antd's table and
   // throw away the focus this just placed.
   const pinArmed = rowPinning !== undefined;
-  const gridComponents = useMemo(
-    () =>
-      gridEnabled && getGridProps
-        ? { table: gridTableComponent(getGridProps()) }
-        : undefined,
-    [gridEnabled, getGridProps]
+  // antd's own virtualizer replaces the body grid with divs — the rows it
+  // draws are `<div>`s, not `<tr>`s — so the body wrapper has to be a `<div>`
+  // there. A `<tbody>` in that position is invalid twice over: inside antd's
+  // holder div, and around the row divs it receives.
+  const virtualBody = virtualize && !grouping;
+  const components = useMemo(
+    () => ({
+      table: tableComponent(
+        gridEnabled && getGridProps ? getGridProps() : undefined
+      ),
+      header: {
+        // A bounded height splits the grid into a header table and a body
+        // table, and antd resolves the header one through `header.table`. It
+        // carries the name; the grid role and its ARIA dimensions stay on the
+        // body table, where the rows are.
+        table: tableComponent(undefined),
+        // The header height is measured only for pinned rows, so the ref stays
+        // conditional; the name does not.
+        wrapper: theadComponent(pinArmed ? theadRef : undefined),
+        row: TheadRow,
+      },
+      body: { wrapper: virtualBody ? VirtualTbodyWrapper : TbodyWrapper },
+    }),
+    [gridEnabled, getGridProps, pinArmed, theadRef, virtualBody]
   );
-  const components = useMemo(() => {
-    const header = pinArmed
-      ? { wrapper: pinnedTheadComponent(theadRef) }
-      : undefined;
-    return {
-      ...gridComponents,
-      ...(header ? { header } : {}),
-      body: { wrapper: TbodyWrapper },
-    };
-  }, [gridComponents, pinArmed, theadRef]);
 
   return (
     <Table<GroupedDataRecord<TRow>>
@@ -1096,6 +1187,7 @@ function DesktopTableBody<TRow>({
           getRowId,
           rowPinning,
           headerOffset,
+          pinRowSticky,
           rowReorder,
           windowStart,
           gridFocus,
@@ -1118,16 +1210,21 @@ function DesktopTableBody<TRow>({
 }
 
 /**
- * antd owns the `<table>` element, so `role="grid"` and the ARIA dimensions
- * reach it through the documented `components` seam rather than a spread.
+ * antd owns the `<table>` element, so its part name — plus `role="grid"` and
+ * the ARIA dimensions when cell navigation is armed — reaches it through the
+ * documented `components` seam rather than a spread. With a sticky or
+ * virtualized header antd splits the grid into a header table and a body table;
+ * both are tables of ours, and both carry the name.
  *
  * Built at module scope: a component declared inside another component is a new
  * type on every render, which remounts everything below it — here that would
  * mean losing the cell focus on every keystroke.
  */
-function gridTableComponent(gridProps: Record<string, unknown>) {
-  return function GridTable(tableProps: Record<string, unknown>) {
-    return <table {...tableProps} {...gridProps} />;
+function tableComponent(gridProps: Record<string, unknown> | undefined) {
+  return function AdaptTable(tableProps: Record<string, unknown>) {
+    return (
+      <table data-adapttable-part="table" {...tableProps} {...gridProps} />
+    );
   };
 }
 
@@ -1137,12 +1234,30 @@ function TbodyWrapper(
   return <tbody data-adapttable-part="tbody" {...props} />;
 }
 
-function pinnedTheadComponent(theadRef: Ref<HTMLTableSectionElement | null>) {
-  return function PinnedThead(
+/**
+ * The body wrapper antd's virtual table asks for.
+ *
+ * Virtualized, antd draws the body as a div grid — its rows are `<div>`s
+ * carrying the row part, and the holder it wraps them in is a `<div>` too. The
+ * part name still marks the table's body, on the element antd actually renders
+ * there, which is the same convention the virtual rows already follow.
+ */
+function VirtualTbodyWrapper(props: Readonly<HTMLAttributes<HTMLDivElement>>) {
+  return <div data-adapttable-part="tbody" {...props} />;
+}
+
+function theadComponent(
+  theadRef: Ref<HTMLTableSectionElement | null> | undefined
+) {
+  return function AdaptThead(
     props: Readonly<HTMLAttributes<HTMLTableSectionElement>>
   ) {
-    return <thead ref={theadRef} {...props} />;
+    return <thead data-adapttable-part="thead" ref={theadRef} {...props} />;
   };
+}
+
+function TheadRow(props: Readonly<HTMLAttributes<HTMLTableRowElement>>) {
+  return <tr data-adapttable-part="header-row" {...props} />;
 }
 
 /**
@@ -1155,12 +1270,15 @@ function DataTableBodyRegion<TRow>(
   const {
     gridFocus,
     chromeBody,
+    errorState,
     source,
     editingRows,
     table,
     slots,
     columns,
     rowActions,
+    rowActionsLayout,
+    renderRowActions,
     confirm,
     getRowId,
     labels,
@@ -1180,6 +1298,7 @@ function DataTableBodyRegion<TRow>(
     rowHeight,
     cardClassName,
     summaryRow,
+    renderCard,
     skeletonRows,
     size,
     bordered,
@@ -1201,15 +1320,16 @@ function DataTableBodyRegion<TRow>(
     pinnedTopRows,
     pinnedBottomRows,
     extraRows,
+    pinRowSticky,
   } = props;
 
   let body: ReactNode;
-  if (source.error) {
-    body = (
+  if (errorState) {
+    body = fillSlot(slots?.error, errorState) ?? (
       <ErrorState
-        error={source.error}
+        error={errorState.error}
         labels={labels}
-        onRetry={source.refetch ? () => void source.refetch?.() : undefined}
+        onRetry={errorState.retry}
       />
     );
   } else if (chromeBody === "skeleton") {
@@ -1232,6 +1352,8 @@ function DataTableBodyRegion<TRow>(
         cardClassName={cardClassName}
         rows={editingRows}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        renderRowActions={renderRowActions}
         confirm={confirm}
         getRowId={getRowId}
         prefetch={prefetch}
@@ -1246,6 +1368,7 @@ function DataTableBodyRegion<TRow>(
         grouping={grouping}
         tree={tree}
         renderRowDetail={detailRender}
+        renderCard={renderCard}
         summaryRow={summaryRow}
         {...cardWindow}
         rowReorder={rowReorder}
@@ -1286,6 +1409,7 @@ function DataTableBodyRegion<TRow>(
         rowReorder={rowReorder}
         windowStart={windowStart}
         rowPinning={rowPinning}
+        pinRowSticky={pinRowSticky}
       />
     );
   }
@@ -1314,85 +1438,19 @@ function TableFooterSlot({ children }: Readonly<{ children?: ReactNode }>) {
  *
  * @typeParam TRow - The row type.
  */
-export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
-  const {
-    slots,
-    className,
-    classNames,
-    animate = false,
-    bordered = false,
-    virtualize = false,
-  } = props;
-  const size = resolveSize(props.size, props.density);
-  const filtersMode = resolveFilterMode(props.filtersMode, props.headerFilters);
-  // Resolve the data tier (source > onQueryChange server > frontend data)
-  // and the declarative-filter runtime; everything below — pagination, row
-  // selection, the sentinel — uses the RESOLVED source via `table.source`.
-  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
-  // so with `urlSync={false}` both share the same in-memory backend instead
-  // of the menu silently reading the real address bar.
-  const resolvedUrlAdapter = useResolvedAdapter(
-    props.urlSync === false ? undefined : props.urlAdapter,
-    props.urlSync !== false
-  );
-  const { source: resolvedSource, runtime } = useTableData<TRow>({
-    locale: props.locale,
-    source: props.source,
-    data: props.data,
-    total: props.total,
-    loading: props.loading,
-    error: props.error,
-    mode: props.mode,
-    onQueryChange: props.onQueryChange,
-    urlAdapter: resolvedUrlAdapter,
-    // No `urlSync` here on purpose: the decision is already baked into WHICH
-    // adapter was resolved above (memory when off, the real one when on), and
-    // the tier hooks would otherwise apply it a second time — routing the
-    // active tier to a private store that saved views cannot see.
-    urlKey: props.urlKey,
-    columns: props.columns,
-    filters: props.filters,
-    filterTypes: props.filterTypes,
-    defaults: props.defaults,
-    paginationMode: props.paginationMode,
-    supports: props.supports,
-    facetKeys: props.facetKeys,
-    facets: props.facets,
-  });
-  // A declarative `filters` array becomes the auto-built form; JSX passes
-  // through untouched. Column-level `filter` shorthands alone (no `filters`
-  // prop) must still render the form — only explicit JSX takes over. The
-  // form needs the resolved labels before `useTableChrome` resolves its own
-  // (the chrome consumes the form node), so resolve the same prop here.
-  const formLabels = useMemo(() => resolveLabels(props.labels), [props.labels]);
-  const filtersNode =
-    isDeclarativeFilters(props.filters) || props.filters === undefined
-      ? autoFilterForm(runtime, resolvedSource, formLabels)
-      : props.filters;
-  const filterLabels = useMemo(
-    () => ({ ...runtime.filterLabels, ...props.filterLabels }),
-    [runtime.filterLabels, props.filterLabels]
-  );
-  const { history, onCellEdit: recordingCellEdit } =
-    useTableEditHistory<TRow>(props);
-  const pinChrome = useAntdPinChrome({
-    pinnedRowIds: props.pinnedRowIds,
-    onPinnedRowIdsChange: props.onPinnedRowIdsChange,
-    urlSync: props.urlSync,
-    urlKey: props.urlKey,
-    urlAdapter: resolvedUrlAdapter,
-  });
-  const chromeProps = {
-    ...props,
-    onCellEdit: recordingCellEdit,
-    source: resolvedSource,
-    filters: filtersNode,
-    filterDefs: runtime.defs,
-    filterLabels,
-    pinnedRowIds: pinChrome.pinnedRowIds,
-    onPinnedRowIdsChange: pinChrome.onPinnedRowIdsChange,
-  };
-  const c = useTableChrome<TRow>(chromeProps);
+/**
+ * The grid's own state: where the window starts, find, focus, and the
+ * selection's arithmetic.
+ *
+ * antd builds its chrome by hand rather than through `useDataTableShell`,
+ * so it calls these four directly. Grouping them keeps `DataTable` — which
+ * assembles the entire adapter — from carrying their branches too.
+ */
+function useAntdGridState<TRow>(
+  props: Readonly<DataTableProps<TRow>>,
+  c: ReturnType<typeof useTableChrome<TRow>>,
+  history: EditHistoryState<TRow>
+) {
   // antd builds its own chrome rather than using `useDataTableShell`, so it
   // calls the focus hook directly. Same derivation as the shell's: the row count
   // is the DATASET total and `windowStart` is where the rendered slice begins, so
@@ -1410,6 +1468,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   });
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
+    headerCheckbox: props.columnSelectionCheckbox === true,
     rowCount: Math.max(c.source.total, windowStart + c.source.rows.length),
     columns: c.columnLayout.visibleColumns,
     rows: c.source.rows,
@@ -1433,6 +1492,103 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     columns: c.columnLayout.visibleColumns,
     firstRowIndex: windowStart,
   });
+  return { windowStart, find, gridFocus, stats };
+}
+
+export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
+  const {
+    slots,
+    className,
+    classNames,
+    animate = false,
+    bordered = false,
+    virtualize = false,
+  } = props;
+  const size = resolveSize(props.size, props.density);
+  const filtersMode = resolveFilterMode(props.filtersMode, props.headerFilters);
+  // Resolve the data tier (source > onQueryChange server > frontend data)
+  // and the declarative-filter runtime; everything below — pagination, row
+  // selection, the sentinel — uses the RESOLVED source via `table.source`.
+  // ONE resolved URL backend for the tier hooks AND the saved-views menu,
+  // so with `urlSync={false}` both share the same in-memory backend instead
+  // of the menu silently reading the real address bar.
+  const resolvedUrlAdapter = useResolvedAdapter(
+    props.urlSync === false ? undefined : props.urlAdapter,
+    props.urlSync !== false
+  );
+  const dataColumns = useMemo(
+    () => flattenColumnTree(props.columns).leaves,
+    [props.columns]
+  );
+  const { source: resolvedSource, runtime } = useTableData<TRow>({
+    locale: props.locale,
+    source: props.source,
+    data: props.data,
+    total: props.total,
+    loading: props.loading,
+    error: props.error,
+    mode: props.mode,
+    onQueryChange: props.onQueryChange,
+    urlAdapter: resolvedUrlAdapter,
+    // No `urlSync` here on purpose: the decision is already baked into WHICH
+    // adapter was resolved above (memory when off, the real one when on), and
+    // the tier hooks would otherwise apply it a second time — routing the
+    // active tier to a private store that saved views cannot see.
+    urlKey: props.urlKey,
+    columns: dataColumns,
+    filters: props.filters,
+    filterTypes: props.filterTypes,
+    defaults: props.defaults,
+    paginationMode: props.paginationMode,
+    supports: props.supports,
+    facetKeys: props.facetKeys,
+    facets: props.facets,
+  });
+  // A declarative `filters` array becomes the auto-built form; JSX passes
+  // through untouched. Column-level `filter` shorthands alone (no `filters`
+  // prop) must still render the form — only explicit JSX takes over. The
+  // form needs the resolved labels before `useTableChrome` resolves its own
+  // (the chrome consumes the form node), so resolve the same prop here.
+  const formLabels = useMemo(() => resolveLabels(props.labels), [props.labels]);
+  const filtersNode = resolveFiltersNode(
+    props.filters,
+    runtime,
+    resolvedSource,
+    formLabels,
+    resolveFilterMode(props.filtersMode, props.headerFilters) === "header",
+    props.filterFields
+  );
+  const filterLabels = useMemo(
+    () => ({ ...runtime.filterLabels, ...props.filterLabels }),
+    [runtime.filterLabels, props.filterLabels]
+  );
+  const { history, onCellEdit: recordingCellEdit } = useTableEditHistory<TRow>({
+    ...props,
+    columns: dataColumns,
+  });
+  const pinChrome = useAntdPinChrome({
+    pinnedRowIds: props.pinnedRowIds,
+    onPinnedRowIdsChange: props.onPinnedRowIdsChange,
+    urlSync: props.urlSync,
+    urlKey: props.urlKey,
+    urlAdapter: resolvedUrlAdapter,
+  });
+  const chromeProps = {
+    ...props,
+    onCellEdit: recordingCellEdit,
+    source: resolvedSource,
+    filters: filtersNode,
+    filterDefs: runtime.defs,
+    filterLabels,
+    pinnedRowIds: pinChrome.pinnedRowIds,
+    onPinnedRowIdsChange: pinChrome.onPinnedRowIdsChange,
+  };
+  const c = useTableChrome<TRow>(chromeProps);
+  const { windowStart, find, gridFocus, stats } = useAntdGridState(
+    props,
+    c,
+    history
+  );
   const { table, confirm, getRowId } = c;
   const { labels, source, selection } = table;
   // The injected actions column is first-class in column management: it lives
@@ -1443,6 +1599,31 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const rowActions = c.rowActions;
   const hasRowActions = rowActions !== undefined;
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: c.allColumns,
+    labels,
+    rowFor: (rowId) => source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        gridFocus?.copyCells();
+      },
+      onSort: (key, dir) => {
+        source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        c.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        setFiltersOpen(true);
+      },
+    },
+    sortBy: source.sortBy,
+    sortDir: source.sortDir,
+  });
   const filtersTrigger = useFilterTriggerToggle(filtersOpen, setFiltersOpen);
   // Layout-visible columns WITHOUT device filtering: the same button must
   // produce the same file on phone and desktop. The selection and full column
@@ -1473,7 +1654,23 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     // it without the host retyping a translated string.
     resolveExportCsv(props.exportCsv)?.writer?.extension
   );
-  const rootRef = useRef<HTMLDivElement>(null);
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels,
+    onPrint: props.onPrint,
+    onExport: exportHandler.onExportCsv,
+    onClearFilters: c.clearFilters,
+    hasFilters: c.activeFilterCount > 0,
+  });
+  // The chrome owns it: progressive column hiding measures this element.
+  const rootRef = c.rootRef;
+  // Fullscreen also decides where every overlay portals: promoted, the rest
+  // of the document is hidden, so a menu on `document.body` is invisible.
+  const fullscreen = useFullscreen(rootRef.current);
+  const viewControls = viewControlsToolbar(props, fullscreen);
   useChromeScrollReset(rootRef, c, chromeProps);
   // Same action the shell exposes, wired to this adapter's own root: sizing a
   // column means measuring cells, and the cells are in there.
@@ -1483,11 +1680,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       c.columnLayout.visibleColumns.map((column) => column.key),
       c.columnLayout.setWidth
     );
-  }, [c.columnLayout]);
+  }, [c.columnLayout, rootRef]);
   const onAutoSizeColumn = useCallback(
     (key: string) =>
       autoSizeAllColumns(rootRef.current, [key], c.columnLayout.setWidth),
-    [c.columnLayout]
+    [c.columnLayout, rootRef]
   );
   useMountStagger(rootRef, [source.rows.length, c.isMobile], {
     enabled: animate,
@@ -1506,6 +1703,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     virtualOverscan: props.virtualOverscan,
     virtualScrollMargin: props.virtualScrollMargin,
   });
+  const virtualBody = virtualize && !grouping;
   const resolvedTableLabel = table.getTableProps()["aria-label"];
   // In virtual mode the rows live inside antd's own fixed-height scroll
   // container, so the page-level sentinel never reaches the viewport — the
@@ -1521,14 +1719,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     enabled: sentinelEnabled(
       c.isPaged,
       source.error,
-      Boolean(virtualize && !grouping),
+      Boolean(virtualBody),
       c.body
     ),
   });
 
   const handleVirtualScroll = virtualScrollEndHandler(
     source,
-    virtualize && !grouping && !c.isPaged && !source.error
+    virtualBody && !c.isPaged && !source.error
   );
 
   // Window the MOBILE card list with core virtualization — desktop rows still
@@ -1537,7 +1735,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const cardWindow = useCardWindowing({
     rows: source.rows,
     rowKey: getRowId,
-    virtualize: virtualize && !grouping,
+    virtualize: virtualBody,
     isPaged: c.isPaged,
     error: source.error,
     body: c.body,
@@ -1586,11 +1784,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     pinOffset: c.columnLayout.pinOffset,
     grouping: c.grouping,
   });
+  const pinRowSticky = !bodyCellsHaveRowSpan(cellsByRow);
 
   const columns = buildColumns<TRow>({
     gridFocus: gridFocus,
     columns: table.columns,
     rowActions,
+    rowActionsLayout: props.rowActionsLayout,
+    renderRowActions: props.renderRowActions,
     sortBy: source.sortBy,
     sortDir: source.sortDir,
     confirm,
@@ -1623,14 +1824,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       : undefined,
     collapsibleColumnGroups: props.collapsibleColumnGroups === true,
     collapsedColumnGroups: c.columnLayout.state.collapsedGroups,
+    columnGroups: c.columnGroups,
     onToggleColumnGroup: c.columnLayout.toggleColumnGroup,
     rowReorder: c.rowReorder,
     windowStart,
     cellsByRow,
+    cellSpanAppearance: props.cellSpanAppearance,
     headerFilters: filtersMode === "header",
     filterDefs: runtime.defs,
     filterSource: resolvedSource,
     filterRegistry: runtime.registry,
+    closeHeaderFilterOnSelect: props.closeHeaderFilterOnSelect === true,
   });
   // A tree is already flat by the time antd sees it: core walks the hierarchy
   // and hands back the visible rows in reading order, so antd's own
@@ -1669,8 +1873,18 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     summaryLeadingCells(rowSelection, expandable, Boolean(c.rowReorder)),
     hasRowActions
   );
+  // antd's native virtual table (and any maxHeight box) already scrolls
+  // inside a fixed-height scroller. The toolbar sits outside that box, so
+  // page-sticky search would detach from the card while rows scroll in the
+  // box — pin the toolbar only when the page itself is the scroller.
+  const inScrollBox =
+    props.maxHeight != null || (virtualBody && c.body === "desktop");
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(props.stickyHeader, props.stickyToolbar, inScrollBox),
+    props.stickyTop ?? 0
+  );
   const sticky: TableProps<unknown>["sticky"] = props.stickyHeader
-    ? { offsetHeader: props.stickyTop ?? 0 }
+    ? { offsetHeader: inScrollBox ? 0 : stickyBar.headerOffset }
     : undefined;
   // The filtered empty-state may carry its own slot: `noResults` wins there,
   // and falls through to `empty` so passing only `empty` still covers both.
@@ -1689,12 +1903,15 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     <DataTableBodyRegion
       gridFocus={gridFocus}
       chromeBody={c.body}
+      errorState={c.errorState}
       source={source}
       editingRows={c.editingRows}
       table={table}
       slots={slots}
       columns={columns}
       rowActions={rowActions}
+      rowActionsLayout={props.rowActionsLayout}
+      renderRowActions={props.renderRowActions}
       confirm={confirm}
       getRowId={getRowId}
       labels={labels}
@@ -1714,6 +1931,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       rowHeight={props.rowHeight}
       cardClassName={classNames?.card}
       summaryRow={props.summaryRow}
+      renderCard={props.renderCard}
       skeletonRows={props.skeletonRows}
       size={size}
       bordered={bordered}
@@ -1735,12 +1953,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       pinnedTopRows={pinnedTopRows}
       pinnedBottomRows={pinnedBottomRows}
       extraRows={props.extraRows}
+      pinRowSticky={pinRowSticky}
     />
   );
 
   return (
     <div
       ref={rootRef}
+      {...contextMenu.regionProps}
       dir={props.dir}
       className={
         [className, classNames?.root].filter(Boolean).join(" ") || undefined
@@ -1751,14 +1971,27 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <AntdRowReorderAnnouncer rowReorder={c.rowReorder} />
       <FindBar find={find} labels={c.table.labels} />
       <Space orientation="vertical" size="small" style={{ width: "100%" }}>
-        <div className={classNames?.toolbar}>
+        <div
+          data-adapttable-part="toolbar"
+          ref={stickyBar.toolbarRef}
+          className={classNames?.toolbar}
+          style={stickyBar.toolbarStyle}
+        >
           <Toolbar
             table={table}
             searchable={props.searchable !== false}
             searchPlaceholder={props.searchPlaceholder}
             sortByOptions={props.sortByOptions}
             toolbar={props.toolbar}
-            hasFilters={filtersMode !== "header" && Boolean(filtersNode)}
+            toolbarSlots={props.toolbarSlots}
+            {...undoRedoToolbar(props.undoRedoButtons, history, labels)}
+            {...printToolbar(props.printButton, props.onPrint, labels)}
+            {...viewControls}
+            hasFilters={toolbarShowsFilters(
+              filtersMode,
+              Boolean(filtersNode),
+              Boolean(resolvedSource.setFilterTree)
+            )}
             activeFilterCount={c.activeFilterCount}
             filters={filtersNode}
             filtersMode={filtersMode}
@@ -1820,7 +2053,24 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
         <div className={c.body === "desktop" ? classNames?.table : undefined}>
-          {bodyRegion}
+          <SidePanelLayout
+            side={props.sidePanel?.side}
+            body={bodyRegion}
+            panel={
+              props.sidePanel?.open != null && (
+                <SidePanel
+                  panels={props.sidePanel.panels}
+                  openPanel={props.sidePanel.open}
+                  onOpenPanel={props.sidePanel.onOpenChange}
+                  onClose={() => {
+                    props.sidePanel?.onOpenChange(null);
+                  }}
+                  side={props.sidePanel.side}
+                  labels={labels}
+                />
+              )
+            }
+          />
         </div>
         <TableFooterSlot>{props.tableFooter}</TableFooterSlot>
         {c.isPaged && !source.error && c.body === "desktop" && (
@@ -1855,7 +2105,26 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
-      <SelectionStatsBar
+      <CommandPalette
+        commands={palette.commands}
+        open={palette.open}
+        onClose={palette.close}
+        labels={labels}
+      />
+      <ContextMenu
+        items={contextMenu.items}
+        at={contextMenu.at}
+        onClose={contextMenu.close}
+        container={fullscreen.container}
+        labels={labels}
+      />
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={source.rows.length}
+        page={source.page}
+        limit={source.limit}
+        total={source.total}
+        selected={c.table.selection?.selectedCount ?? 0}
         stats={stats}
         labels={c.table.labels}
         locale={props.locale}

@@ -32,6 +32,12 @@ import { type ReactNode } from "react";
 
 import { ChecklistFilter } from "./ChecklistFilter";
 
+/**
+ * Mantine's Input.Wrapper sits the label flush on the control (0px). The
+ * form stack only spaces fields from each other — this is the label gap.
+ */
+const FILTER_LABEL_STYLES = { label: { marginBottom: 16 } };
+
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
   /** The resolved declarative definitions, in render order. */
@@ -173,17 +179,18 @@ function RangeField<TRow>({
   }
 
   return (
-    <Stack gap={4}>
+    <Stack gap="md">
       <Input.Label size="sm">{label}</Input.Label>
       {/* Operator and value(s) share a row when they fit — "At least [5]" —
           and wrap when they don't (date inputs have a wide native minimum,
           so "Between" two dates takes a second row in narrow drawers). */}
-      <Group gap="xs" align="flex-start">
+      <Group gap="sm" align="flex-start">
         <Select
           size="sm"
           clearable
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
           aria-label={`${label} ${labels.operator}`}
+          data-adapttable-part="filter-operator"
           placeholder={labels.operator}
           data={data}
           value={op ?? null}
@@ -214,6 +221,7 @@ function BooleanControl<TRow>({
     <Select
       size="sm"
       label={label}
+      styles={FILTER_LABEL_STYLES}
       data-adapttable-part="filter-select"
       data={[
         { value: "", label: labels.boolAny },
@@ -242,6 +250,7 @@ function SelectControl<TRow>({
     <Select
       size="sm"
       label={label}
+      styles={FILTER_LABEL_STYLES}
       data={data}
       value={asText(source.extra[def.key])}
       onChange={(next) => source.setExtra(def.key, next ?? "")}
@@ -264,6 +273,7 @@ function MultiSelectControl<TRow>({
     <MultiSelect
       size="sm"
       label={label}
+      styles={FILTER_LABEL_STYLES}
       searchable
       clearable
       hidePickedOptions={false}
@@ -294,9 +304,9 @@ function TextFilterField<TRow>({
     label: filterOpLabel(labels, opLabelKeys[choice]),
   }));
   return (
-    <Stack gap={4}>
+    <Stack gap="md">
       <Input.Label size="sm">{label}</Input.Label>
-      <Group gap="xs" align="flex-start">
+      <Group gap="sm" align="flex-start">
         <Select
           size="sm"
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
@@ -375,7 +385,7 @@ export function AutoFilterForm<TRow>({
   registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
-    <Stack gap="sm">
+    <Stack gap="lg">
       {defs.map((def) => (
         <FilterControl
           key={def.key}

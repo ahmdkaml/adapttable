@@ -3,8 +3,10 @@ import {
   type ColumnDef,
   type ConfirmHandler,
   type EditableCellEditing,
+  type MobileCardRenderer,
   type RowAction,
-  runRowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type TableLabels,
   treeCardStyle,
   type TreeEntry,
@@ -14,7 +16,6 @@ import {
   insertExtraRows,
   isExtraEntry,
   orderedCardEntries,
-  resolveDisabledReason,
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
@@ -25,16 +26,7 @@ import {
   type SharedTableRenderProps,
   useSummaryCells,
 } from "@adapttable/core/adapter";
-import {
-  ActionIcon,
-  Button,
-  Card,
-  Checkbox,
-  Group,
-  Stack,
-  Text,
-  Tooltip,
-} from "@mantine/core";
+import { Card, Checkbox, Group, Stack, Text } from "@mantine/core";
 import {
   type CSSProperties,
   memo,
@@ -49,6 +41,7 @@ import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import { GroupHeaderCard } from "./GroupHeader";
 import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
+import { RowActionButtons } from "./RowActionButtons";
 
 /**
  * Props for {@link MobileCards}: the card-relevant slice of core's shared
@@ -60,6 +53,8 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "table"
   | "rows"
   | "rowActions"
+  | "rowActionsLayout"
+  | "renderRowActions"
   | "confirm"
   | "getRowId"
   | "onRowClick"
@@ -67,6 +62,7 @@ export interface MobileCardsProps<TRow> extends Pick<
   | "rowStyle"
   | "rowHeight"
   | "renderRowDetail"
+  | "renderCard"
   | "summaryRow"
   | "expansion"
   | "editing"
@@ -89,6 +85,8 @@ export interface MobileCardsProps<TRow> extends Pick<
 
 /** Per-card inputs for the memoized {@link MobileCardBase}. */
 interface MobileCardProps<TRow> {
+  /** Replace the card's body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** This card's place in the tree, when the table is one. */
   treeEntry?: TreeEntry<TRow>;
   /** Open or close this node. */
@@ -101,6 +99,8 @@ interface MobileCardProps<TRow> {
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
   /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
@@ -156,6 +156,8 @@ const COMPARED_CARD_PROPS: readonly Exclude<
   "labels",
   "confirm",
   "rowActions",
+  "rowActionsLayout",
+  "renderRowActions",
   "className",
   "styleSignature",
   "selected",
@@ -197,6 +199,8 @@ function MobileCardBase<TRow>({
   labels,
   confirm,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   className,
   style,
   selected,
@@ -216,7 +220,36 @@ function MobileCardBase<TRow>({
   rowReorder,
   windowStart,
   rowCount,
+  renderCard,
 }: Readonly<MobileCardProps<TRow>>) {
+  // Built once and used by both paths, so a custom card shows the very
+  // same value node the built-in would have — cell renderers and editors
+  // included.
+  const fields = columns.map((column) => ({
+    column,
+    label: resolveMobileLabel(column),
+    value: (
+      <EditableDataCell
+        editing={editing}
+        row={row}
+        column={column}
+        rowId={id}
+        rows={rows}
+        columns={columns}
+        rowKey={getRowId}
+        editLabel={labels.editCell}
+        undoLabel={labels.undoEdit}
+        display={
+          column.Cell ? (
+            <column.Cell row={row} rowIndex={index} />
+          ) : (
+            column.accessor?.(row)
+          )
+        }
+      />
+    ),
+  }));
+
   return (
     <Card
       {...rowClickProps(row, onRowClick, index)}
@@ -257,37 +290,22 @@ function MobileCardBase<TRow>({
             />
           </Group>
         )}
-        {columns.map((column) => (
-          <div key={column.key}>
-            {resolveMobileLabel(column) && (
-              <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
-                {resolveMobileLabel(column)}
-              </Text>
-            )}
-            {/* Cells are arbitrary ReactNode (often block elements) —
+        {renderCard
+          ? renderCard(row, { index, fields, selected, expanded })
+          : fields.map(({ column, label, value }) => (
+              <div key={column.key}>
+                {label && (
+                  <Text fz="xs" c="dimmed" tt="uppercase" fw={500}>
+                    {label}
+                  </Text>
+                )}
+                {/* Cells are arbitrary ReactNode (often block elements) —
                 a <p> wrapper would be invalid HTML. */}
-            <Text component="div" fz="sm">
-              <EditableDataCell
-                editing={editing}
-                row={row}
-                column={column}
-                rowId={id}
-                rows={rows}
-                columns={columns}
-                rowKey={getRowId}
-                editLabel={labels.editCell}
-                undoLabel={labels.undoEdit}
-                display={
-                  column.Cell ? (
-                    <column.Cell row={row} rowIndex={index} />
-                  ) : (
-                    column.accessor?.(row)
-                  )
-                }
-              />
-            </Text>
-          </div>
-        ))}
+                <Text component="div" fz="sm">
+                  {value}
+                </Text>
+              </div>
+            ))}
         {rowReorder && (
           <RowReorderButtons
             reorder={rowReorder}
@@ -298,7 +316,9 @@ function MobileCardBase<TRow>({
             rowCount={rowCount}
           />
         )}
-        {expanded && renderDetail && <div>{renderDetail(row)}</div>}
+        {expanded && renderDetail && (
+          <div data-adapttable-part="card-detail">{renderDetail(row)}</div>
+        )}
         {editing?.rowEditing && (
           <RowEditActions
             rowEditing={editing.rowEditing}
@@ -308,51 +328,14 @@ function MobileCardBase<TRow>({
           />
         )}
         {rowActions && rowActions.length > 0 && (
-          <Group gap={4} justify="flex-end" pt={4}>
-            {rowActions.map((action) => {
-              if (action.isHidden?.(row)) return null;
-              const reason = resolveDisabledReason(
-                action.disabledReason?.(row)
-              );
-              const disabled =
-                reason !== undefined || (action.isDisabled?.(row) ?? false);
-              // The disabled attribute already blocks activation, so attach
-              // the handler only when the action can run.
-              const run = disabled
-                ? undefined
-                : () => runRowAction(action, row, confirm, labels.cancel);
-              return action.icon ? (
-                <Tooltip
-                  key={action.key}
-                  label={reason ?? action.label}
-                  withArrow
-                  openDelay={200}
-                >
-                  <ActionIcon
-                    variant="subtle"
-                    color={action.color}
-                    size="sm"
-                    disabled={disabled}
-                    aria-label={action.label}
-                    onClick={run}
-                  >
-                    {action.icon}
-                  </ActionIcon>
-                </Tooltip>
-              ) : (
-                <Button
-                  key={action.key}
-                  variant="subtle"
-                  color={action.color}
-                  size="compact-sm"
-                  disabled={disabled}
-                  onClick={run}
-                >
-                  {action.label}
-                </Button>
-              );
-            })}
-          </Group>
+          <RowActionButtons
+            row={row}
+            actions={rowActions}
+            confirm={confirm}
+            labels={labels}
+            layout={rowActionsLayout}
+            render={renderRowActions}
+          />
         )}
       </Stack>
     </Card>
@@ -364,6 +347,8 @@ export function MobileCards<TRow>({
   table,
   rows,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   confirm,
   getRowId,
   bodyRef,
@@ -388,6 +373,7 @@ export function MobileCards<TRow>({
   pinnedTopRows = [],
   pinnedBottomRows = [],
   extraRows,
+  renderCard,
 }: Readonly<MobileCardsProps<TRow>>) {
   const { columns, selection, labels } = table;
   const compact = density === "compact";
@@ -412,7 +398,7 @@ export function MobileCards<TRow>({
     []
   );
 
-  const renderCard = (
+  const cardFor = (
     row: TRow,
     index: number,
     key: string,
@@ -429,6 +415,8 @@ export function MobileCards<TRow>({
         labels={labels}
         confirm={confirm}
         rowActions={rowActions}
+        rowActionsLayout={rowActionsLayout}
+        renderRowActions={renderRowActions}
         className={rowClassName?.(row, index)}
         style={resolveRowStyle(rowStyle, rowHeight, row, index)}
         styleSignature={rowStyleSignature(
@@ -455,6 +443,7 @@ export function MobileCards<TRow>({
         windowStart={windowStart}
         rowCount={rows.length}
         reorderSignature={rowReorderSignature(rowReorder, id, index)}
+        renderCard={renderCard}
       />
     );
   };
@@ -463,6 +452,7 @@ export function MobileCards<TRow>({
     <Stack
       gap={compact ? "xs" : "sm"}
       ref={bodyRef}
+      data-adapttable-part="cards"
       className={className}
       {...table.getTableProps({ role: "list" })}
     >
@@ -506,7 +496,7 @@ export function MobileCards<TRow>({
                 />
               );
             }
-            return renderCard(entry.row, entry.index, entry.key);
+            return cardFor(entry.row, entry.index, entry.key);
           })
         : insertExtraRows(
             bodyRowEntries(entries, tree),
@@ -530,14 +520,20 @@ export function MobileCards<TRow>({
                 </div>
               </Card>
             ) : (
-              renderCard(slot.row, slot.index, slot.key, slot.treeEntry)
+              cardFor(slot.row, slot.index, slot.key, slot.treeEntry)
             )
           )}
       {paddingBottom > 0 && (
         <div aria-hidden style={{ height: paddingBottom }} />
       )}
       {summaryCells && (
-        <Card withBorder radius="md" padding={cardPadding} role="listitem">
+        <Card
+          data-adapttable-part="summary-card"
+          withBorder
+          radius="md"
+          padding={cardPadding}
+          role="listitem"
+        >
           <Stack gap={cardGap}>
             {columns
               .filter((column) => summaryCells[column.key] !== undefined)

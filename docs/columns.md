@@ -212,7 +212,10 @@ Rows must be objects, since the cache is keyed by row identity. The spec type is
 ## Grouped headers
 
 Give adjacent columns the same `group` and they render under one spanning
-header cell. A string is one level; a path stacks one header row per depth:
+header cell. A string is one level; a path stacks one header row per depth.
+That shortcut is presentational — for collapse options and groups that stay
+together through reorder, use a `ColumnGroupDef` parent with `children`.
+See [column groups](./column-groups.md).
 
 ```tsx
 const columns: ColumnDef<Person>[] = [
@@ -237,13 +240,14 @@ column out of the middle of a group splits it into two spans rather than
 pretending the layout is something it is not. Reorder them back together and
 the group closes up again.
 
-Pass `collapsibleColumnGroups` and each real group header gains a toggle. A
-collapsed group keeps its first leaf as the summary column and hides the
-rest. Collapse state lives on `columnLayout.collapsedGroups` and the URL
-(`colGroupCollapse`); group ids are `path.join("\u001f")` so a label may
-contain `/`. On mobile the card layout has no header row, but the same
-visible-column filter applies — cards hide the same leaves a collapsed
-group hid on desktop.
+Pass `collapsibleColumnGroups` and each real group header gains a toggle. What
+a collapsed group shows is that group's own options — an arrow stub by
+default, a kept child via `collapsedKey`, or a cell via `collapsedRender`.
+See [column groups](./column-groups.md). Collapse state lives on
+`columnLayout.collapsedGroups` and the URL (`colGroupCollapse`); group ids are
+`path.join("\u001f")` so a label may contain `/`. On mobile the card layout has
+no header row, but the same visible-column filter applies — cards hide the same
+leaves a collapsed group hid on desktop.
 
 ## Notes
 

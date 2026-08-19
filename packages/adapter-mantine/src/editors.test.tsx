@@ -153,17 +153,30 @@ describe("editor set (mantine)", () => {
     );
   });
 
+  /** The MultiSelect's field — its `aria-label` also names the dropdown. */
+  const multiField = () =>
+    document.querySelector<HTMLInputElement>(
+      ".mantine-MultiSelect-inputField"
+    )!;
+
+  /** The chosen values, as Mantine renders them: pills, not option rows. */
+  const chosen = () =>
+    [
+      ...document.querySelectorAll(
+        ".mantine-MultiSelect-pillsList .mantine-Pill-label"
+      ),
+    ].map((pill) => pill.textContent);
+
   it("commits a multi-select as the array it chose", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
-    expect(select.multiple).toBe(true);
+    expect(document.querySelector(".mantine-MultiSelect-input")).not.toBeNull();
     // Seeded from the stored array — no `editValue` needed for the round trip.
-    expect([...select.selectedOptions].map((o) => o.value)).toEqual(["urgent"]);
+    expect(chosen()).toEqual(["urgent"]);
 
-    select.options[1]!.selected = true;
-    fireEvent.change(select);
-    fireEvent.blur(select);
+    fireEvent.click(multiField());
+    fireEvent.click(screen.getByRole("option", { name: "billable" }));
+    fireEvent.blur(multiField());
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", [
       "urgent",
       "billable",
@@ -173,10 +186,10 @@ describe("editor set (mantine)", () => {
   it("commits an empty multi-select as an empty array, not an empty string", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
-    select.options[0]!.selected = false;
-    fireEvent.change(select);
-    fireEvent.blur(select);
+    fireEvent.click(multiField());
+    // Clicking a chosen value again un-chooses it, leaving nothing selected.
+    fireEvent.click(screen.getByRole("option", { name: "urgent" }));
+    fireEvent.blur(multiField());
     expect(onCellEdit).toHaveBeenCalledExactlyOnceWith(ROWS[0], "tags", []);
   });
 

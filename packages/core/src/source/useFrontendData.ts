@@ -296,6 +296,7 @@ export function useFrontendData<TRow>(
     paginationMode: resolvedMode,
     page: safePage,
     limit,
+    defaultLimit: state.defaultLimit,
     search,
     sortBy,
     sortDir,

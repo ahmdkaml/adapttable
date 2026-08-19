@@ -101,6 +101,17 @@ describe("<DataTable> (Radix)", () => {
     expect(container.querySelector(".my-footer")).toBeInTheDocument();
   });
 
+  it("does not wrap the table in a card border", () => {
+    const { container } = renderHarness({
+      override: { classNames: { root: "my-root" } },
+    });
+    const root = container.querySelector<HTMLElement>(".my-root")!;
+    expect(root.style.border).toBe("");
+    expect(container.querySelector(".rt-TableRoot")?.className).not.toContain(
+      "rt-variant-surface"
+    );
+  });
+
   it("applies the card className on mobile", () => {
     const { container } = renderHarness({
       override: { forceMobile: true, classNames: { card: "my-card" } },
@@ -124,6 +135,48 @@ describe("<DataTable> (Radix)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
     expect(onAction).toHaveBeenCalled();
     expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("collapses row actions into a 3-dot menu when layout is menu", async () => {
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+        rowActionsLayout: "menu",
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="row-actions-trigger"]'
+    );
+    expect(trigger).toHaveAttribute("aria-label", "Row actions");
+    fireEvent.pointerDown(trigger!, { button: 0 });
+    fireEvent.pointerUp(trigger!, { button: 0 });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    expect(onAction).toHaveBeenCalled();
+  });
+
+  it("lets renderRowActions replace the actions cell", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+        renderRowActions: ({ row }) => (
+          <button
+            type="button"
+            aria-label="custom-e"
+            onClick={() => onEdit(row)}
+          >
+            Custom
+          </button>
+        ),
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-trigger"]')
+    ).toBeNull();
+    fireEvent.click(screen.getAllByLabelText("custom-e")[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
   });
 
   it("renders rows with values", () => {
@@ -279,6 +332,34 @@ describe("<DataTable> (Radix)", () => {
     renderHarness({ error: new Error("boom") });
     expect(screen.getByText(/boom/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+  });
+
+  it("lets the host replace the error state, error and retry in hand", () => {
+    const refetch = vi.fn();
+    renderHarness({
+      error: new Error("boom"),
+      refetch,
+      override: {
+        slots: {
+          error: (state) => (
+            <output>
+              mine: {state.error.message}
+              <button type="button" onClick={state.retry}>
+                again
+              </button>
+            </output>
+          ),
+        },
+      },
+    });
+
+    // The built-in went away entirely — not layered under the replacement.
+    expect(screen.getByText(/mine: boom/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+
+    // And the retry it was handed is the source's, not a decoration.
+    fireEvent.click(screen.getByRole("button", { name: "again" }));
+    expect(refetch).toHaveBeenCalled();
   });
 
   it("commits debounced search to the URL", () => {
@@ -477,6 +558,9 @@ describe("<DataTable> (Radix)", () => {
       .map((s) => s.textContent ?? "")
       .join("");
     expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-ScrollAreaViewport');
+    expect(css).toContain(
+      ".adapttable-radix-scroll .rt-ScrollAreaViewport{overflow:visible!important"
+    );
     expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-r-ta-left');
     expect(css).toContain('.rt-TableRoot[dir="rtl"] .rt-r-ta-right');
   });
@@ -872,21 +956,21 @@ describe("custom header and footer", () => {
   });
 });
 
-describe("header filter row", () => {
-  it("writes a compact name filter under the header", () => {
+describe("header filter trigger", () => {
+  it("puts a filter icon on the column header instead of a second row", () => {
     renderHarness({
       override: {
         headerFilters: true,
         filters: [{ key: "name", type: "text", label: "Name" }],
       },
     });
-    const input = screen.getByLabelText("Name");
-    fireEvent.change(input, { target: { value: "Ali" } });
-    expect(input).toHaveValue("Ali");
-    expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
+    expect(screen.queryByRole("row", { name: "Column filters" })).toBeNull();
+    expect(
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
+    ).not.toBeNull();
   });
 
-  it("hides the header filter row on mobile cards", () => {
+  it("hides the header filter trigger on mobile cards", () => {
     renderHarness({
       isMobile: true,
       override: {
@@ -895,7 +979,7 @@ describe("header filter row", () => {
       },
     });
     expect(
-      document.querySelector('[data-adapttable-part="filter-header-row"]')
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
     ).toBeNull();
   });
 });

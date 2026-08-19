@@ -10,12 +10,18 @@ import { Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
 
 export type { ChecklistFilterProps };
 
-function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
+function ChecklistSearch({
+  label,
+  value,
+  className,
+  onChange,
+}: ChecklistSearchProps) {
   return (
     <TextField
       size="small"
       type="search"
       placeholder={label}
+      className={className}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       slotProps={{

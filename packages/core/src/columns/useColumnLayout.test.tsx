@@ -312,7 +312,9 @@ describe("batched mutations", () => {
       useColumnLayout({ columns: grouped, collapsibleColumnGroups: true })
     );
     act(() => result.current.toggleColumnGroup("People"));
-    expect(keys(result.current.visibleColumns)).toEqual(["a", "c"]);
+    const collapsedKeys = keys(result.current.visibleColumns);
+    expect(collapsedKeys[0]).toMatch(/^__groupStub:People:/);
+    expect(collapsedKeys).toEqual([collapsedKeys[0], "c"]);
     expect(result.current.state.collapsedGroups).toEqual(["People"]);
     act(() => result.current.toggleColumnGroup("People"));
     expect(keys(result.current.visibleColumns)).toEqual(["a", "b", "c"]);

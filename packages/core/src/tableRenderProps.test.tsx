@@ -124,6 +124,165 @@ describe("tableRenderModel", () => {
     expect(model.entries.map((entry) => entry.key)).toEqual(["a"]);
   });
 
+  it("keeps one team span when a teammate is pinned to the top", () => {
+    interface Member {
+      id: string;
+      name: string;
+      team: string;
+    }
+    const people: Member[] = [
+      { id: "1", name: "Chioma", team: "Core" },
+      { id: "2", name: "Fatima", team: "Core" },
+      { id: "3", name: "Elena", team: "Core" },
+      { id: "4", name: "Sefa", team: "Data" },
+      { id: "5", name: "Omar", team: "Data" },
+    ];
+    const memberCols: ColumnDef<Member>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "team", header: "Team", accessor: (r) => r.team },
+    ];
+    const memberTable = {
+      columns: memberCols,
+      selection: null,
+      labels: { cancel: "Cancel" },
+    } as unknown as UseDataTableResult<Member>;
+    const model = tableRenderModel({
+      table: memberTable,
+      rows: people,
+      getRowId: (r) => r.id,
+      pinnedTopRows: [people[0]!],
+      getCellSpan: ({ column, sectionRows, sectionRowIndex }) => {
+        if (column.key !== "team") return undefined;
+        const current = sectionRows[sectionRowIndex];
+        if (!current) return undefined;
+        if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+          return undefined;
+        }
+        let span = 1;
+        while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+          span += 1;
+        }
+        return span > 1 ? { rowSpan: span } : undefined;
+      },
+    });
+    const teamSpan = (id: string) =>
+      model.cellsByRow.get(id)?.find((cell) => cell.column.key === "team")
+        ?.rowSpan;
+    expect(teamSpan("1")).toBe(3);
+    expect(teamSpan("2")).toBeUndefined();
+    expect(teamSpan("3")).toBeUndefined();
+    expect(teamSpan("4")).toBe(2);
+  });
+
+  it("keeps one team span when consecutive teammates are pinned to the floor", () => {
+    interface Member {
+      id: string;
+      name: string;
+      team: string;
+    }
+    const people: Member[] = [
+      { id: "1", name: "Ada", team: "Core" },
+      { id: "2", name: "Barbara", team: "Core" },
+      { id: "3", name: "Brendan", team: "Core" },
+      { id: "4", name: "Radia", team: "Core" },
+      { id: "5", name: "Marissa", team: "Core" },
+    ];
+    const memberCols: ColumnDef<Member>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "team", header: "Team", accessor: (r) => r.team },
+    ];
+    const memberTable = {
+      columns: memberCols,
+      selection: null,
+      labels: { cancel: "Cancel" },
+    } as unknown as UseDataTableResult<Member>;
+    const consecutiveTeam = ({
+      column,
+      sectionRows,
+      sectionRowIndex,
+    }: {
+      column: { key: string };
+      sectionRows: readonly Member[];
+      sectionRowIndex: number;
+    }) => {
+      if (column.key !== "team") return undefined;
+      const current = sectionRows[sectionRowIndex];
+      if (!current) return undefined;
+      if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+        return undefined;
+      }
+      let span = 1;
+      while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+        span += 1;
+      }
+      return span > 1 ? { rowSpan: span } : undefined;
+    };
+    const model = tableRenderModel({
+      table: memberTable,
+      rows: people,
+      getRowId: (r) => r.id,
+      pinnedBottomRows: [people[3]!, people[4]!],
+      getCellSpan: consecutiveTeam,
+    });
+    const teamSpan = (id: string) =>
+      model.cellsByRow.get(id)?.find((cell) => cell.column.key === "team")
+        ?.rowSpan;
+    expect(teamSpan("1")).toBe(5);
+    expect(teamSpan("4")).toBeUndefined();
+    expect(teamSpan("5")).toBeUndefined();
+  });
+
+  it("keeps a team span through extras sitting in front of the last teammate", () => {
+    interface Member {
+      id: string;
+      name: string;
+      team: string;
+    }
+    const people: Member[] = [
+      { id: "1", name: "Radia", team: "Core" },
+      { id: "2", name: "Brendan", team: "Core" },
+      { id: "3", name: "Barbara", team: "Core" },
+      { id: "4", name: "Marissa", team: "Core" },
+      { id: "5", name: "Ada", team: "Core" },
+    ];
+    const memberCols: ColumnDef<Member>[] = [
+      { key: "name", header: "Name", accessor: (r) => r.name },
+      { key: "team", header: "Team", accessor: (r) => r.team },
+    ];
+    const memberTable = {
+      columns: memberCols,
+      selection: null,
+      labels: { cancel: "Cancel" },
+    } as unknown as UseDataTableResult<Member>;
+    const model = tableRenderModel({
+      table: memberTable,
+      rows: people,
+      getRowId: (r) => r.id,
+      extraRows: [
+        { key: "s", kind: "separator", beforeRowId: "5" },
+        { key: "n", kind: "fullWidth", beforeRowId: "5" },
+      ],
+      getCellSpan: ({ column, sectionRows, sectionRowIndex }) => {
+        if (column.key !== "team") return undefined;
+        const current = sectionRows[sectionRowIndex];
+        if (!current) return undefined;
+        if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+          return undefined;
+        }
+        let span = 1;
+        while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+          span += 1;
+        }
+        return span > 1 ? { rowSpan: span } : undefined;
+      },
+    });
+    const teamSpan = (id: string) =>
+      model.cellsByRow.get(id)?.find((cell) => cell.column.key === "team")
+        ?.rowSpan;
+    expect(teamSpan("1")).toBe(7);
+    expect(teamSpan("5")).toBeUndefined();
+  });
+
   it("windows body cells to the column window", () => {
     const wide: ColumnDef<Row>[] = [
       { key: "name", header: "Name", accessor: (r) => r.name },
@@ -596,6 +755,7 @@ describe("useChromeBodyData load-more wiring", () => {
       total: 10,
       page: 1,
       limit: 2,
+      defaultLimit: 2,
       search: "",
       sortBy: undefined,
       sortDir: undefined,
@@ -646,6 +806,7 @@ function mockSource(over: Record<string, unknown> = {}) {
     total: 10,
     page: 1,
     limit: 2,
+    defaultLimit: 2,
     search: "",
     sortBy: undefined,
     sortDir: undefined,

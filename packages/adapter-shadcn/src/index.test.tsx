@@ -3,7 +3,7 @@ import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { DataTable, shadcnClassNames } from "./index";
+import { DataTable, SavedViewsPanel, shadcnClassNames } from "./index";
 
 interface Row {
   id: string;
@@ -50,6 +50,46 @@ function renderHarness(
   return render(<Harness classNames={classNames} density={extra?.density} />);
 }
 
+/** A custom card body reaches through the preset wrapper too. */
+function CardHarness() {
+  const source = useFrontendData<Row>({
+    data: ROWS,
+    urlAdapter: adapter,
+    columns,
+  });
+  return (
+    <DataTable
+      source={source}
+      columns={columns}
+      rowKey={(r) => r.id}
+      forceMobile
+      renderCard={(row, card) => (
+        <p>
+          {row.name} · {card.fields.length}
+        </p>
+      )}
+    />
+  );
+}
+
+/** The error slot reaches through the preset wrapper to the unstyled shell. */
+function ErrorHarness() {
+  const source = useFrontendData<Row>({
+    data: ROWS,
+    urlAdapter: adapter,
+    columns,
+    error: new Error("boom"),
+  });
+  return (
+    <DataTable
+      source={source}
+      columns={columns}
+      rowKey={(r) => r.id}
+      slots={{ error: (state) => <output>mine: {state.error.message}</output> }}
+    />
+  );
+}
+
 describe("@adapttable/shadcn", () => {
   it("renders a shadcn-styled table from a single import", () => {
     const { container, getByText } = renderHarness();
@@ -87,5 +127,98 @@ describe("@adapttable/shadcn", () => {
     expect(
       container.querySelector('[data-adapttable-part="root"]')
     ).toHaveAttribute("data-density", "compact");
+  });
+
+  it("passes the error slot through to the shell", () => {
+    adapter = createMemoryAdapter("");
+    const { getByText, container } = render(<ErrorHarness />);
+
+    expect(getByText(/mine: boom/)).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-adapttable-part="error"]')
+    ).toBeNull();
+  });
+
+  it("passes a custom card body through to the shell", () => {
+    adapter = createMemoryAdapter("");
+    const { getByText } = render(<CardHarness />);
+
+    expect(getByText(/Ada · 1/)).toBeInTheDocument();
+  });
+
+  it("re-exports the panels, badge parts and all", () => {
+    // This preset's panels ARE the unstyled ones — native markup with the
+    // preset's classes — so the part names have to arrive with them rather
+    // than being a gap in the one kit that ships no panel source of its own.
+    const { container } = render(
+      <SavedViewsPanel
+        views={[
+          {
+            name: "Theirs",
+            search: "t.q=x",
+            visibility: "team",
+            readOnly: true,
+          },
+          { name: "Mine", search: "t.q=a", isDefault: true },
+        ]}
+        onApply={() => undefined}
+        onRename={() => undefined}
+        onMove={() => undefined}
+        onSetDefault={() => undefined}
+        onRemove={() => undefined}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-readonly"]')
+    ).toHaveTextContent("Read-only");
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-default"]')
+    ).toHaveTextContent("Default");
+  });
+
+  it("ships the saved-views panel pre-styled, like the table", () => {
+    // One import, one look: a panel mounted beside a shadcn table carries the
+    // preset without the app hand-wiring the class map.
+    const { container } = render(
+      <SavedViewsPanel
+        views={[{ name: "Mine", search: "t.q=a" }]}
+        onApply={() => undefined}
+        onRename={() => undefined}
+        onMove={() => undefined}
+        onSetDefault={() => undefined}
+        onRemove={() => undefined}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-adapttable-part="saved-views-panel"]')
+    ).toHaveClass(...shadcnClassNames.viewsPanel.split(" "));
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-row"]')
+    ).toHaveClass(...shadcnClassNames.viewsRow.split(" "));
+  });
+
+  it("merges panel overrides over the preset, per part", () => {
+    const { container } = render(
+      <SavedViewsPanel
+        views={[{ name: "Mine", search: "t.q=a" }]}
+        onApply={() => undefined}
+        onRename={() => undefined}
+        onMove={() => undefined}
+        onSetDefault={() => undefined}
+        onRemove={() => undefined}
+        classNames={{ viewsPanel: "custom-panel-xyz" }}
+      />
+    );
+
+    const panel = container.querySelector(
+      '[data-adapttable-part="saved-views-panel"]'
+    );
+    expect(panel).toHaveClass("custom-panel-xyz");
+    // The part that was not overridden keeps the preset.
+    expect(
+      container.querySelector('[data-adapttable-part="saved-view-row"]')
+    ).toHaveClass(...shadcnClassNames.viewsRow.split(" "));
   });
 });

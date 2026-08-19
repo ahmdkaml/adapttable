@@ -17,6 +17,14 @@ describe("useRowExpansion", () => {
     expect(result.current.isExpanded("b")).toBe(true);
   });
 
+  it("opens the ids it was given", () => {
+    const { result } = renderHook(() => useRowExpansion(["a"]));
+    expect(result.current.isExpanded("a")).toBe(true);
+    expect(result.current.isExpanded("b")).toBe(false);
+    act(() => result.current.toggle("a"));
+    expect(result.current.isExpanded("a")).toBe(false);
+  });
+
   it("keeps a stable identity between unrelated renders", () => {
     const { result, rerender } = renderHook(() => useRowExpansion());
     const first = result.current;

@@ -1,6 +1,8 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
+import { sidebar } from "./sidebar.mjs";
+
 // Starlight injects `head` entries in dev as well as build, so analytics must
 // be gated or local work reports itself as real traffic. `import.meta.env.PROD`
 // is not available while this config is evaluated, so read the CLI command.
@@ -81,6 +83,22 @@ export default defineConfig({
                   "function gtag(){dataLayer.push(arguments);}",
                   "gtag('js', new Date());",
                   "gtag('config', 'G-FT8LY7Z15Y');",
+                  "(function () {",
+                  "  function report(type, fatal) {",
+                  "    if (typeof gtag !== 'function') return;",
+                  "    gtag('event', 'web_exception', {",
+                  "      exception_type: type,",
+                  "      fatal: fatal,",
+                  "      non_interaction: true",
+                  "    });",
+                  "  }",
+                  "  window.addEventListener('error', function (event) {",
+                  "    report(event.error && event.error.name ? event.error.name : 'Error', true);",
+                  "  });",
+                  "  window.addEventListener('unhandledrejection', function (event) {",
+                  "    report(event.reason && event.reason.name ? event.reason.name : 'UnhandledRejection', false);",
+                  "  });",
+                  "})();",
                 ].join("\n"),
               },
               // Microsoft Clarity session recording, behind the same gate:
@@ -127,90 +145,7 @@ export default defineConfig({
           href: "https://github.com/orwa-mahmoud/adapttable",
         },
       ],
-      sidebar: [
-        {
-          label: "Start",
-          items: [
-            { label: "Getting started", slug: "getting-started" },
-            { label: "Concepts", slug: "concepts" },
-            { label: "Data tiers", slug: "data-tiers" },
-          ],
-        },
-        {
-          label: "Features",
-          items: [
-            { label: "Columns", slug: "columns" },
-            { label: "Sparkline columns", slug: "sparkline" },
-            { label: "PDF export and print", slug: "export-pdf" },
-            { label: "Sorting", slug: "sorting" },
-            { label: "Filtering", slug: "filtering" },
-            { label: "Pagination", slug: "pagination" },
-            { label: "Selection & bulk actions", slug: "selection" },
-            { label: "Row expansion", slug: "row-expansion" },
-            { label: "Inline cell editing", slug: "cell-editing" },
-            { label: "Row reordering", slug: "row-reordering" },
-            { label: "Row pinning", slug: "row-pinning" },
-            { label: "Row and column spanning", slug: "row-spanning" },
-            { label: "Full-width and separator rows", slug: "full-width-rows" },
-            { label: "Row styling and heights", slug: "row-styling" },
-            { label: "Row grouping", slug: "row-grouping" },
-            { label: "Column management", slug: "column-management" },
-            { label: "Saved views", slug: "saved-views" },
-            { label: "Virtualization", slug: "virtualization" },
-            { label: "Mobile cards", slug: "mobile" },
-          ],
-        },
-        {
-          label: "Beyond the table",
-          items: [
-            { label: "URL state", slug: "url-state" },
-            { label: "Customization", slug: "customization" },
-            { label: "i18n & RTL", slug: "i18n-rtl" },
-          ],
-        },
-        {
-          label: "Reference",
-          items: [
-            { label: "API reference", slug: "api" },
-            { label: "FAQ", slug: "faq" },
-            { label: "Comparison", slug: "comparison" },
-            { label: "Versioning & stability", slug: "versioning" },
-          ],
-        },
-        {
-          label: "Migrating",
-          items: [
-            {
-              label: "From AdaptTable v1",
-              slug: "migrate-from-v1",
-            },
-            {
-              label: "From mantine-datatable",
-              slug: "migrate-from-mantine-datatable",
-            },
-            {
-              label: "From MUI X DataGrid",
-              slug: "migrate-from-mui-x-datagrid",
-            },
-            {
-              label: "From TanStack Table",
-              slug: "migrate-from-tanstack-table",
-            },
-            {
-              label: "From mui-datatables",
-              slug: "migrate-from-mui-datatables",
-            },
-            {
-              label: "From material-table",
-              slug: "migrate-from-material-table",
-            },
-            {
-              label: "From ag-Grid",
-              slug: "migrate-from-ag-grid",
-            },
-          ],
-        },
-      ],
+      sidebar,
     }),
   ],
 });

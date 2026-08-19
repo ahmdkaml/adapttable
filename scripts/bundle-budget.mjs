@@ -65,7 +65,14 @@ const FIXTURES = [
     // capabilities are genuinely shaken out, not merely compressing well. A
     // feature that starts leaking into the base path trips this before the
     // budget notices the bytes.
-    absent: ["toCsv", "Blob", "download", "virtual"],
+    absent: [
+      "toCsv",
+      "Blob",
+      "download",
+      "virtual",
+      "PIVOT_BLANK",
+      "parseFormula",
+    ],
   },
   {
     // The whole surface at once, which no application imports. It is a canary
@@ -77,6 +84,80 @@ const FIXTURES = [
     pkg: "core",
     budgetKB: 93,
     code: `export * from "PKG";`,
+    // The optional entries are the proof that "optional" is real: even the
+    // whole main surface at once does not carry them. The marker is an
+    // engine-only name, not the word "pivot" — the panel's LABELS are shared
+    // table labels and do belong in the base bundle.
+    absent: ["PIVOT_BLANK", "parseFormula"],
+  },
+  {
+    // What the pivot engine costs the tables that ask for it, and nothing to
+    // the tables that do not — see the `absent` checks above.
+    name: "core · pivot",
+    pkg: "core",
+    entryFile: "pivot.js",
+    budgetKB: 5,
+    code: `export { pivot } from "PKG";`,
+  },
+  {
+    // The engine plus the mapping that renders it with an adapter's own
+    // table — the pair a host actually imports to put a pivot on screen.
+    // Measured 4.1 KB against the engine's 1.5, and 2.6 of that difference is
+    // the shared label set: the mapping reads its two grand-total captions
+    // from the same labels every table resolves, rather than shipping English
+    // of its own. This fixture bundles the entry with nothing else installed,
+    // so it counts that set in full; an app importing the table has already
+    // paid for it, and the mapping's own weight is under a kilobyte.
+    name: "core · pivot rendered",
+    pkg: "core",
+    entryFile: "pivot.js",
+    budgetKB: 5,
+    code: `export { pivot, pivotTableModel } from "PKG";`,
+  },
+  {
+    // Same promise for the formula engine: a parser nobody imports is a
+    // parser nobody pays for.
+    name: "core · formula",
+    pkg: "core",
+    entryFile: "formula.js",
+    budgetKB: 6,
+    code: `export { buildFormulaColumns } from "PKG";`,
+  },
+  {
+    // The React-free half of the model, which a backend imports instead of the
+    // table: the filter-tree, pivot and formula-column URL codecs and nothing
+    // else. Measured 0.8 KB, the pivot codec included: it carries the switches
+    // and the folded groups a shared link names, which a route handler reads
+    // with the same function the table wrote them with. The ceiling holds.
+    // The absences carry the promise — `useState` is the
+    // load-bearing one, because an entry that names a hook has a React peer no
+    // route handler can satisfy; `PIVOT_BLANK` says the codec did not drag the
+    // engine in behind it, and `parseFormula` says the same for the formula
+    // parser, which reading a link must never reach.
+    name: "core · query",
+    pkg: "core",
+    entryFile: "query.js",
+    budgetKB: 1,
+    code: `export { parseFilterTree, deserializePivot, deserializeFormulaColumns } from "PKG";`,
+    absent: [
+      "useState",
+      "useSyncExternalStore",
+      "PIVOT_BLANK",
+      "toCsv",
+      "parseFormula",
+    ],
+  },
+  {
+    // What a route handler pays to parse and validate a shared link: measured
+    // 1.6 KB, the parser plus the codecs it reads through `@adapttable/core/query`.
+    // React is external in every fixture here, so an accidental React import
+    // would not show as bytes — the graph walk in `scripts/smoke-dist.mjs` is
+    // what enforces its absence, and these markers are the cheap second look.
+    name: "server · parse a query",
+    pkg: "server",
+    budgetKB: 2,
+    code: `export { parseTableQuery } from "PKG";`,
+    absent: ["useState", "PIVOT_BLANK", "toCsv"],
   },
   // Every adapter, because the adapters are meant to be interchangeable and
   // that includes their weight. One drifting away from the pack is a finding.
@@ -239,7 +320,15 @@ const FIXTURES = [
  */
 async function measure(fixture, dir) {
   const entry = join(dir, "entry.js");
-  const target = join(ROOT, "packages", fixture.pkg, "dist", "index.js");
+  // Optional entries (`@adapttable/core/pivot` and friends) build to their
+  // own file, and measuring them is the only way to say what they cost.
+  const target = join(
+    ROOT,
+    "packages",
+    fixture.pkg,
+    "dist",
+    fixture.entryFile ?? "index.js"
+  );
   writeFileSync(entry, fixture.code.replaceAll("PKG", target));
 
   const bundle = await Rolldown.rolldown({

@@ -211,6 +211,7 @@ describe("EditableCellGate", () => {
             message: "This row changed",
             keepMine: "Keep mine",
             takeTheirs: "Take theirs",
+            theirsValue: (value) => `Theirs: ${value}`,
           },
         }}
         row={live}
@@ -233,6 +234,9 @@ describe("EditableCellGate", () => {
     expect(
       document.querySelector('[data-adapttable-part="edit-cell-conflict"]')
     ).toHaveTextContent("This row changed");
+    expect(
+      document.querySelector('[data-adapttable-part="edit-cell-incoming"]')
+    ).toHaveTextContent("Theirs: Ada Updated");
     const keepMine = document.querySelector(
       '[data-adapttable-part="edit-cell-keep-mine"]'
     )!;
@@ -282,6 +286,7 @@ describe("EditableCellGate", () => {
             message: "This row changed",
             keepMine: "Keep mine",
             takeTheirs: "Take theirs",
+            theirsValue: (value) => `Theirs: ${value}`,
           },
         }}
         row={live}

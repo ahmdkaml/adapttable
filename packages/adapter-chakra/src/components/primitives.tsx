@@ -28,8 +28,13 @@ export function Checkbox({
   id,
   value,
   mb,
+  className,
+  inputRef,
+  onKeyDown,
   "aria-label": ariaLabel,
+  "data-adapttable-part": dataPart,
   children,
+  ...rest
 }: Readonly<{
   checked: boolean;
   indeterminate?: boolean;
@@ -39,8 +44,18 @@ export function Checkbox({
   id?: string;
   value?: string;
   mb?: number;
+  className?: string;
+  /** Hands the real input out, so a cell editor can take focus on mount. */
+  inputRef?: (node: HTMLInputElement | null) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
   children?: ReactNode;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
   return (
     <ChakraCheckbox.Root
@@ -49,6 +64,8 @@ export function Checkbox({
       size={size}
       colorPalette={colorPalette}
       mb={mb}
+      className={className}
+      data-adapttable-part={dataPart}
       checked={indeterminate ? "indeterminate" : checked}
     >
       {/* The accessible name lives on the real (hidden) input so the
@@ -59,8 +76,11 @@ export function Checkbox({
           change-event value tracker, so `onChange` can silently no-op after an
           out-of-band selection change — `onClick` always fires once per click. */}
       <ChakraCheckbox.HiddenInput
+        ref={inputRef}
         aria-label={ariaLabel}
+        onKeyDown={onKeyDown}
         onClick={onToggle ? () => onToggle() : undefined}
+        {...rest}
       />
       <ChakraCheckbox.Control />
       {children != null && (
@@ -109,6 +129,7 @@ export function NativeSelect({
   size,
   value,
   placeholder,
+  multiple,
   onChange,
   onKeyDown,
   onBlur,
@@ -116,13 +137,18 @@ export function NativeSelect({
   flex,
   w,
   minW,
+  maxW,
+  className,
   "aria-label": ariaLabel,
   "data-adapttable-part": dataPart,
   children,
+  ...rest
 }: Readonly<{
   size?: "xs" | "sm" | "md" | "lg";
-  value?: string | number;
+  value?: string | number | readonly string[];
   placeholder?: string;
+  /** Renders `<select multiple>` — a list box rather than a dropdown. */
+  multiple?: boolean;
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLSelectElement>) => void;
   onBlur?: (event: FocusEvent<HTMLSelectElement>) => void;
@@ -130,25 +156,43 @@ export function NativeSelect({
   flex?: string;
   w?: string;
   minW?: string;
+  maxW?: string;
+  className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
   children: ReactNode;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
   return (
-    <ChakraNativeSelect.Root size={size} flex={flex} w={w} minW={minW}>
+    <ChakraNativeSelect.Root
+      size={size}
+      flex={flex}
+      w={w}
+      minW={minW}
+      maxW={maxW}
+    >
       <ChakraNativeSelect.Field
+        className={className}
         ref={fieldRef}
         data-adapttable-part={dataPart}
         aria-label={ariaLabel}
-        placeholder={placeholder}
+        // A multiple field is a list box: Chakra's placeholder renders an
+        // empty first option, which reads as a selectable value there.
+        placeholder={multiple ? undefined : placeholder}
+        multiple={multiple}
         value={value}
         onChange={onChange}
         onKeyDown={onKeyDown}
         onBlur={onBlur}
+        {...rest}
       >
         {children}
       </ChakraNativeSelect.Field>
-      <ChakraNativeSelect.Indicator />
+      {multiple ? null : <ChakraNativeSelect.Indicator />}
     </ChakraNativeSelect.Root>
   );
 }
@@ -164,7 +208,7 @@ export function FormField({
 }: Readonly<{ label: ReactNode; children: ReactNode }>) {
   return (
     <ChakraField.Root>
-      <ChakraField.Label fontSize="sm" mb={1}>
+      <ChakraField.Label fontSize="sm" mb={4}>
         {label}
       </ChakraField.Label>
       {children}

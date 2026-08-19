@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, fireEvent, render, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FilterDef } from "./filters/filterDefs";
@@ -69,6 +69,27 @@ describe("useDataTableShell", () => {
     expect(result.current.toolbarProps.hasFilters).toBe(true);
   });
 
+  it("keeps Filters in header mode when the AND/OR tree is on", () => {
+    const filters: FilterDef<Row>[] = [
+      { key: "name", type: "text", label: "Name" },
+    ];
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlSync: false,
+          filters,
+          headerFilters: true,
+        },
+        () => <div>form</div>
+      )
+    );
+    expect(result.current.toolbarProps.hasFilters).toBe(true);
+    expect(result.current.tableProps.closeHeaderFilterOnSelect).toBe(false);
+  });
+
   it("passes hand-drawn JSX filters through untouched", () => {
     const jsx = <div>custom</div>;
     const { result } = renderHook(() =>
@@ -99,7 +120,32 @@ describe("useDataTableShell", () => {
     );
     expect(result.current.hasRowActions).toBe(true);
     expect(result.current.tableProps.rowActions).toHaveLength(1);
+    expect(result.current.tableProps.rowActionsLayout).toBeUndefined();
+    expect(result.current.tableProps.renderRowActions).toBeUndefined();
+    expect(result.current.tableProps.cellSpanAppearance).toBeUndefined();
     expect(result.current.tableProps.setWidth).toBeTypeOf("function");
+  });
+
+  it("forwards the opt-in row-actions layout and custom cell renderer", () => {
+    const renderRowActions = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          urlSync: false,
+          rowActions: [{ key: "x", label: "X", onClick: vi.fn() }],
+          rowActionsLayout: "menu",
+          renderRowActions,
+          cellSpanAppearance: "plain",
+        },
+        noForm
+      )
+    );
+    expect(result.current.tableProps.rowActionsLayout).toBe("menu");
+    expect(result.current.tableProps.renderRowActions).toBe(renderRowActions);
+    expect(result.current.tableProps.cellSpanAppearance).toBe("plain");
   });
 
   it("writes uncontrolled pins to the URL and still notifies the host", () => {
@@ -400,5 +446,50 @@ describe("useDataTableShell — the scroll box and column sizing", () => {
     );
     result.current.autoSizeColumns();
     expect(onColumnLayoutChange).not.toHaveBeenCalled();
+  });
+
+  it("sizes one named column and windows when virtualizeColumns is on", () => {
+    const onColumnLayoutChange = vi.fn();
+    const { result } = renderHook(() =>
+      useDataTableShell(
+        {
+          data: ROWS,
+          columns,
+          rowKey,
+          onColumnLayoutChange,
+          virtualizeColumns: true,
+          cellNavigation: true,
+          closeHeaderFilterOnSelect: true,
+          columnLayout: {
+            hidden: [],
+            order: [],
+            pinned: { name: "start" },
+            widths: {},
+          },
+        },
+        noForm
+      )
+    );
+    expect(result.current.tableProps.closeHeaderFilterOnSelect).toBe(true);
+    const root = document.createElement("div");
+    const cell = document.createElement("div");
+    cell.setAttribute("data-column-key", "name");
+    Object.defineProperty(cell, "scrollWidth", { value: 200 });
+    root.append(cell);
+    document.body.append(root);
+    result.current.rootRef.current = root;
+    act(() => {
+      result.current.autoSizeColumn("name");
+    });
+    expect(onColumnLayoutChange).toHaveBeenCalledOnce();
+    const box = document.createElement("div");
+    result.current.tableProps.virtualScrollRef(box);
+    const gridProps = result.current.tableProps.gridFocus.getGridProps();
+    const { getByRole } = render(<div {...gridProps} />);
+    act(() => {
+      result.current.tableProps.gridFocus.focusCell({ row: 0, col: 0 });
+    });
+    fireEvent.keyDown(getByRole("grid"), { key: "ArrowDown" });
+    root.remove();
   });
 });

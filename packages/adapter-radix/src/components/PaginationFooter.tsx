@@ -12,6 +12,7 @@ export function Footer({
   pagination,
   total,
   limit,
+  defaultLimit = limit,
   setPage,
   setLimit,
   labels,
@@ -21,6 +22,7 @@ export function Footer({
   pagination: PaginationInfo;
   total: number;
   limit: number;
+  defaultLimit?: number;
   setPage: (n: number) => void;
   setLimit: (n: number) => void;
   labels: Required<TableLabels>;
@@ -49,7 +51,7 @@ export function Footer({
               width="72px"
               aria-label={labels.rowsPerPage}
               value={String(limit)}
-              options={pageSizeSelectOptions(limit)}
+              options={pageSizeSelectOptions(limit, defaultLimit)}
               onValueChange={(value) => setLimit(Number(value))}
             />
           </>

@@ -25,6 +25,23 @@ import { DataTable } from "@adapttable/mantine";
 A number `rowHeight` is every row. A function is per row. Height wins when
 `rowStyle` also names `height` — `rowHeight` is the dedicated override.
 
+Pass a light fill and a dark fill — AdaptTable does not pick those colours.
+`light-dark()` follows the page `color-scheme` (and RTL uses logical
+properties, so `text-align: start` is already the extra's alignment):
+
+```tsx
+rowStyle={(row) =>
+  row.overdue
+    ? {
+        backgroundColor:
+          "light-dark(oklch(0.93 0.08 95), oklch(0.38 0.07 85))",
+      }
+    : undefined
+}
+```
+
+CSS variables that flip under the host's dark class work the same way.
+
 The row virtualizer's `estimateSize` reads the same value, so a
 variable-height table still windows. `measureElement` stays authoritative
 for what the browser actually laid out.

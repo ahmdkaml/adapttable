@@ -1,15 +1,21 @@
 import {
   resolveLabels,
+  showSimpleFilterFields,
   type TableLabels,
   type UseSavedViewsOptions,
 } from "@adapttable/core";
 import {
+  fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
+  SidePanelLayout,
+  useCommandPalette,
   useDataTableShell,
+  useStickyToolbarLayout,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import { Box, Button, Group, Paper, Progress, Stack } from "@mantine/core";
-import { useElementSize } from "@mantine/hooks";
 import { useRef } from "react";
 
 import { useMountStagger } from "./animation/useMountStagger";
@@ -17,6 +23,8 @@ import { ActiveFilterChips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkActionBar } from "./components/BulkActionBar";
 import { ColumnMenu, type ColumnMenuProps } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { EmptyState } from "./components/EmptyState";
 import { ErrorState } from "./components/ErrorState";
@@ -26,33 +34,12 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { PaginationFooter } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { SidePanel } from "./components/SidePanel";
+import { StatusBar } from "./components/StatusBar";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import { SURFACE } from "./surface";
 import type { DataTableProps } from "./types";
-
-const stickyToolbarStyle = (top: number) => ({
-  position: "sticky" as const,
-  top,
-  zIndex: 3,
-  background: SURFACE,
-  paddingBottom: "var(--mantine-spacing-xs)",
-});
-
-/** The toolbar's style: parked sticky at `stickyTop` only when asked to. */
-const toolbarStyle = (stickyToolbar: boolean, stickyTop: number) =>
-  stickyToolbar ? stickyToolbarStyle(stickyTop) : undefined;
-
-/**
- * The sticky header's inset: below the sticky toolbar when it sticks,
- * otherwise the caller's inset alone — the cross-adapter meaning.
- */
-const stickyHeaderInset = (
-  stickyToolbar: boolean,
-  stickyTop: number,
-  toolbarHeight: number
-) => (stickyToolbar ? stickyTop + toolbarHeight : stickyTop);
 
 /** The Columns menu, rendered inline in the toolbar — or nothing when off. */
 function ColumnMenuSlot<TRow>({
@@ -93,7 +80,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     classNames,
     skeletonRows,
     stickyTop = 0,
-    stickyToolbar = false,
+    stickyToolbar,
     animate = false,
     stickyHeader = false,
     enableColumnMenu = false,
@@ -104,21 +91,30 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // The whole shared orchestration — data tier, filter runtime, chrome,
   // scroll reset, body windowing — lives in core. Mantine adds only what its
   // kit needs: a measured sticky toolbar, per-body stagger refs, and density.
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        labels={resolveLabels(props.labels)}
-        registry={registry}
-      />
+    <Stack gap="lg" data-adapttable-part="filters-form">
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
-    </div>
+      {simpleFiltersOn ? (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          labels={resolveLabels(props.labels)}
+          registry={registry}
+        />
+      ) : null}
+    </Stack>
   ));
   const {
     chrome,
@@ -137,8 +133,47 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   // Everything rendered below reads the chrome's VIEW facade — identical to
   // the raw source except under grouping, where it presents the full set.
   const viewSource = shell.source;
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: chrome.allColumns,
+    labels: table.labels,
+    rowFor: (rowId) =>
+      shell.source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        shell.source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        chrome.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        shell.setFiltersOpen(true);
+      },
+    },
+    sortBy: shell.source.sortBy,
+    sortDir: shell.source.sortDir,
+  });
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels: table.labels,
+    onPrint: props.onPrint,
+    onExport: shell.toolbarProps.onExportCsv,
+    onClearFilters: chrome.clearFilters,
+    hasFilters: chrome.activeFilterCount > 0,
+  });
   const { isMobile, confirm } = chrome;
-  const { ref: toolbarRef, height: toolbarHeight } = useElementSize();
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(stickyHeader, stickyToolbar, props.maxHeight != null),
+    stickyTop
+  );
 
   const desktopBodyRef = useRef<HTMLTableSectionElement>(null);
   const mobileBodyRef = useRef<HTMLDivElement>(null);
@@ -195,17 +230,14 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
         bodyRef={desktopBodyRef}
         className={classNames?.table}
         stickyHeader={stickyHeader}
-        stickyHeaderOffset={stickyHeaderInset(
-          stickyToolbar,
-          stickyTop,
-          toolbarHeight
-        )}
+        stickyHeaderOffset={stickyBar.headerOffset}
       />
     );
   }
 
   return (
     <Paper
+      {...contextMenu.regionProps}
       ref={rootRef}
       p="xs"
       radius="md"
@@ -223,8 +255,17 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       <FindBar find={shell.find} labels={table.labels} />
       <Stack gap="xs">
         <Box
-          ref={toolbarRef}
-          style={toolbarStyle(stickyToolbar, stickyTop)}
+          data-adapttable-part="toolbar"
+          ref={stickyBar.toolbarRef}
+          style={{
+            ...stickyBar.toolbarStyle,
+            ...(stickyBar.toolbarStyle
+              ? {
+                  background: SURFACE,
+                  paddingBottom: "var(--mantine-spacing-xs)",
+                }
+              : {}),
+          }}
           className={classNames?.toolbar}
         >
           <Stack gap="xs">
@@ -301,20 +342,52 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           />
         )}
 
-        {viewSource.error && (
-          <ErrorState
-            error={viewSource.error}
-            title={table.labels.errorTitle}
-            message={table.labels.errorMessage}
-            retryLabel={table.labels.retry}
-            onRetry={
-              viewSource.refetch ? () => void viewSource.refetch?.() : undefined
-            }
-            isRetrying={viewSource.isFetching}
-          />
-        )}
-
-        {!viewSource.error && body}
+        <CommandPalette
+          commands={palette.commands}
+          open={palette.open}
+          onClose={palette.close}
+          labels={table.labels}
+        />
+        <ContextMenu
+          items={contextMenu.items}
+          at={contextMenu.at}
+          onClose={contextMenu.close}
+          container={shell.fullscreen.container}
+          labels={table.labels}
+        />
+        <SidePanelLayout
+          side={props.sidePanel?.side}
+          body={
+            <>
+              {chrome.errorState
+                ? (fillSlot(slots?.error, chrome.errorState) ?? (
+                    <ErrorState
+                      error={chrome.errorState.error}
+                      title={table.labels.errorTitle}
+                      message={table.labels.errorMessage}
+                      retryLabel={table.labels.retry}
+                      onRetry={chrome.errorState.retry}
+                      isRetrying={chrome.errorState.retrying}
+                    />
+                  ))
+                : body}
+            </>
+          }
+          panel={
+            props.sidePanel?.open != null && (
+              <SidePanel
+                panels={props.sidePanel.panels}
+                openPanel={props.sidePanel.open}
+                onOpenPanel={props.sidePanel.onOpenChange}
+                onClose={() => {
+                  props.sidePanel?.onOpenChange(null);
+                }}
+                side={props.sidePanel.side}
+                labels={table.labels}
+              />
+            )
+          }
+        />
 
         {canLoadMore && viewSource.hasNextPage && (
           <Group ref={loadMoreRef} justify="center" py="xs">
@@ -339,6 +412,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
               page={table.pagination.safePage}
               totalPages={table.pagination.totalPages}
               limit={viewSource.limit}
+              defaultLimit={viewSource.defaultLimit}
               total={viewSource.total}
               fromIndex={table.pagination.fromIndex}
               toIndex={table.pagination.toIndex}
@@ -362,7 +436,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={dir}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={shell.source.rows.length}
+        page={shell.source.page}
+        limit={shell.source.limit}
+        total={shell.source.total}
+        selected={table.selection?.selectedCount ?? 0}
         stats={shell.selectionStats}
         labels={table.labels}
         locale={props.locale}

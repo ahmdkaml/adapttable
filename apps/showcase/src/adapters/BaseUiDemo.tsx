@@ -1,5 +1,9 @@
-import { DataTable } from "@adapttable/base-ui";
-import type { NestedTableDefaults } from "@adapttable/core";
+import { DataTable, type DataTableProps } from "@adapttable/base-ui";
+import type {
+  ColumnDef,
+  ColumnLayoutState,
+  NestedTableDefaults,
+} from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 
 import {
@@ -16,6 +20,8 @@ import {
   makeActions,
   makeBulkActions,
   makeColumns,
+  makeWideColumns,
+  nestedOpenIds,
   type Person,
   type StatusCellProps,
   strings,
@@ -24,6 +30,7 @@ import {
   type DataMode,
   DemoBody,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "../Demo";
@@ -131,10 +138,37 @@ export function BaseUiDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
+  failure,
+  onRecover,
+  customCard,
+  realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   headerFilters,
+  filterFields,
   columnGroups,
+  sparkline,
+  formulaColumns,
+  derivedFields,
+  editorShowcase,
+  exportCsv,
+  columnMenu,
+  filterControls,
+  bulkActions,
+  statusBar,
+  contextMenu,
+  densityChooser,
+  onDensityChange,
+  fullscreen,
+  commandPalette,
+  onPrint,
+  printButton,
+  undoRedoButtons,
+  sidePanel,
+  wide,
+  defaultColumnLayout,
   forceMobile,
   focused,
 }: Readonly<{
@@ -157,10 +191,48 @@ export function BaseUiDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
+  failure?: Failure;
+  onRecover?: () => void;
+  customCard?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
+  /** Columns built from user-typed formulas, appended after the declared set. */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /** Write the id-derived fields onto the rows, so a formula can read them. */
+  derivedFields?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
+  /** Show the Columns menu. Defaults to on unless the page is focused. */
+  /** The toolbar Export button's configuration. */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
+  columnMenu?: boolean;
+  /** Show the Filters control. Defaults to on unless the page is focused. */
+  filterControls?: boolean;
+  /** Bulk actions, which are what turn row selection on. Defaults to on
+   *  unless the page is focused. */
+  bulkActions?: boolean;
+  statusBar?: boolean;
+  contextMenu?: boolean;
+  densityChooser?: boolean;
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  fullscreen?: boolean;
+  commandPalette?: boolean;
+  onPrint?: () => void;
+  printButton?: boolean;
+  undoRedoButtons?: boolean;
+  sidePanel?: DataTableProps<Person>["sidePanel"];
+  /** Use the wide, horizontally-scrolling column set with Person pinned. */
+  wide?: boolean;
+  /** The column layout the page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -172,7 +244,17 @@ export function BaseUiDemo({
       mode={mode}
       pageMode={pageMode}
       urlKey={urlKey}
-      defaultColumnLayout={LIVE_DEFAULT_LAYOUT}
+      defaultColumnLayout={
+        // The wide showcase pins BOTH edges by default: person at the
+        // start, the actions column at the end (it pins like any column).
+        wide
+          ? {
+              pinned: focused
+                ? { person: "start" }
+                : { person: "start", actions: "end" },
+            }
+          : (defaultColumnLayout ?? LIVE_DEFAULT_LAYOUT)
+      }
       grouping={grouping}
       tree={tree}
       rowMode={rowMode}
@@ -183,14 +265,42 @@ export function BaseUiDemo({
       cellSpan={cellSpan}
       extraRows={extraRows}
       rowStyle={rowStyle}
+      highlight={highlight}
+      failure={failure}
+      onRecover={onRecover}
+      customCard={customCard}
+      realtime={realtime}
       editing={editing}
+      derivedFields={derivedFields}
+      formulaColumns={formulaColumns}
       render={(source, columns) => (
         <DataTable
           source={source}
-          columns={makeColumns(locale, BASE_UI_CELLS, { groups: columnGroups })}
+          columns={
+            wide
+              ? makeWideColumns(locale, BASE_UI_CELLS)
+              : makeColumns(locale, BASE_UI_CELLS, {
+                  groups: columnGroups,
+                  sparkline,
+                  editors: editorShowcase,
+                  formulas: formulaColumns,
+                })
+          }
           rowKey={(r) => r.id}
           nestedTable={nested ? nestedOrders : undefined}
+          defaultExpandedRowIds={nestedOpenIds(nested, source.rows)}
           cellNavigation={cellNavigation ?? editing}
+          columnSelectionCheckbox={columnSelectionCheckbox}
+          statusBar={statusBar}
+          contextMenu={contextMenu}
+          densityChooser={densityChooser}
+          onDensityChange={onDensityChange}
+          fullscreen={fullscreen}
+          commandPalette={commandPalette}
+          onPrint={onPrint}
+          printButton={printButton}
+          undoRedoButtons={undoRedoButtons}
+          sidePanel={sidePanel}
           selectionStats={editing}
           editHistory={editing}
           findInTable={editing}
@@ -202,17 +312,25 @@ export function BaseUiDemo({
           locale={locale}
           dir={getDirection(locale)}
           searchPlaceholder={s.search}
-          rowActions={focused ? undefined : makeActions(locale)}
-          bulkActions={focused ? undefined : makeBulkActions(locale)}
+          rowActions={
+            rowMutations || (focused && !columnGroups)
+              ? undefined
+              : makeActions(locale)
+          }
+          rowActionsLayout={rowMutations ? "menu" : undefined}
+          bulkActions={
+            (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
+          }
           confirm={demoConfirm}
-          enableColumnMenu={!focused}
-          exportCsv={!focused}
+          enableColumnMenu={columnMenu ?? !focused}
+          exportCsv={exportCsv ?? !focused}
           savedViews={focused ? undefined : demoSavedViews(urlKey)}
           animate={animate}
           resizableColumns
           stickyHeader
           headerFilters={headerFilters}
-          filters={focused ? undefined : filters}
+          filterFields={filterFields}
+          filters={(filterControls ?? !focused) ? filters : undefined}
           filterTypes={demoFilterTypes()}
           accentColor="blue"
         />

@@ -31,6 +31,42 @@ export const shadcnClassNames = {
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90",
   exportCsvButton:
     "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+  // Undo and Redo are the toolbar's quietest pair: they sit disabled most of
+  // the time, so they take the outline treatment and the muted disabled state
+  // rather than a filled one that would keep drawing the eye.
+  undoButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  redoButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  // Print sits with the view controls and is never disabled, so it takes the
+  // outline treatment without the muted state the undo pair needs.
+  printButton:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+  densityToggle:
+    "shrink-0 whitespace-nowrap inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+  fullscreenToggle:
+    "shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background text-sm hover:bg-accent hover:text-accent-foreground",
+  commandPalette:
+    "rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg",
+  commandInput:
+    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring",
+  commandItem:
+    "flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none",
+  commandEmpty: "px-2 py-3 text-sm text-muted-foreground",
+  contextMenu:
+    "min-w-[10rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+  contextMenuItem:
+    "flex w-full items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none data-[danger]:text-destructive",
+  contextMenuSeparator: "-mx-1 my-1 h-px bg-border",
+  sidePanel:
+    "w-[280px] shrink-0 rounded-lg border border-border bg-card p-3 text-card-foreground",
+  sidePanelTab:
+    "inline-flex h-8 items-center rounded-md px-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground",
+  sidePanelClose:
+    "ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+  statusBar:
+    "flex flex-wrap items-center gap-x-4 gap-y-1 px-1 py-2 text-xs text-muted-foreground tabular-nums",
+  statusItem: "whitespace-nowrap",
   cellSelected: "bg-accent",
   // Find hits keep the browser's convention rather than a theme token: amber
   // for every match, a stronger amber for the one you are on.
@@ -40,7 +76,7 @@ export const shadcnClassNames = {
     "size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent",
   filtersBackdrop: "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]",
   filtersPanel:
-    "fixed inset-y-0 end-0 z-50 flex w-[340px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",
+    "fixed inset-y-0 end-0 z-50 flex w-[420px] max-w-[88vw] flex-col border-s border-border bg-card text-card-foreground shadow-2xl",
   filtersPopover:
     "z-50 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
   filtersCount:
@@ -50,8 +86,8 @@ export const shadcnClassNames = {
   filtersTitle: "text-base font-semibold",
   filtersClose:
     "flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-muted-foreground hover:bg-accent",
-  filtersBody: "flex flex-1 flex-col gap-4 overflow-auto p-4",
-  filtersForm: "flex flex-col gap-4",
+  filtersBody: "flex flex-1 flex-col gap-6 overflow-auto p-4",
+  filtersForm: "flex flex-col gap-6",
   filterTree: "flex flex-col gap-3",
   filterTreeGroup: "m-0 flex flex-col gap-2 border-0 p-0",
   filterTreeCondition: "flex flex-wrap items-end gap-2",
@@ -61,7 +97,7 @@ export const shadcnClassNames = {
   filterTreeSummary:
     "flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold",
   // ── Auto-built filter form (declarative `filters` definitions) ──
-  filterField: "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
+  filterField: "m-0 flex min-w-0 flex-col gap-4 border-0 p-0",
   filterLabel: "p-0 text-xs font-medium text-muted-foreground",
   filterInput:
     "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring",
@@ -74,7 +110,7 @@ export const shadcnClassNames = {
   filterChecklistList:
     "flex max-h-60 flex-wrap items-center gap-2 overflow-auto",
   filterChecklistCount: "text-xs text-muted-foreground",
-  filterCheckboxGroup: "flex flex-wrap items-center gap-2",
+  filterCheckboxGroup: "flex flex-wrap items-center gap-2.5",
   filterCheckbox:
     "inline-flex cursor-pointer select-none items-center rounded-full border border-input bg-background px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground [&>input]:sr-only",
   filtersFooter:
@@ -86,13 +122,22 @@ export const shadcnClassNames = {
   table: "w-full border-collapse text-sm",
   headerCell:
     "border-b border-border bg-card px-3 py-2.5 text-start font-medium text-muted-foreground [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
+  // Small, quiet, and sitting inside a header caption — it takes the muted
+  // foreground and no box of its own.
+  columnSelect:
+    "ms-1 inline-flex items-center align-middle text-muted-foreground",
   sortButton:
     "inline-flex items-center gap-1 font-medium hover:text-foreground",
   row: "border-b border-border last:border-0 hover:bg-muted/50 data-[selected]:bg-accent data-[dragging]:opacity-60 data-[drop=before]:shadow-[inset_0_2px_0_0_hsl(var(--primary))] data-[drop=after]:shadow-[inset_0_-2px_0_0_hsl(var(--primary))]",
   // Pinned cells must be opaque so scrolled content never shows through.
   cell: "px-3 py-2.5 [&[data-pinned]]:bg-card [[data-density=compact]_&]:px-2 [[data-density=compact]_&]:py-1.5",
+  cellSpan: "bg-muted/40 text-center",
   actionButton:
     "h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50",
+  rowActionsTrigger:
+    "inline-flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground [&::-webkit-details-marker]:hidden",
+  rowActionsMenu:
+    "relative inline-block [&>button]:block [&>button]:w-full [&>button]:px-2 [&>button]:text-start",
   footer:
     "flex flex-wrap items-center gap-2 border-t border-border p-3 text-sm text-muted-foreground",
   pager: "ms-auto flex flex-wrap items-center gap-1",
@@ -158,11 +203,16 @@ export const shadcnClassNames = {
   thead: "bg-card",
   headerRow: "align-middle",
   filterHeaderRow: "align-middle",
+  filterHeaderTrigger:
+    "ms-1 inline-flex items-center text-muted-foreground hover:text-foreground",
   filterHeaderCell:
     "border-b border-border bg-card px-1 py-1 text-start [[data-density=compact]_&]:px-1 [[data-density=compact]_&]:py-0.5",
   filterHeaderInput:
     "h-7 w-full min-w-0 rounded-md border border-input bg-background px-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring",
-  filterHeaderMenu: "relative w-full",
+  // The dropdown panel itself, matching every other part named `*Menu`/`*Panel`
+  // — not the wrapper it is positioned against.
+  filterHeaderMenu:
+    "z-50 min-w-full rounded-md border border-border bg-card p-2 text-card-foreground shadow-xl",
   tbody: "align-middle",
   scrollBox: "overscroll-x-contain",
   virtualSpacer: "block",

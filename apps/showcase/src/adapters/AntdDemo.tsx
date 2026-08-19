@@ -1,5 +1,9 @@
 import { DataTable, type DataTableProps } from "@adapttable/antd";
-import type { NestedTableDefaults } from "@adapttable/core";
+import type {
+  ColumnDef,
+  ColumnLayoutState,
+  NestedTableDefaults,
+} from "@adapttable/core";
 import { getDirection, getLabels } from "@adapttable/i18n";
 import {
   Avatar,
@@ -27,6 +31,7 @@ import {
   makeColumns,
   makeWideColumns,
   nameHue,
+  nestedOpenIds,
   type Person,
   type StatusCellProps,
   statusTone,
@@ -36,6 +41,7 @@ import {
   type DataMode,
   DemoBody,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "../Demo";
@@ -113,12 +119,37 @@ export function AntdDemo({
   cellSpan,
   extraRows,
   rowStyle,
+  highlight,
+  failure,
+  onRecover,
+  customCard,
+  realtime,
   editing,
   cellNavigation,
+  columnSelectionCheckbox,
   wide,
+  defaultColumnLayout,
   exportCsv,
   headerFilters,
+  filterFields,
   columnGroups,
+  sparkline,
+  formulaColumns,
+  derivedFields,
+  editorShowcase,
+  columnMenu,
+  filterControls,
+  bulkActions,
+  statusBar,
+  contextMenu,
+  densityChooser,
+  onDensityChange,
+  fullscreen,
+  commandPalette,
+  onPrint,
+  printButton,
+  undoRedoButtons,
+  sidePanel,
   forceMobile,
   focused,
 }: Readonly<{
@@ -141,10 +172,19 @@ export function AntdDemo({
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  highlight?: boolean;
+  failure?: Failure;
+  onRecover?: () => void;
+  customCard?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   cellNavigation?: boolean;
+  columnSelectionCheckbox?: boolean;
   /** Use the wide, horizontally-scrolling column set with Person pinned. */
   wide?: boolean;
+  /** The column layout the page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
    * Export configuration for the toolbar button. Defaults to a plain CSV of
    * the current page; the columns demo overrides it to write the highlighted
@@ -152,7 +192,32 @@ export function AntdDemo({
    */
   exportCsv?: DataTableProps<Person>["exportCsv"];
   headerFilters?: boolean;
+  filterFields?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
+  /** Columns built from user-typed formulas, appended after the declared set. */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /** Write the id-derived fields onto the rows, so a formula can read them. */
+  derivedFields?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
+  /** Show the Columns menu. Defaults to on unless the page is focused. */
+  columnMenu?: boolean;
+  /** Show the Filters control. Defaults to on unless the page is focused. */
+  filterControls?: boolean;
+  /** Bulk actions, which are what turn row selection on. Defaults to on
+   *  unless the page is focused. */
+  bulkActions?: boolean;
+  statusBar?: boolean;
+  contextMenu?: boolean;
+  densityChooser?: boolean;
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  fullscreen?: boolean;
+  commandPalette?: boolean;
+  onPrint?: () => void;
+  printButton?: boolean;
+  undoRedoButtons?: boolean;
+  sidePanel?: DataTableProps<Person>["sidePanel"];
   forceMobile?: boolean;
   /** Dedicated pages hide unrelated filter/action/view chrome. */
   focused?: boolean;
@@ -179,7 +244,7 @@ export function AntdDemo({
                   ? { person: "start" }
                   : { person: "start", actions: "end" },
               }
-            : LIVE_DEFAULT_LAYOUT
+            : (defaultColumnLayout ?? LIVE_DEFAULT_LAYOUT)
         }
         grouping={grouping}
         tree={tree}
@@ -191,7 +256,14 @@ export function AntdDemo({
         cellSpan={cellSpan}
         extraRows={extraRows}
         rowStyle={rowStyle}
+        highlight={highlight}
+        failure={failure}
+        onRecover={onRecover}
+        customCard={customCard}
+        realtime={realtime}
         editing={editing}
+        derivedFields={derivedFields}
+        formulaColumns={formulaColumns}
         columnGroups={columnGroups}
         render={(source, columns) => (
           <DataTable
@@ -199,11 +271,28 @@ export function AntdDemo({
             columns={
               wide
                 ? makeWideColumns(locale, ANTD_CELLS)
-                : makeColumns(locale, ANTD_CELLS, { groups: columnGroups })
+                : makeColumns(locale, ANTD_CELLS, {
+                    groups: columnGroups,
+                    sparkline,
+                    editors: editorShowcase,
+                    formulas: formulaColumns,
+                  })
             }
             rowKey={(r) => r.id}
             nestedTable={nested ? nestedOrders : undefined}
+            defaultExpandedRowIds={nestedOpenIds(nested, source.rows)}
             cellNavigation={cellNavigation ?? editing}
+            columnSelectionCheckbox={columnSelectionCheckbox}
+            statusBar={statusBar}
+            contextMenu={contextMenu}
+            densityChooser={densityChooser}
+            onDensityChange={onDensityChange}
+            fullscreen={fullscreen}
+            commandPalette={commandPalette}
+            onPrint={onPrint}
+            printButton={printButton}
+            undoRedoButtons={undoRedoButtons}
+            sidePanel={sidePanel}
             selectionStats={editing}
             editHistory={editing}
             findInTable={editing}
@@ -215,18 +304,26 @@ export function AntdDemo({
             locale={locale}
             dir={getDirection(locale)}
             searchPlaceholder={s.search}
-            rowActions={focused ? undefined : makeActions(locale)}
-            bulkActions={focused ? undefined : makeBulkActions(locale)}
+            rowActions={
+              rowMutations || (focused && !columnGroups)
+                ? undefined
+                : makeActions(locale)
+            }
+            rowActionsLayout={rowMutations ? "menu" : undefined}
+            bulkActions={
+              (bulkActions ?? !focused) ? makeBulkActions(locale) : undefined
+            }
             confirm={demoConfirm}
-            enableColumnMenu={!focused || wide}
+            enableColumnMenu={columnMenu ?? !focused}
             exportCsv={exportCsv ?? !focused}
             savedViews={focused ? undefined : demoSavedViews(urlKey)}
             animate={animate}
             resizableColumns
             stickyHeader
-            filters={focused ? undefined : filters}
+            filters={(filterControls ?? !focused) ? filters : undefined}
             filterTypes={demoFilterTypes()}
             headerFilters={headerFilters}
+            filterFields={filterFields}
           />
         )}
       />

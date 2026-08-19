@@ -120,14 +120,14 @@ describe("header groups (Mantine)", () => {
     expect(headerRows).toHaveLength(2);
     const groupCells = headerRows[0]!.querySelectorAll("th");
     expect(groupCells).toHaveLength(2);
-    // Ungrouped `name` gets an unlabeled single-span gap cell.
-    expect(groupCells[0]!.textContent).toBe("");
-    expect(groupCells[0]!.colSpan).toBe(1);
+    // Ungrouped `name` rowspans the group band, like Ant.
+    expect(groupCells[0]!.textContent).toContain("Name");
+    expect(groupCells[0]!.rowSpan).toBe(2);
     expect(groupCells[1]!.textContent).toBe("Geo");
     expect(groupCells[1]!.colSpan).toBe(2);
   });
 
-  it("pads expansion/selection/actions columns with empty group headers", () => {
+  it("rowspans edge chrome through the group band beside Name and Geo", () => {
     const { container } = renderTable({
       ...CHROME_PROPS,
       columns: GROUPED_COLUMNS,
@@ -135,15 +135,15 @@ describe("header groups (Mantine)", () => {
     const groupCells = container
       .querySelectorAll("thead tr")[0]!
       .querySelectorAll("th");
-    // chevron + checkbox + gap + "Geo" + actions
+    // chevron + checkbox + Name (rowspan) + "Geo" + actions
     expect(groupCells).toHaveLength(5);
-    expect(groupCells[0]!.textContent).toBe("");
-    expect(groupCells[1]!.textContent).toBe("");
+    expect(groupCells[2]!.textContent).toContain("Name");
+    expect(groupCells[2]!.rowSpan).toBe(2);
     expect(groupCells[3]!.textContent).toBe("Geo");
-    expect(groupCells[4]!.textContent).toBe("");
+    expect(groupCells[4]!.textContent).toBe("Actions");
   });
 
-  it("collapses a group to its summary column when armed", () => {
+  it("collapses a group to an arrow stub when armed", () => {
     const { container } = renderTable({
       columns: GROUPED_COLUMNS,
       collapsibleColumnGroups: true,
@@ -154,9 +154,7 @@ describe("header groups (Mantine)", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(toggle!);
     expect(screen.queryByRole("columnheader", { name: "Budget" })).toBeNull();
-    expect(
-      screen.getByRole("columnheader", { name: "City" })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "City" })).toBeNull();
   });
 
   it("renders a single header row when no column declares a group", () => {

@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
+import { SHOWCASE_PAGES } from "./pages.mjs";
+
 const GA_MEASUREMENT_ID = "G-FT8LY7Z15Y";
 
 const CLARITY_PROJECT_ID = "xxq9dbsjnj";
@@ -40,6 +42,22 @@ const googleAnalytics = (): Plugin => ({
         "function gtag(){dataLayer.push(arguments);}",
         "gtag('js', new Date());",
         `gtag('config', '${GA_MEASUREMENT_ID}');`,
+        "(function () {",
+        "  function report(type, fatal) {",
+        "    if (typeof gtag !== 'function') return;",
+        "    gtag('event', 'web_exception', {",
+        "      exception_type: type,",
+        "      fatal: fatal,",
+        "      non_interaction: true",
+        "    });",
+        "  }",
+        "  window.addEventListener('error', function (event) {",
+        "    report(event.error && event.error.name ? event.error.name : 'Error', true);",
+        "  });",
+        "  window.addEventListener('unhandledrejection', function (event) {",
+        "    report(event.reason && event.reason.name ? event.reason.name : 'UnhandledRejection', false);",
+        "  });",
+        "})();",
       ].join("\n"),
       injectTo: "head",
     },
@@ -95,17 +113,11 @@ export default defineConfig({
   // with plain anchors — no client router, no GitHub Pages 404 tricks.
   build: {
     rollupOptions: {
-      input: {
-        main: page("./index.html"),
-        columns: page("./columns/index.html"),
-        editing: page("./editing/index.html"),
-        grouping: page("./grouping/index.html"),
-        "export-pdf": page("./export-pdf/index.html"),
-        "all-options": page("./all-options/index.html"),
-        mobile: page("./mobile/index.html"),
-        scale: page("./scale/index.html"),
-        rtl: page("./rtl/index.html"),
-      },
+      // Generated from `pages.mjs`, the manifest the docs sitemap and the
+      // composed-site check read too. A page is registered once, there.
+      input: Object.fromEntries(
+        SHOWCASE_PAGES.map(({ key, html }) => [key, page(html)])
+      ),
     },
   },
   resolve: {
@@ -116,6 +128,8 @@ export default defineConfig({
       "@adapttable/core/xlsx": pkg("core", "xlsx"),
       "@adapttable/core/pdf": pkg("core", "pdf"),
       "@adapttable/core/sparkline": pkg("core", "sparkline"),
+      "@adapttable/core/pivot": pkg("core", "pivot"),
+      "@adapttable/core/formula": pkg("core", "formula"),
       "@adapttable/core": pkg("core"),
       "@adapttable/mantine": pkg("adapter-mantine"),
       "@adapttable/mui": pkg("adapter-mui"),

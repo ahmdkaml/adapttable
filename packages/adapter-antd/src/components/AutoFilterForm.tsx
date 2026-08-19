@@ -149,6 +149,7 @@ function RangeField<TRow>({
         allowClear
         style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
         aria-label={`${label} ${labels.operator}`}
+        data-adapttable-part="filter-operator"
         placeholder={labels.operator}
         value={op}
         onChange={(next) => {
@@ -350,12 +351,12 @@ export function AutoFilterForm<TRow>({
   registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
-    <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+    <Space orientation="vertical" size="large" style={{ width: "100%" }}>
       {defs.map((def) => (
         <Space
           key={def.key}
           orientation="vertical"
-          size={4}
+          size={16}
           style={{ width: "100%" }}
         >
           <Typography.Text strong style={{ fontSize: 12 }}>

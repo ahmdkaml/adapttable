@@ -409,3 +409,29 @@ describe("printTable", () => {
     expect(print).toHaveBeenCalled();
   });
 });
+
+describe("a print document given a font", () => {
+  it("carries the face with it and puts it first in the stack", () => {
+    const css = printStyles({ font: new Uint8Array([1, 2, 3, 4]) });
+
+    expect(css).toContain("@font-face{font-family:AdaptTablePrint");
+    expect(css).toContain('format("truetype")');
+    expect(css).toContain("data:font/ttf;base64,AQIDBA==");
+    expect(css).toContain("font:11pt/1.35 AdaptTablePrint,system-ui");
+  });
+
+  it("accepts an ArrayBuffer, and encodes a font too big for one call", () => {
+    // 0x8000 is the chunk size, so this crosses it twice.
+    const big = new Uint8Array(0x14000).fill(0x41);
+    const css = printStyles({ font: big.buffer });
+
+    expect(css).toContain("data:font/ttf;base64,");
+    // Base64 is four characters per three bytes, plus padding.
+    expect(css).toContain("QUFB".repeat(20));
+  });
+
+  it("changes nothing about the stylesheet when no font is given", () => {
+    expect(printStyles()).not.toContain("@font-face");
+    expect(printStyles()).toContain("font:11pt/1.35 system-ui");
+  });
+});

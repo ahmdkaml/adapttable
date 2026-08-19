@@ -2,6 +2,8 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — a real AdaptTable you can edit in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
+▶ **See it working:** [nested tables in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/) — open a row onto another table, not a blank panel. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
+
 Render a detail panel under any row by passing `renderRowDetail` — its
 presence is the whole API.
 
@@ -45,6 +47,8 @@ export function Orders() {
 
 - Passing `renderRowDetail(row)` enables a leading expand chevron on desktop
   rows and a detail section on mobile cards — no extra flag.
+  `defaultExpandedRowIds` opens those rows on the first render; after that the
+  reader's toggles own the set.
 - **Multiple rows may be open at once.** Expansion is keyed by row id, so an
   open panel survives sorting and paging: a row that leaves the page simply
   re-opens when it returns.
@@ -60,11 +64,12 @@ export function Orders() {
 
 ## Options
 
-| Prop              | Type                       | Default | Description                                                              |
-| ----------------- | -------------------------- | ------- | ------------------------------------------------------------------------ |
-| `renderRowDetail` | `(row: TRow) => ReactNode` | —       | Detail-panel renderer; its presence enables expansion.                   |
-| `labels`          | `TableLabels`              | English | Override `expandRow` / `collapseRow` for the chevron's accessible label. |
-| `rowKey`          | `(row: TRow) => string`    | —       | Already required; expansion state is keyed by this id.                   |
+| Prop                    | Type                       | Default | Description                                                              |
+| ----------------------- | -------------------------- | ------- | ------------------------------------------------------------------------ |
+| `renderRowDetail`       | `(row: TRow) => ReactNode` | —       | Detail-panel renderer; its presence enables expansion.                   |
+| `defaultExpandedRowIds` | `readonly string[]`        | —       | Row ids whose panel starts open. Later toggles own the set.              |
+| `labels`                | `TableLabels`              | English | Override `expandRow` / `collapseRow` for the chevron's accessible label. |
+| `rowKey`                | `(row: TRow) => string`    | —       | Already required; expansion state is keyed by this id.                   |
 
 ## Notes
 

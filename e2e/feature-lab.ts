@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * Change one Feature Lab option through its modal configuration drawer.
@@ -20,4 +20,31 @@ export async function configureFeatureLab(
     .click();
   await dialog.getByRole("button", { name: "Close options" }).click();
   await expect(dialog).toBeHidden();
+}
+
+/**
+ * Kits that use a native `<select>` expose every zone's options to the page.
+ * Scope the pick to this zone, and `selectOption` when the control is native.
+ */
+export async function pickAddField(
+  page: Page,
+  zone: Locator,
+  name: string
+): Promise<void> {
+  const add = zone.getByRole("combobox", { name: "Add field" });
+  const tag = await add.evaluate((el) => el.tagName);
+  if (tag === "SELECT") {
+    await add.selectOption({ label: name });
+    return;
+  }
+  await add.click();
+  const option = page
+    .getByRole("option", { name, exact: true })
+    .filter({ visible: true });
+  try {
+    await option.first().click({ timeout: 2500 });
+  } catch {
+    await page.keyboard.type(name);
+    await page.keyboard.press("Enter");
+  }
 }

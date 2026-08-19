@@ -34,7 +34,7 @@ const COLUMNS: ColumnDef<Person>[] = [
   { key: "city", header: "City", accessor: (r) => r.city },
 ];
 
-// "Person" spans two adjacent columns, "city" is the ungrouped gap.
+// "Person" spans name+age; city is ungrouped and rowspans the group band.
 const GROUPED: ColumnDef<Person>[] = [
   { ...COLUMNS[0]!, group: "Person" },
   { ...COLUMNS[1]!, group: "Person" },
@@ -141,15 +141,13 @@ describe("header groups (Radix)", () => {
     const headRows = container.querySelectorAll<HTMLElement>("thead tr");
     expect(headRows).toHaveLength(2);
     const cells = within(headRows[0]!).getAllByRole("columnheader");
-    // expansion + selection + Person(×2) + gap + Org + actions
+    // expand pad, selection pad, Person, City (rowspan 2), Org, actions pad
     expect(cells).toHaveLength(6);
-    expect(cells[0]).toBeEmptyDOMElement();
-    expect(cells[1]).toBeEmptyDOMElement();
     expect(cells[2]).toHaveTextContent("Person");
     expect(cells[2]).toHaveAttribute("colspan", "2");
-    expect(cells[3]).toBeEmptyDOMElement(); // the ungrouped city gap
+    expect(cells[3]).toHaveTextContent("City");
+    expect(cells[3]).toHaveAttribute("rowspan", "2");
     expect(cells[4]).toHaveTextContent("Org");
-    expect(cells[5]).toBeEmptyDOMElement();
   });
 
   it("renders only the group cells when there is no expansion/selection/actions", () => {
@@ -158,10 +156,11 @@ describe("header groups (Radix)", () => {
       container.querySelector<HTMLElement>("thead tr")!
     ).getAllByRole("columnheader");
     expect(cells).toHaveLength(3);
-    expect(cells.map((c) => c.textContent)).toEqual(["Person", "", "Org"]);
+    expect(cells.map((c) => c.textContent)).toEqual(["Person", "City", "Org"]);
+    expect(cells[1]).toHaveAttribute("rowspan", "2");
   });
 
-  it("collapses a group to its summary column when armed", () => {
+  it("collapses a group to an arrow stub when armed", () => {
     const { container } = renderTable({
       columns: GROUPED,
       collapsibleColumnGroups: true,
@@ -172,9 +171,7 @@ describe("header groups (Radix)", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(toggle!);
     expect(screen.queryByRole("columnheader", { name: "Age" })).toBeNull();
-    expect(
-      screen.getByRole("columnheader", { name: "Name" })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Name" })).toBeNull();
   });
 
   it("renders a single header row when no column declares a group", () => {

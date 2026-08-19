@@ -35,6 +35,12 @@ export type ResolvedPaginationMode = "infinite" | "paged";
 /** Comparable primitive returned by a sort-value extractor. */
 export type SortableValue = string | number | boolean | null | undefined;
 
+/**
+ * When a leaf under a collapsible column group is visible.
+ * `"open"` — expanded group only; `"closed"` — collapsed only; `"always"` — both.
+ */
+export type ColumnGroupShow = "open" | "closed" | "always";
+
 /** A single extra-filter value as it round-trips through URL state. */
 export type FilterValue = string | string[] | number | undefined;
 
@@ -81,6 +87,15 @@ export interface ColumnDef<TRow> {
   renderFooter?: (ctx: ColumnFooterContext<TRow>) => ReactNode;
   /** Native tooltip on the header caption. */
   headerTooltip?: string;
+  /**
+   * How readily this column is given up when the table is too narrow for all
+   * of them. Priority 1 is kept longest, in the ordinary sense of the word.
+   *
+   * A column that omits it is never dropped, so the columns carrying the
+   * row's identity stay by saying nothing — and a table where nobody sets it
+   * behaves exactly as it did before.
+   */
+  responsivePriority?: number;
   /** Host-provided controls after the caption, before the resize handle. */
   headerActions?: ReactNode;
   /**
@@ -88,8 +103,19 @@ export interface ColumnDef<TRow> {
    * render under one spanning header cell. A string is one level; a
    * path (`["Finance", "Q1"]`) stacks rows. Reordering columns apart
    * splits the group (adjacency-based, never lies about layout).
+   *
+   * Prefer a {@link ColumnGroupDef} with `children` when the group has
+   * collapse options (`collapsedKey`, `collapsedRender`) — `group` is
+   * the shortcut for a spanning label only.
    */
   group?: string | readonly string[];
+  /**
+   * When this leaf sits under a collapsible group: shown only while the
+   * group is expanded (`open`), only while collapsed (`closed`), or in
+   * both states (`always`). Omit and the group decides — `collapsedKey`,
+   * `collapsedRender`, or an arrow stub when neither is set.
+   */
+  groupShow?: ColumnGroupShow;
   /**
    * Per-locale data paths for this column's VALUE. The active table
    * `locale` picks the path (exact tag first, then its primary subtag, then
@@ -277,13 +303,17 @@ export interface ActionConfirm<TArg> {
   danger?: boolean;
 }
 
-/** A per-row action — trailing icon buttons on desktop, card buttons on mobile. */
+/** A per-row action — trailing buttons on desktop, card buttons on mobile. */
 export interface RowAction<TRow> {
   /** Identifier — not shown to the user. */
   key: string;
-  /** Pre-translated label; also used as the accessible name. */
+  /** Pre-translated label; the accessible name, and the tooltip when icon-only. */
   label: string;
-  /** Optional leading icon. */
+  /**
+   * When set, adapters render an icon-only button. Omit it for a text button.
+   * Built-in duplicate / delete / pin keys get each kit's own glyph when this
+   * is omitted.
+   */
   icon?: ReactNode;
   /** Click handler; fires after confirmation when `confirm` is set. */
   onClick: (row: TRow) => void;
@@ -481,6 +511,20 @@ export interface TableLabels {
   viewName?: string;
   /** Delete-a-view action (suffixed with the view name). */
   deleteView?: string;
+  /** Rename a saved view. */
+  renameView?: string;
+  /** Apply a saved view to the table. */
+  applyView?: string;
+  /** Move a saved view one step earlier in the list. */
+  moveViewUp?: string;
+  /** Move a saved view one step later in the list. */
+  moveViewDown?: string;
+  /** Make a saved view the one the table opens with. */
+  setDefaultView?: string;
+  /** Marks the view the table opens with. */
+  defaultViewBadge?: string;
+  /** Marks a shared view this reader cannot change. */
+  readOnlyViewBadge?: string;
   /** Banner: every row on this page is selected. */
   pageSelected?: (count: number) => string;
   /** Banner action: extend the selection to every matching row. */
@@ -528,6 +572,11 @@ export interface TableLabels {
   actions?: string;
   selectAll?: string;
   selectRow?: string;
+  /**
+   * Accessible name for the header checkbox that selects a column
+   * (`columnSelectionCheckbox`). The column's own name is appended.
+   */
+  selectColumn?: string;
   cancel?: string;
   retry?: string;
   errorTitle?: string;
@@ -609,6 +658,60 @@ export interface TableLabels {
    */
   undoEdit?: string;
   /** Accessible name for opening a whole row for editing (`rowEditing`). */
+  /** The toolbar control that puts the last edit back (`undoRedoButtons`). */
+  redoEdit?: string;
+  /** Accessible name for the side panel's tab strip (`sidePanel`). */
+  sidePanel?: string;
+  /** Accessible name for a context menu (`contextMenu`). */
+  contextMenu?: string;
+  /** Accessible name for the command palette dialog. */
+  commandPalette?: string;
+  /** Placeholder and label for the palette's search box. */
+  commandSearch?: string;
+  /** Shown when a query matches no command. */
+  commandEmpty?: string;
+  /**
+   * The palette command that opens the print dialog, and the caption on the
+   * toolbar button when `printButton` asks for one.
+   */
+  print?: string;
+  /** Accessible name for the density chooser. */
+  density?: string;
+  /** The roomy layout's caption. */
+  densityComfortable?: string;
+  /** The tight layout's caption. */
+  densityCompact?: string;
+  /** The fullscreen button, before it is on. */
+  enterFullscreen?: string;
+  /** The same button, after. */
+  exitFullscreen?: string;
+  /** The context-menu entry that copies the selection. */
+  copyCells?: string;
+  /** The context-menu entry that cuts it. */
+  cutCells?: string;
+  /** The control that closes the side panel. */
+  closePanel?: string;
+  /** The pivot panel's row-axis zone. */
+  pivotRows?: string;
+  /** The pivot panel's column-axis zone. */
+  pivotColumns?: string;
+  /** The pivot panel's measures zone. */
+  pivotMeasures?: string;
+  /** The control that adds a field to a pivot zone. */
+  pivotAdd?: string;
+  /** Take a field off a pivot zone. */
+  pivotRemove?: string;
+  /** Move a pivot field one step towards the outside. */
+  pivotMoveUp?: string;
+  /** Move a pivot field one step towards the inside. */
+  pivotMoveDown?: string;
+  /** The aggregation chooser on a pivot measure. */
+  pivotAggregation?: string;
+  /** Header over a pivot's grand-total column — "Total". */
+  pivotTotal?: string;
+  /** Caption on a pivot's grand-total line — "Grand total". */
+  pivotGrandTotal?: string;
+  /** Accessible name for entering row edit mode. */
   editRow?: string;
   /** Accessible name for committing a row edit. */
   saveRow?: string;
@@ -627,14 +730,22 @@ export interface TableLabels {
   /** The question the delete dialog asks before it runs. */
   deleteRowConfirm?: string;
   /**
+   * Accessible name of the 3-dot control that opens the row-actions menu
+   * (`rowActionsLayout="menu"`).
+   */
+  rowActionsMenu?: string;
+  /**
    * The message on an editor whose row changed under it. Keep mine / Take
-   * theirs sit beside it.
+   * theirs sit beside it, and {@link TableLabels.theirsValue} names the
+   * incoming value so the reader can see what they would take.
    */
   editConflict?: string;
   /** Keep the draft; accept the incoming row as the new snapshot. */
   keepMine?: string;
   /** Replace the draft with the incoming value. */
   takeTheirs?: string;
+  /** The incoming value on the conflict notice (`Theirs: ada@…`). */
+  theirsValue?: (value: string) => string;
   /** Accessible name of the row-reorder grip, and the Columns-menu row. */
   reorderRow?: string;
   /** Mobile: move this card one slot earlier. */
@@ -657,7 +768,7 @@ export interface TableLabels {
   rowSeparator?: string;
   /** Expand a collapsed column group back to its leaves. */
   expandColumnGroup?: string;
-  /** Collapse a column group to its summary column. */
+  /** Collapse a column group (stub, kept child, or collapsedRender). */
   collapseColumnGroup?: string;
   /**
    * The selected rectangle, for the grid's live region: given its 1-based edges

@@ -5,10 +5,17 @@ import {
   EditableCellGate,
   editorInputType,
   isBooleanEditor,
+  isDraftChecked,
   isMultiSelectEditor,
   isSelectEditor,
+  type MultiSelectEditorCheckboxProps,
+  MultiSelectEditorChrome,
+  type MultiSelectEditorSlots,
 } from "@adapttable/core";
-import { editorValidationProps } from "@adapttable/core/adapter";
+import {
+  commitBooleanDraft,
+  editorValidationProps,
+} from "@adapttable/core/adapter";
 import {
   type KeyboardEvent,
   type ReactElement,
@@ -19,8 +26,31 @@ import {
 
 import { TextField } from "../ui";
 import { editableCellSlots } from "./kitControls";
-import { NativeBooleanEditor, NativeMultiSelectEditor } from "./nativeEditors";
-import { NativeSelect } from "./primitives";
+import { Checkbox, NativeSelect } from "./primitives";
+
+/** The multi-select editor's options, as Base UI checkboxes. */
+function MultiSelectOption({
+  label,
+  checked,
+  onToggle,
+  onKeyDown,
+  focusRef,
+}: Readonly<MultiSelectEditorCheckboxProps>) {
+  return (
+    <Checkbox
+      checked={checked}
+      onToggle={onToggle}
+      onKeyDown={onKeyDown}
+      inputRef={focusRef}
+    >
+      {label}
+    </Checkbox>
+  );
+}
+
+const multiSelectSlots: MultiSelectEditorSlots = {
+  Checkbox: MultiSelectOption,
+};
 
 function stopEditKeys(event: KeyboardEvent): void {
   if (event.key === "Enter" || event.key === "Escape" || event.key === "Tab") {
@@ -72,16 +102,25 @@ export function BaseUiCellEditor({
 
   if (isBooleanEditor(ctrl.editor)) {
     return (
-      <NativeBooleanEditor ctrl={ctrl} label={label} onKeyDown={onKeyDown} />
+      <Checkbox
+        aria-label={label}
+        data-adapttable-part="edit-cell-editor"
+        {...editorValidationProps(ctrl)}
+        inputRef={ctrl.focusRef}
+        checked={isDraftChecked(ctrl.draft)}
+        onKeyDown={onKeyDown}
+        onToggle={() => commitBooleanDraft(ctrl, !isDraftChecked(ctrl.draft))}
+      />
     );
   }
 
   if (isMultiSelectEditor(ctrl.editor)) {
     return (
-      <NativeMultiSelectEditor
+      <MultiSelectEditorChrome
         ctrl={ctrl}
         label={label}
         onKeyDown={onKeyDown}
+        slots={multiSelectSlots}
       />
     );
   }
@@ -93,8 +132,11 @@ export function BaseUiCellEditor({
           size="1"
           width="100%"
           aria-label={label}
+          data-adapttable-part="edit-cell-editor"
+          {...editorValidationProps(ctrl)}
           value={ctrl.draft}
           options={ctrl.selectOptions}
+          onKeyDown={onKeyDown}
           onValueChange={(value) => {
             ctrl.setDraft(value);
             ctrl.commitOnBlur();

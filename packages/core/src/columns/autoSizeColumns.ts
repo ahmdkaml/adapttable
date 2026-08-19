@@ -17,6 +17,46 @@ import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from "./columnResize";
 /** Breathing room added to the widest cell so text never touches the edge. */
 const CONTENT_PADDING = 24;
 
+/** Sub-pixel slack: `scrollWidth === clientWidth` is already a fit. */
+const CLIP_EPSILON = 1;
+
+/**
+ * True content width of a cell that already fits in its box.
+ *
+ * `scrollWidth` equals the box once the column is wide enough, so using it
+ * again would grow forever (`+ padding` on every click). A max-content probe
+ * of the cell's children is the width a second click should keep.
+ */
+function intrinsicContentWidth(cell: HTMLElement): number {
+  if (typeof document === "undefined" || !document.body) return 0;
+  const probe = document.createElement("div");
+  probe.setAttribute("aria-hidden", "true");
+  probe.style.position = "absolute";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  probe.style.height = "auto";
+  probe.style.width = "max-content";
+  probe.style.maxWidth = "none";
+  probe.style.whiteSpace = "normal";
+  probe.innerHTML = cell.innerHTML;
+  document.body.appendChild(probe);
+  const width = probe.scrollWidth;
+  probe.remove();
+  return width;
+}
+
+/** Width this cell needs, including breathing room when content was clipped. */
+function cellNeededWidth(cell: HTMLElement): number {
+  const scroll = cell.scrollWidth;
+  const client = cell.clientWidth;
+  if (scroll > client + CLIP_EPSILON) {
+    return scroll + CONTENT_PADDING;
+  }
+  const intrinsic = intrinsicContentWidth(cell);
+  if (intrinsic > 0) return intrinsic + CONTENT_PADDING;
+  return scroll;
+}
+
 /**
  * The width a column needs for its widest rendered cell.
  *
@@ -39,15 +79,10 @@ export function measureColumnWidth(
   if (cells.length === 0) return null;
   let widest = 0;
   for (const cell of cells) {
-    // `scrollWidth` is the content's width even when the cell is clipping it,
-    // which is exactly the case auto-sizing exists to fix.
-    widest = Math.max(widest, cell.scrollWidth);
+    widest = Math.max(widest, cellNeededWidth(cell));
   }
   if (widest === 0) return null;
-  return Math.min(
-    MAX_COLUMN_WIDTH,
-    Math.max(MIN_COLUMN_WIDTH, widest + CONTENT_PADDING)
-  );
+  return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, widest));
 }
 
 /**

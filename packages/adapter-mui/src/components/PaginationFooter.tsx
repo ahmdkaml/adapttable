@@ -17,6 +17,7 @@ export function Footer({
   pagination,
   total,
   limit,
+  defaultLimit = limit,
   setPage,
   setLimit,
   labels,
@@ -25,6 +26,7 @@ export function Footer({
   pagination: PaginationInfo;
   total: number;
   limit: number;
+  defaultLimit?: number;
   setPage: (n: number) => void;
   setLimit: (n: number) => void;
   labels: Required<TableLabels>;
@@ -57,7 +59,7 @@ export function Footer({
             onChange={(e) => setLimit(Number(e.target.value))}
             sx={{ minWidth: 132 }}
           >
-            {pageSizeOptions(limit).map((n) => (
+            {pageSizeOptions([limit, defaultLimit]).map((n) => (
               <MenuItem key={n} value={String(n)}>
                 {n}
               </MenuItem>

@@ -148,10 +148,21 @@ const SCENARIOS = [
   },
   {
     // Realtime patches through the patch API, the way a socket feed would
-    // arrive. `awaitPatches` holds the sample open until the burst lands, so
-    // the reported time includes every re-render it caused.
+    // arrive — on the plain pipeline, which rebuilds the view per patch.
+    // `awaitPatches` holds the sample open until the burst lands, and the page
+    // reports the burst's own elapsed time so a patch-speed regression shows
+    // up as a number rather than hiding inside the mount.
     name: "realtime patches · 20k rows, 200 updates",
     query: "rows=20000&patch=200",
+    smoke: false,
+    awaitPatches: 200,
+    expect: { maxDomRows: 60 },
+  },
+  {
+    // The same burst with the incremental engine engaged, so the pair below
+    // prints a measured comparison instead of a claim.
+    name: "realtime patches · incremental engine",
+    query: "rows=20000&patch=200&incremental=1",
     smoke: false,
     awaitPatches: 200,
     expect: { maxDomRows: 60 },
@@ -207,9 +218,18 @@ async function sample(query, awaitPatches = 0) {
   const domCells = await page.evaluate(
     () => document.querySelectorAll("table tbody td").length
   );
+  // The burst's own elapsed time, stamped by the page between the first patch
+  // dispatch and the commit that put the last one on screen. `interactiveMs`
+  // is the mount and says nothing about patch speed.
+  const patchBurstMs = await page.evaluate(() => {
+    const value = document
+      .querySelector("[data-bench-burst-ms]")
+      ?.getAttribute("data-bench-burst-ms");
+    return value == null ? null : Number(value);
+  });
   const heapMB = await retainedHeapMB(page);
   await page.context().browser().close();
-  return { domRows: prev, domCells, heapMB, interactiveMs };
+  return { domRows: prev, domCells, heapMB, interactiveMs, patchBurstMs };
 }
 
 /**
@@ -346,12 +366,17 @@ for (const scenario of chosen) {
   results.push({ ...scenario, ...result, failures });
   if (!JSON_OUT) {
     const status = failures.length ? `FAIL — ${failures.join(", ")}` : "ok";
+    const burst =
+      result.patchBurstMs == null
+        ? ""
+        : `  burst ${String(Math.round(result.patchBurstMs)).padStart(5)}ms ` +
+          `(${(result.patchBurstMs / (scenario.awaitPatches ?? 1)).toFixed(2)}ms/update)`;
     console.log(
       `${failures.length ? "✗" : "✓"} ${scenario.name.padEnd(34)} ` +
         `${String(result.domRows).padStart(5)} rows  ` +
         `${String(result.domCells).padStart(6)} cells  ` +
         `${String(result.heapMB ?? "—").padStart(4)}MB  ` +
-        `${String(result.interactiveMs).padStart(5)}ms  ${status}`
+        `${String(result.interactiveMs).padStart(5)}ms${burst}  ${status}`
     );
   }
 }
@@ -382,6 +407,18 @@ if (JSON_OUT) {
     console.log(
       `windowing 500 columns: ${Math.round(wideOff.domCells / wideOn.domCells)}x ` +
         `fewer DOM cells (${wideOff.domCells} → ${wideOn.domCells})`
+    );
+  }
+  // The third A/B: the incremental engine's win over rebuilding per patch.
+  const full = results.find(
+    (r) => r.query.includes("patch=200") && !r.query.includes("incremental=1")
+  );
+  const incr = results.find((r) => r.query.includes("incremental=1"));
+  if (full?.patchBurstMs != null && incr?.patchBurstMs != null) {
+    const times = full.patchBurstMs / incr.patchBurstMs;
+    console.log(
+      `200-update burst: ${Math.round(full.patchBurstMs)}ms full rebuild → ` +
+        `${Math.round(incr.patchBurstMs)}ms incremental (${times.toFixed(1)}x)`
     );
   }
   console.log(

@@ -24,6 +24,8 @@ const TITLES = {
   "getting-started.md": "Get started — a React table for your UI kit",
   "concepts.md": "AdaptTable concepts — headless core & source",
   "columns.md": "React table columns — ColumnDef & custom cells",
+  "column-groups.md":
+    "React table column groups — spanning headers, collapsible",
   "sparkline.md": "React table sparkline columns — bar, line, area",
   "export-pdf.md": "React table PDF export and print layout",
   "sorting.md": "React table sorting — multi-column, URL-synced",
@@ -48,6 +50,8 @@ const TITLES = {
   "url-state.md": "React table URL state — filters, sort, page",
   "ssr-rsc.md": "React table SSR & server components — Next.js",
   "i18n-rtl.md": "React table i18n & RTL — Arabic, Hebrew",
+  "accessibility.md": "Accessible React data table — keyboard, screen readers",
+  "realtime.md": "Realtime React data table — live row updates",
   "api.md": "AdaptTable API reference — every export",
   "faq.md": "FAQ — the free MUI X & ag-Grid alternative",
   "comparison.md": "React table comparison — AG Grid, TanStack, MUI",
@@ -74,6 +78,8 @@ const DESCRIPTIONS = {
     "One headless core, a TableSource data contract, and adapters that mount real Mantine, MUI, Chakra, Ant, Radix and shadcn components.",
   "columns.md":
     "Define React table columns once with ColumnDef — accessors, sorting, per-column filters, alignment, pinning and custom cells — same API across every UI kit.",
+  "column-groups.md":
+    "Collapsible column groups for React tables — spanning headers that fold to an arrow stub, a kept child, or a cell you draw, on every UI kit adapter.",
   "sparkline.md":
     "Optional React table sparkline columns — bar, line and area as inline SVG from @adapttable/core/sparkline, so the base bundle never pays for charts.",
   "export-pdf.md":
@@ -122,6 +128,10 @@ const DESCRIPTIONS = {
     "Render AdaptTable on the server: where the client boundary goes in the Next.js App Router, DOM-free SSR, hydration without mismatches, and Suspense.",
   "i18n-rtl.md":
     "React table with first-class RTL/Arabic: locale presets, per-locale column paths, logical pinning and mirrored layout — not just translated strings.",
+  "accessibility.md":
+    "Accessible React data table: semantic markup, labelled controls and screen-reader announcements — on by default, no prop to turn on. Try it from the keyboard in the live demo.",
+  "realtime.md":
+    "Realtime React data table: patch rows as a websocket or poll delivers them with applyRowPatches, so sort, filters and selection survive. No realtime prop — you own the socket.",
   "api.md":
     "Complete AdaptTable API reference — DataTable props, ColumnDef, filters, source builders, prop-getters and the headless useDataTable hook for React.",
   "faq.md":

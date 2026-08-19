@@ -2,6 +2,12 @@
  * Compact checklist layout. Structure only — adapters pass the search
  * field, action buttons and checkboxes the end user clicks. Options wrap
  * like the multi-select form; they never stack one value per row.
+ *
+ * Past {@link CHECKLIST_VIRTUALIZE_AT} options the list windows: a column
+ * with hundreds of distinct values would otherwise mount hundreds of kit
+ * checkboxes behind a 240px viewport. Windowing is structure, so it lives
+ * here rather than in any adapter — the slots still render whatever their
+ * kit renders, there are just fewer of them at a time.
  */
 import { type CSSProperties, type ReactNode } from "react";
 
@@ -9,6 +15,11 @@ import { resolveLabels } from "../labels";
 import type { TableSource } from "../source/TableSource";
 import type { TableLabels } from "../types";
 import { CHECKLIST_LIST_HEIGHT, useChecklistFilter } from "./checklist";
+import {
+  CHECKLIST_ITEM_WIDTH,
+  CHECKLIST_OPTION_GAP,
+  useChecklistWindow,
+} from "./checklistWindow";
 import { type FilterDef, filterLabel } from "./filterDefs";
 
 /** Class hooks the unstyled adapter maps onto `DataTableClassNames`. */
@@ -78,7 +89,20 @@ const LIST: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   alignItems: "center",
-  gap: 8,
+  gap: CHECKLIST_OPTION_GAP,
+};
+
+/**
+ * The windowed list is a fixed viewport with rows that start at the top: the
+ * spacers stand in for what is not mounted, so the box can never grow to fit
+ * its content or the scrollbar would describe the window instead of the list.
+ */
+const WINDOWED_LIST: CSSProperties = {
+  ...LIST,
+  maxHeight: undefined,
+  height: CHECKLIST_LIST_HEIGHT,
+  alignItems: "flex-start",
+  alignContent: "flex-start",
 };
 
 const OPTION: CSSProperties = {
@@ -87,6 +111,20 @@ const OPTION: CSSProperties = {
   alignItems: "center",
   maxWidth: "100%",
 };
+
+/**
+ * Uniform cells while windowed. Options-per-row has to be arithmetic for the
+ * window to know which row it is on, and a natural-width chip cloud has no
+ * such number.
+ */
+const WINDOWED_OPTION: CSSProperties = {
+  ...OPTION,
+  flex: `0 0 ${CHECKLIST_ITEM_WIDTH}px`,
+  minWidth: 0,
+};
+
+/** Forces a row break so the spacer holds open whole rows, not a gap in one. */
+const SPACER: CSSProperties = { flexBasis: "100%", height: 0 };
 
 /**
  * Distinct-values checklist layout. Returns `null` when the source has no
@@ -102,10 +140,12 @@ export function ChecklistChrome<TRow>({
 }: Readonly<ChecklistChromeProps<TRow>>) {
   const labels = resolveLabels(labelOverrides);
   const state = useChecklistFilter(def, source);
+  const window = useChecklistWindow(state.visible.length, state.virtualize);
   if (!state.available) return null;
   const Search = slots.Search;
   const Button = slots.Button;
   const Checkbox = slots.Checkbox;
+  const mounted = state.visible.slice(window.start, window.end);
 
   return (
     <div
@@ -134,15 +174,23 @@ export function ChecklistChrome<TRow>({
         <Button label={labels.checklistClear} onClick={state.clear} />
       </div>
       <div
+        ref={window.ref}
         data-adapttable-part="filter-checklist-list"
         data-virtualized={state.virtualize ? "true" : "false"}
         className={
           classNames.filterChecklistList ?? classNames.filterCheckboxGroup
         }
-        style={LIST}
+        style={state.virtualize ? WINDOWED_LIST : LIST}
+        onScroll={state.virtualize ? window.onScroll : undefined}
       >
-        {state.visible.map((item) => (
-          <div key={item.value} style={OPTION}>
+        {window.padTop > 0 ? (
+          <div style={{ ...SPACER, height: window.padTop }} />
+        ) : null}
+        {mounted.map((item) => (
+          <div
+            key={item.value}
+            style={state.virtualize ? WINDOWED_OPTION : OPTION}
+          >
             <Checkbox
               label={item.label}
               count={labels.groupCount(item.count)}
@@ -153,6 +201,9 @@ export function ChecklistChrome<TRow>({
             />
           </div>
         ))}
+        {window.padBottom > 0 ? (
+          <div style={{ ...SPACER, height: window.padBottom }} />
+        ) : null}
         {state.visible.length === 0 ? (
           <span>{labels.checklistNoValues}</span>
         ) : null}

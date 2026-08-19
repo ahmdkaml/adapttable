@@ -398,15 +398,20 @@ export function Progress({
   );
 }
 
-/** Small spinner. */
+/**
+ * Small spinner. The name is the caller's to supply — a hardcoded English
+ * string here would announce "Loading" to an Arabic reader whose whole table
+ * is otherwise localized.
+ */
 export function Spinner({
   size: _size,
   className,
-}: Readonly<{ size?: Size; className?: string }>) {
+  label,
+}: Readonly<{ size?: Size; className?: string; label?: string }>) {
   return (
     <output
       className={cx("adapttable-spinner", className)}
-      aria-label="Loading"
+      aria-label={label}
     />
   );
 }
@@ -469,7 +474,9 @@ export const Table = {
         data-size={size}
         {...rest}
       >
-        <table style={tableStyle}>{children}</table>
+        <table data-adapttable-part="table" style={tableStyle}>
+          {children}
+        </table>
       </div>
     );
   },
@@ -534,6 +541,7 @@ export const Table = {
     children,
     justify,
     colSpan,
+    rowSpan,
     style,
     className,
     ...rest
@@ -542,6 +550,7 @@ export const Table = {
       children?: ReactNode;
       justify?: Justify;
       colSpan?: number;
+      rowSpan?: number;
       style?: CSSProperties;
       className?: string;
     } & HTMLAttributes<HTMLTableCellElement>
@@ -551,6 +560,7 @@ export const Table = {
         className={className}
         data-justify={justify}
         colSpan={colSpan}
+        rowSpan={rowSpan}
         style={style}
         scope="col"
         {...rest}

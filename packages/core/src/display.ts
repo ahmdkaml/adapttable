@@ -7,6 +7,7 @@ import {
   type PinOffset,
   type PinSide,
 } from "./columns/useColumnLayout";
+import { type CellSpanAppearance, cellSpanMark } from "./rows/cellSpan";
 import type { ColumnDef } from "./types";
 
 /**
@@ -94,6 +95,9 @@ export const SHARED_DESKTOP_ROW_KEYS = [
   "treeEntry",
   // Which column carries the chevron, so moving the tree column moves it.
   "treeColumnKey",
+  "rowActionsLayout",
+  "renderRowActions",
+  "cellSpanAppearance",
 ] as const;
 
 /** Shallow-equal two objects across a fixed key set (the row-memo guard). */
@@ -103,6 +107,37 @@ export function shallowEqualByKeys<T>(
   next: Readonly<T>
 ): boolean {
   return keys.every((key) => prev[key] === next[key]);
+}
+
+/**
+ * Spreadsheet merge paint: centered content and one fill across the span.
+ * `"plain"` (or a 1×1 cell) returns nothing. Adapters pass this as the base
+ * to {@link cellHighlightStyle} so a selection or find hit still wins the
+ * background. Override the fill with `--adapttable-cell-span-fill`.
+ *
+ * @param colSpan - Horizontal span on the origin cell.
+ * @param rowSpan - Vertical span on the origin cell.
+ * @param appearance - `"merged"` (default) or `"plain"`.
+ * @param fill - `"off"` keeps centering without a wash (unstyled selection
+ *   classes need the background free).
+ */
+export function mergedCellStyle(
+  colSpan: number,
+  rowSpan: number,
+  appearance?: CellSpanAppearance,
+  fill: "on" | "off" = "on"
+): CSSProperties | undefined {
+  if (appearance === "plain") return undefined;
+  if (cellSpanMark(colSpan, rowSpan) === undefined) return undefined;
+  const style: CSSProperties = {
+    textAlign: "center",
+    verticalAlign: "middle",
+  };
+  if (fill === "on") {
+    style.background =
+      "var(--adapttable-cell-span-fill, color-mix(in srgb, currentColor 12%, transparent))";
+  }
+  return style;
 }
 
 /**

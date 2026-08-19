@@ -11,8 +11,9 @@ export interface FilterPopoverProps {
   onClearFilters: () => void;
   labels: Required<TableLabels>;
   /**
-   * Accepted for a consistent adapter surface; the card centres under its
-   * trigger, so it needs no direction-specific placement.
+   * Placement is centred and needs no RTL variant. Direction still has to
+   * land on the card itself — antd portals it to the body, so it would
+   * otherwise keep a left-to-right header and form.
    */
   dir?: Direction;
   /** The Filters trigger button — becomes the popover anchor. */
@@ -33,6 +34,7 @@ export function FilterPopover({
   activeFilterCount,
   onClearFilters,
   labels,
+  dir = "ltr",
   children,
 }: Readonly<FilterPopoverProps>) {
   const anchorRef = useRef<HTMLSpanElement>(null);
@@ -73,6 +75,7 @@ export function FilterPopover({
     // The card must never claim the whole screen: antd adds its own padding
     // around this content, so leave room for it plus a gutter on both sides.
     <div
+      dir={dir}
       style={{
         minWidth: 280,
         maxWidth: "min(380px, calc(100vw - 48px))",

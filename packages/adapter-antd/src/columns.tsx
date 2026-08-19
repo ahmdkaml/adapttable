@@ -1,5 +1,6 @@
 import {
   ACTIONS_COLUMN_KEY,
+  type CellSpanAppearance,
   type ColumnDef,
   columnHeaderController,
   columnResizeHandleProps,
@@ -15,7 +16,8 @@ import {
   REORDER_COLUMN_KEY,
   resolveColumnHeader,
   type RowAction,
-  runRowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type SortDirection,
   type SortLevel,
   type TableLabels,
@@ -25,16 +27,23 @@ import {
   type BodyCell,
   cellHighlightStyle,
   cellsForRow,
+  cellSpanMark,
   columnFlexShares,
+  columnGroupHeaderCaption,
+  columnSelectLabel,
   columnSizeStyle,
+  EXTRA_OVER_SPAN_STYLE,
   EXTRA_ROW_PARTS,
+  groupedHeaderAlign,
+  groupedHeaderChildRule,
   type HeaderGroupCell,
   headerGroupRows,
+  isColumnGroupSummaryKey,
+  mergedCellStyle,
   REORDER_COLUMN_WIDTH,
-  resolveDisabledReason,
   type RowReorderState,
 } from "@adapttable/core/adapter";
-import { Button, type TableColumnsType, Tooltip, Typography } from "antd";
+import { type TableColumnsType, Typography } from "antd";
 import type {
   CSSProperties,
   HTMLAttributes,
@@ -44,7 +53,7 @@ import type {
   ReactNode,
 } from "react";
 
-import { isDangerColor } from "./colors";
+import { ColumnSelectCheckbox } from "./components/ColumnSelectCheckbox";
 import { EditableDataCell } from "./components/EditableCell";
 import { FillHandle } from "./components/FillHandle";
 import {
@@ -56,11 +65,12 @@ import {
 } from "./components/grouping";
 import {
   ColumnGroupToggle,
-  FilterHeaderControl,
+  FilterHeaderTrigger,
   RowEditActions,
   RowReorderHandle,
   TreeCell,
 } from "./components/kitControls";
+import { RowActionButtons } from "./components/RowActionButtons";
 
 /**
  * Map a logical pin side to antd's native physical `fixed` value. antd mirrors
@@ -246,7 +256,7 @@ function groupTitle(
       {onToggle ? (
         <ColumnGroupToggle cell={cell} labels={labels} onToggle={onToggle} />
       ) : null}
-      {cell.label}
+      {columnGroupHeaderCaption(cell)}
     </>
   );
 }
@@ -285,8 +295,36 @@ function nestGroupLevel<TRow>(
       Math.min(cellEnd, end),
       titleFor
     );
-    if (cell.label === null) out.push(...children);
-    else out.push({ key: cell.key, title: titleFor(cell), children });
+    if (cell.label === null) {
+      out.push(...children);
+      continue;
+    }
+    // A collapsedRender / stub group has no child header to show — flatten
+    // so antd rowspans the title like an ungrouped leaf.
+    if (
+      children.length > 0 &&
+      children.every((child) =>
+        isColumnGroupSummaryKey(String(child.key ?? ""))
+      )
+    ) {
+      const leaf = children[0];
+      if (leaf) out.push({ ...leaf, title: titleFor(cell) });
+      continue;
+    }
+    out.push({
+      key: cell.key,
+      title: titleFor(cell),
+      children,
+      onHeaderCell: () => ({
+        "data-adapttable-part": "header-group-cell",
+        style: {
+          textAlign: groupedHeaderAlign(cell.align),
+          ...groupedHeaderChildRule(
+            "var(--ant-color-split, rgba(5, 5, 5, 0.06))"
+          ),
+        },
+      }),
+    });
   }
   return out;
 }
@@ -304,9 +342,10 @@ function groupColumns<TRow>(
   labels: Required<TableLabels>,
   collapsedIds: readonly string[] = [],
   collapsible = false,
-  onToggle?: (id: string) => void
+  onToggle?: (id: string) => void,
+  groups?: ReadonlyMap<string, { readonly align?: "start" | "center" | "end" }>
 ): TableColumnsType<TRow> {
-  const rows = headerGroupRows(columns, collapsedIds, collapsible);
+  const rows = headerGroupRows(columns, collapsedIds, collapsible, groups);
   if (!rows) return leaves;
   return nestGroupLevel(rows, leaves, 0, 0, leaves.length, (cell) =>
     groupTitle(cell, labels, onToggle)
@@ -344,6 +383,8 @@ export interface BuildColumnsOptions<TRow> {
   gridFocus?: GridFocusState;
   columns: readonly ColumnDef<TRow>[];
   rowActions?: readonly RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   sortBy: string | undefined;
   sortDir: SortDirection | undefined;
   confirm: ConfirmHandler;
@@ -379,10 +420,17 @@ export interface BuildColumnsOptions<TRow> {
   windowStart?: number;
   /** Per-row body cells so `onCell` can apply col/row spans. */
   cellsByRow?: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
+  /** Spreadsheet merge paint; omit / `"merged"` is the default look. */
+  cellSpanAppearance?: CellSpanAppearance;
   /** When true, group parents render a collapse toggle. */
   collapsibleColumnGroups?: boolean;
   /** Collapsed column-group ids from the layout. */
   collapsedColumnGroups?: readonly string[];
+  /** Tree groups for the declared columns — header align lives here. */
+  columnGroups?: ReadonlyMap<
+    string,
+    { readonly align?: "start" | "center" | "end" }
+  >;
   /** Toggle one column group. No-op unless collapse is armed. */
   onToggleColumnGroup?: (id: string) => void;
   /**
@@ -394,6 +442,7 @@ export interface BuildColumnsOptions<TRow> {
   filterSource?: FilterFormSource<TRow>;
   /** Type registry so a custom `filterTypes` entry can render in the header. */
   filterRegistry?: FilterTypeRegistry;
+  closeHeaderFilterOnSelect?: boolean;
 }
 
 /**
@@ -574,6 +623,8 @@ export function buildColumns<TRow>({
   gridFocus,
   columns,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   sortBy,
   sortDir,
   confirm,
@@ -593,13 +644,16 @@ export function buildColumns<TRow>({
   rowReorder,
   windowStart = 0,
   cellsByRow,
+  cellSpanAppearance,
   collapsibleColumnGroups,
   collapsedColumnGroups,
+  columnGroups,
   onToggleColumnGroup,
   headerFilters,
   filterDefs,
   filterSource,
   filterRegistry,
+  closeHeaderFilterOnSelect,
 }: BuildColumnsOptions<TRow>): TableColumnsType<GroupedDataRecord<TRow>> {
   const cellOpts = {
     editing,
@@ -646,6 +700,13 @@ export function buildColumns<TRow>({
                   typeof sortIndex === "number" ? sortIndex : undefined,
               })
             )}
+            {gridFocus?.columnCheckbox === true ? (
+              <ColumnSelectCheckbox
+                label={columnSelectLabel(labels.selectColumn, column)}
+                checked={gridFocus.isColumnSelected(columnIndex)}
+                onToggle={() => gridFocus.toggleColumn(columnIndex)}
+              />
+            ) : null}
             {column.headerActions ? (
               <span data-adapttable-part="header-actions">
                 {column.headerActions}
@@ -663,14 +724,13 @@ export function buildColumns<TRow>({
               />
             )}
             {headerDef && filterSource ? (
-              <span data-adapttable-part="filter-header-cell">
-                <FilterHeaderControl
-                  def={headerDef}
-                  source={filterSource}
-                  labels={labels}
-                  registry={filterRegistry}
-                />
-              </span>
+              <FilterHeaderTrigger
+                def={headerDef}
+                source={filterSource}
+                labels={labels}
+                registry={filterRegistry}
+                closeOnSelect={closeHeaderFilterOnSelect}
+              />
             ) : null}
           </span>
         ),
@@ -695,6 +755,7 @@ export function buildColumns<TRow>({
                   record.extraKind === "separator"
                     ? labels.rowSeparator
                     : undefined,
+                style: EXTRA_OVER_SPAN_STYLE,
               };
             }
             return { colSpan: 0 };
@@ -712,12 +773,31 @@ export function buildColumns<TRow>({
           const cells = cellsForRow(cellsByRow, getRowId(record));
           const cell = cells.find((c) => c.column.key === column.key);
           if (!cell) return { colSpan: 0 };
+          const mark = cellSpanMark(cell.colSpan, cell.rowSpan);
+          const spanPaint = mergedCellStyle(
+            cell.colSpan,
+            cell.rowSpan,
+            cellSpanAppearance
+          );
+          const focus =
+            gridFocus && rowIndex !== undefined
+              ? gridFocus.getCellPropsAt(rowIndex, columnIndex)
+              : {};
           return {
             ...grouped,
             colSpan: cell.colSpan,
             rowSpan: cell.rowSpan,
             "data-adapttable-part": "cell",
             "data-column-key": column.key,
+            ...(mark ? { "data-cell-span": mark } : {}),
+            style: cellHighlightStyle(
+              focus,
+              { ...cellStyle(column.align).style, ...spanPaint },
+              {
+                background:
+                  "var(--ant-control-item-bg-active, rgba(0, 0, 0, 0.06))",
+              }
+            ),
           };
         },
         onHeaderCell: () => {
@@ -734,6 +814,7 @@ export function buildColumns<TRow>({
             onToggleSortLevel
           );
           return {
+            "data-adapttable-part": "header-cell",
             "data-column-key": column.key,
             ...gridFocus?.getColumnHeaderProps(columnIndex, {
               sortable: column.sortable,
@@ -765,7 +846,8 @@ export function buildColumns<TRow>({
     labels,
     collapsedColumnGroups,
     collapsibleColumnGroups,
-    onToggleColumnGroup
+    onToggleColumnGroup,
+    columnGroups
   ) as TableColumnsType<GroupedDataRecord<TRow>>;
 
   if (rowReorder) {
@@ -856,38 +938,16 @@ export function buildColumns<TRow>({
                 labels={labels}
               />
             )}
-            {(rowActions ?? []).map((action) => {
-              if (action.isHidden?.(row)) return null;
-              const reason = resolveDisabledReason(
-                action.disabledReason?.(row)
-              );
-              const disabled =
-                reason !== undefined || (action.isDisabled?.(row) ?? false);
-              return (
-                <Tooltip key={action.key} title={reason ?? action.label}>
-                  <Button
-                    size="small"
-                    type="text"
-                    danger={isDangerColor(action.color)}
-                    disabled={disabled}
-                    title={reason}
-                    aria-label={action.label}
-                    // The disabled attribute already blocks activation, so
-                    // attach the handler only when the action can run.
-                    onClick={
-                      disabled
-                        ? undefined
-                        : (e) => {
-                            e.stopPropagation();
-                            runRowAction(action, row, confirm, labels.cancel);
-                          }
-                    }
-                  >
-                    {action.icon ?? action.label}
-                  </Button>
-                </Tooltip>
-              );
-            })}
+            {(rowActions ?? []).length > 0 && (
+              <RowActionButtons
+                row={row}
+                actions={rowActions ?? []}
+                confirm={confirm}
+                labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
+              />
+            )}
           </div>
         );
       },

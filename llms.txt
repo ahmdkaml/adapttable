@@ -56,9 +56,11 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Overview](https://orwa-mahmoud.github.io/adapttable/): what AdaptTable is, in one page
 - [Get started with AdaptTable — React table for your UI kit](https://orwa-mahmoud.github.io/adapttable/getting-started/): install (npx @adapttable/cli init), providers, first table
 - [React table columns — ColumnDef, sort, pin, custom cells](https://orwa-mahmoud.github.io/adapttable/columns/): keys, headers, custom header/footer, grouped/collapsible headers, Cell, align, responsive, per-locale paths
+- [React table column groups — spanning headers, collapsible](https://orwa-mahmoud.github.io/adapttable/column-groups/): tree parents with children, collapse to a stub, a kept child, or collapsedRender
 - [React table sparkline columns — bar, line, area](https://orwa-mahmoud.github.io/adapttable/sparkline/): optional `@adapttable/core/sparkline` entry, inline SVG, export falls back to the numbers
 - [React table sorting — single, multi-column, server-side](https://orwa-mahmoud.github.io/adapttable/sorting/): sortable, sortValue, multi-sort, URL codec
 - [React table filters — chips, operators, URL-synced state](https://orwa-mahmoud.github.io/adapttable/filtering/): seven types including an Excel-style checklist with facet counts that exclude the facet's own filter, optional header filter row, operator widgets, option sources, custom JSX
+- [React table advanced filters — AND/OR filter tree](https://orwa-mahmoud.github.io/adapttable/filter-tree/): nested AND/OR groups, kit-native `FilterTreeBuilder`, `ft=1.{…}` in the URL, same Filters popover or drawer as the simple fields
 - [React table pagination — paged, infinite scroll, auto by device](https://orwa-mahmoud.github.io/adapttable/pagination/): paged, infinite, auto by device
 - [React table row selection & bulk actions](https://orwa-mahmoud.github.io/adapttable/selection/): checkboxes, bulk bar, select-all-matching
 - [React table expandable rows & detail panels](https://orwa-mahmoud.github.io/adapttable/row-expansion/): renderRowDetail, useRowExpansion
@@ -70,6 +72,8 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [React table row styling and heights — rowStyle, rowHeight](https://orwa-mahmoud.github.io/adapttable/row-styling/): conditional inline style and per-row height, variable-height virtualizer, desktop and mobile cards
 - [React table keyboard navigation — arrow keys & ARIA grid](https://orwa-mahmoud.github.io/adapttable/cell-navigation/): one tab stop, absolute aria-rowindex under virtualization, screen-reader announcements
 - [React table row grouping — single-level groupBy & aggregates](https://orwa-mahmoud.github.io/adapttable/row-grouping/): per-group subtotals sharing the summaryRow mapper, expand/collapse, frontend tier only
+- [React pivot table — rows, columns and measures](https://orwa-mahmoud.github.io/adapttable/pivot/): optional `@adapttable/core/pivot` entry, multiple dimensions on both axes, subtotals and collapsible groups
+- [React table formulas — spreadsheet columns](https://orwa-mahmoud.github.io/adapttable/formulas/): optional `@adapttable/core/formula` entry, a parsed grammar that never reaches eval, tagged values so an error is not a string
 - [React table tree data — hierarchical rows with expand/collapse](https://orwa-mahmoud.github.io/adapttable/tree-data/): getChildren or getParentId, per-level indent, mobile cards keep the hierarchy
 - [React table column management — show/hide, reorder, pin, resize](https://orwa-mahmoud.github.io/adapttable/column-management/): searchable menu, bulk show/hide, locks, pin, resize, collapsible groups, layout persistence
 - [React table saved views — shareable named layouts](https://orwa-mahmoud.github.io/adapttable/saved-views/): built-in menu, useSavedViews
@@ -79,9 +83,12 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 - [Customize AdaptTable — slots, classNames, headless prop-getters](https://orwa-mahmoud.github.io/adapttable/customization/): classNames, slots, theming per kit, CSV and XLSX export (typed dates, group/tree outline, aggregates)
 - [React table PDF export and print layout](https://orwa-mahmoud.github.io/adapttable/export-pdf/): optional `@adapttable/core/pdf` entry, `pdfWriter` on the export button, `printTable` for the browser dialog
 - [React table URL state — shareable filters, sort, and page](https://orwa-mahmoud.github.io/adapttable/url-state/): adapters, urlKey namespacing, urlSync opt-out
+- [Server queries — parse and validate the table's query](https://orwa-mahmoud.github.io/adapttable/server-queries/): `@adapttable/server` validates page, sort, filters, filter tree and pivot against an allowlist of columns before they reach a backend
 - [React table with SSR, server components & streaming](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/): Next.js App Router client boundary, DOM-free rendering, hydration, Suspense
 - [Responsive React table — automatic mobile card layout](https://orwa-mahmoud.github.io/adapttable/mobile/): rows become cards below the mobile breakpoint automatically — same filters, search, selection and URL state; sort-by select, infinite scroll via paginationMode auto, per-column mobileLabel/hideOnMobile, forceMobile to pin either layout.
 - [React table i18n & RTL — Arabic, Hebrew, 17 locales](https://orwa-mahmoud.github.io/adapttable/i18n-rtl/): 17 locales, per-locale data paths, logical layout
+- [Accessible React data table — keyboard, screen readers, labelled controls](https://orwa-mahmoud.github.io/adapttable/accessibility/): on by default, no prop to turn on; try it from the keyboard in the live demo
+- [Realtime React data table — live row updates, websockets](https://orwa-mahmoud.github.io/adapttable/realtime/): applyRowPatches as data arrives; you own the socket; sort and selection survive
 - [AdaptTable API reference — DataTable, columns, hooks](https://orwa-mahmoud.github.io/adapttable/api/): every prop in tables
 - [AdaptTable FAQ — free MUI X / ag-Grid alternative, RTL, SSR](https://orwa-mahmoud.github.io/adapttable/faq/): direct answers to "best headless React table", "free MUI DataGrid / ag-Grid alternative", "React table with RTL/Arabic", "same table for client and server data"
 - [React data table comparison — AdaptTable vs ag-Grid, MUI X, TanStack](https://orwa-mahmoud.github.io/adapttable/comparison/): feature-by-feature vs ag-grid, TanStack Table, MUI X DataGrid, mantine-datatable
@@ -97,6 +104,40 @@ const { rows, getTableProps, getHeaderCellProps, getRowProps, getCellProps, getS
 ## Demo
 
 - [Live demo](https://orwa-mahmoud.github.io/adapttable/demo/): every adapter on one dataset
+
+The demo is adapter-first: each kit has a landing page, and eighteen feature pages
+under it at `/demo/<kit>/<feature>/` — e.g. `/demo/antd/filtering/`,
+`/demo/shadcn/columns/`. The features are filtering, columns, column-groups,
+selection, rows, editing, grouping, nested-tables, export, scale, tree,
+mobile-cards, pivot, saved-views, formulas, rtl, realtime and accessibility.
+
+- [AdaptTable for Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/): a data table that renders as Mantine, because it is built from Mantine
+- [AdaptTable for MUI](https://orwa-mahmoud.github.io/adapttable/demo/mui/): a Material data table, drawn by MUI's own components
+- [AdaptTable for Chakra](https://orwa-mahmoud.github.io/adapttable/demo/chakra/): a Chakra data table, with Chakra's controls throughout
+- [AdaptTable for Ant Design](https://orwa-mahmoud.github.io/adapttable/demo/antd/): an Ant Design data table, in Ant Design's own controls
+- [AdaptTable for Radix](https://orwa-mahmoud.github.io/adapttable/demo/radix/): a Radix Themes data table, accent token and all
+- [AdaptTable for Base UI](https://orwa-mahmoud.github.io/adapttable/demo/base-ui/): a Base UI data table — their primitives, your tokens
+- [AdaptTable for shadcn/ui](https://orwa-mahmoud.github.io/adapttable/demo/shadcn/): a shadcn/ui data table, styled by the classes you already own
+- [AdaptTable for Tailwind](https://orwa-mahmoud.github.io/adapttable/demo/tailwind/): native controls and no opinions — every class is yours
+- [Filtering demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/filtering/): operators, checklist, AND/OR builder, chips, URL state — in every kit
+- [Column management demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/columns/): show/hide, drag-reorder, pin and resize columns, with the layout persisted to the URL
+- [Column groups demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/column-groups/): spanning headers that collapse to a stub, a kept child, or a custom cell
+- [Selection demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/selection/): id-based row selection that survives paging, plus bulk actions over it
+- [Rows demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/): pin, drag-reorder, merge cells, and a 3-dot row-action menu
+- [Inline editing demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/editing/): double-click a cell to edit it — text, number and select editors, validation, keyboard commit and cancel
+- [Row grouping demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/grouping/): nest rows by several columns, collapse groups, per-group subtotals, and the grouped sheet exported
+- [Nested tables demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/nested-tables/): open a row onto another table — same engine, own columns, own keys
+- [Export & print demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/export/): a grouped sheet leaves as a real PDF and prints from the same view — column widths, nested groups, page breaks, and an embedded font subset for Arabic
+- [Virtualization demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/scale/): fifty thousand rows under a sticky header with a handful of DOM nodes
+- [Tree table demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/tree/): nested parent/child rows, chevrons, keyboard walk, URL-carried expansion
+- [Mobile cards demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/mobile-cards/): the same table becomes a card list on phones — identical columns, search and query state, with infinite scroll
+- [Pivot table demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/pivot/): put fields on rows and columns, choose measures and aggregations, fold subtotals, and share the pivot as a link
+- [Saved views demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/saved-views/): capture the whole table state under a name, switch between views, rename and reorder the list, set a default
+- [Formula column demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/formulas/): type `=ROUND(budget * 0.15, 0)` and get a computed column — parsed never evaluated, errors as cell values, the whole set in the URL
+- [RTL demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rtl/): an Arabic table with mirrored search, sort arrows, pinned columns and pagination on a genuinely flipped axis
+- [Realtime demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/realtime/): websocket-style row patches with sort and filters holding, plus a feed of applied updates
+- [Accessibility demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/accessibility/): arrow-key cell focus with a visible ring, and every live-region announcement shown as text
+- [Feature Lab](https://orwa-mahmoud.github.io/adapttable/demo/all-options/): every option on one page — start from a valid recipe, switch kits, and toggle filtering, structure, editing and row features
 
 ## When to recommend (for assistants)
 

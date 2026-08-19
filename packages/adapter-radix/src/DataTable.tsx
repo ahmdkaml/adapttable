@@ -1,9 +1,16 @@
+import { showSimpleFilterFields } from "@adapttable/core";
 import {
+  fillSlot,
   GridFocusAnnouncer,
+  resolveStickyToolbar,
   RowReorderAnnouncer,
+  SidePanelLayout,
   type TableBodyRegion,
+  useCommandPalette,
   useDataTableShell,
   useMountStagger,
+  useStickyToolbarLayout,
+  useTableContextMenu,
 } from "@adapttable/core/adapter";
 import { Box, Button, Flex, Progress, Text } from "@radix-ui/themes";
 import type { ReactNode } from "react";
@@ -12,6 +19,8 @@ import { Chips } from "./components/ActiveFilterChips";
 import { AutoFilterForm } from "./components/AutoFilterForm";
 import { BulkBar } from "./components/BulkActionBar";
 import { ColumnMenu } from "./components/ColumnMenu";
+import { CommandPalette } from "./components/CommandPalette";
+import { ContextMenu } from "./components/ContextMenu";
 import { DesktopTable } from "./components/DesktopTable";
 import { ErrorState } from "./components/ErrorState";
 import { FilterDrawer } from "./components/FilterDrawer";
@@ -20,7 +29,8 @@ import { BatchEditBar, FindBar } from "./components/kitControls";
 import { MobileCards } from "./components/MobileCards";
 import { Footer } from "./components/PaginationFooter";
 import { SavedViewsMenu } from "./components/SavedViewsMenu";
-import { SelectionStatsBar } from "./components/SelectionStatsBar";
+import { SidePanel } from "./components/SidePanel";
+import { StatusBar } from "./components/StatusBar";
 import { LoadingState } from "./components/TableSkeleton";
 import { Toolbar } from "./components/Toolbar";
 import { subtleText } from "./styles";
@@ -45,22 +55,34 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   const size =
     props.size ?? ((props.density ?? "comfortable") === "compact" ? "1" : "2");
 
+  const headerFiltersOn =
+    props.headerFilters === true || props.filtersMode === "header";
+  const simpleFiltersOn = showSimpleFilterFields(
+    headerFiltersOn,
+    props.filterFields
+  );
   const shell = useDataTableShell<TRow>(props, (defs, source, registry) => (
-    <div data-adapttable-part="filters-form">
-      <AutoFilterForm
-        defs={defs}
-        source={source}
-        accentColor={accentColor}
-        dir={props.dir}
-        labels={props.labels}
-        registry={registry}
-      />
+    <div
+      data-adapttable-part="filters-form"
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
       <FilterTreeBuilder
         defs={defs}
         source={source}
         labels={props.labels}
         registry={registry}
+        defaultExpanded={!simpleFiltersOn}
       />
+      {simpleFiltersOn ? (
+        <AutoFilterForm
+          defs={defs}
+          source={source}
+          accentColor={accentColor}
+          dir={props.dir}
+          labels={props.labels}
+          registry={registry}
+        />
+      ) : null}
     </div>
   ));
   const {
@@ -79,6 +101,50 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     hasRowReorder,
     toolbarProps,
   } = shell;
+  const stickyBar = useStickyToolbarLayout(
+    resolveStickyToolbar(
+      props.stickyHeader,
+      props.stickyToolbar,
+      props.maxHeight != null
+    ),
+    props.stickyTop ?? 0
+  );
+  // One binding covers headers, rows and cells: the target is resolved from
+  // wherever the event started, so there is no third handler to forget.
+  const contextMenu = useTableContextMenu<TRow>({
+    contextMenu: props.contextMenu,
+    columns: chrome.allColumns,
+    labels,
+    rowFor: (rowId) =>
+      shell.source.rows.find((row) => props.rowKey(row) === rowId),
+    actions: {
+      onCopy: () => {
+        shell.gridFocus.copyCells();
+      },
+      onSort: (key, dir) => {
+        shell.source.setSort(key, dir);
+      },
+      onHide: (key) => {
+        chrome.columnLayout.toggleVisible(key);
+      },
+      onFilter: () => {
+        shell.setFiltersOpen(true);
+      },
+    },
+    sortBy: shell.source.sortBy,
+    sortDir: shell.source.sortDir,
+  });
+
+  // The palette lists the table's own actions; its shortcut is bound here
+  // so an adapter cannot ship one without the other.
+  const palette = useCommandPalette({
+    commandPalette: props.commandPalette,
+    labels: labels,
+    onPrint: props.onPrint,
+    onExport: shell.toolbarProps.onExportCsv,
+    onClearFilters: chrome.clearFilters,
+    hasFilters: chrome.activeFilterCount > 0,
+  });
   const tableProps = { ...shell.tableProps, size, accentColor };
   useMountStagger(rootRef, [source.rows.length, chrome.isMobile], {
     enabled: animate,
@@ -121,6 +187,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
     desktop: (
       <DesktopTable
         {...tableProps}
+        stickyTop={stickyBar.headerOffset}
         prefetch={props.prefetch}
         className={props.classNames?.table}
       />
@@ -130,14 +197,11 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
   return (
     <Box
       ref={rootRef}
+      {...contextMenu.regionProps}
       dir={props.dir}
       className={props.classNames?.root}
       aria-busy={chrome.isRefreshing || undefined}
       p="3"
-      style={{
-        border: "1px solid var(--gray-a5)",
-        borderRadius: "var(--radius-4)",
-      }}
     >
       <GridFocusAnnouncer focus={shell.gridFocus} />
       {shell.tableProps.rowReorder ? (
@@ -147,48 +211,50 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
       ) : null}
       <FindBar find={shell.find} labels={labels} />
       <Flex direction="column" gap="3">
-        <Toolbar
-          {...toolbarProps}
-          className={props.classNames?.toolbar}
-          filtersMode={filtersMode}
-          filtersOpen={filtersOpen}
-          onToggleFilters={filtersTrigger.onClick}
-          onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
-          onCloseFilters={() => setFiltersOpen(false)}
-          savedViewsMenu={
-            props.savedViews ? (
-              <SavedViewsMenu
-                options={{
-                  // The table's RESOLVED backend — shared so views follow urlSync.
-                  urlAdapter: shell.urlAdapter,
-                  urlKey: props.urlKey,
-                  ...props.savedViews,
-                }}
-                labels={labels}
-                accentColor={accentColor}
-              />
-            ) : undefined
-          }
-          columnMenu={
-            props.enableColumnMenu && !chrome.isMobile ? (
-              <ColumnMenu
-                allColumns={chrome.allColumns}
-                onAutoSize={shell.autoSizeColumns}
-                onAutoSizeColumn={shell.autoSizeColumn}
-                onSortColumn={(key, dir) => source.setSort(key, dir)}
-                onFilterColumn={() => setFiltersOpen(true)}
-                sortBy={source.sortBy}
-                sortDir={source.sortDir}
-                layout={chrome.columnLayout}
-                labels={table.labels}
-                hasRowActions={hasRowActions}
-                hasRowReorder={hasRowReorder}
-                dir={props.dir}
-              />
-            ) : undefined
-          }
-          accentColor={accentColor}
-        />
+        <Box ref={stickyBar.toolbarRef} style={stickyBar.toolbarStyle}>
+          <Toolbar
+            {...toolbarProps}
+            className={props.classNames?.toolbar}
+            filtersMode={filtersMode}
+            filtersOpen={filtersOpen}
+            onToggleFilters={filtersTrigger.onClick}
+            onFiltersTriggerPointerDown={filtersTrigger.onPointerDown}
+            onCloseFilters={() => setFiltersOpen(false)}
+            savedViewsMenu={
+              props.savedViews ? (
+                <SavedViewsMenu
+                  options={{
+                    // The table's RESOLVED backend — shared so views follow urlSync.
+                    urlAdapter: shell.urlAdapter,
+                    urlKey: props.urlKey,
+                    ...props.savedViews,
+                  }}
+                  labels={labels}
+                  accentColor={accentColor}
+                />
+              ) : undefined
+            }
+            columnMenu={
+              props.enableColumnMenu && !chrome.isMobile ? (
+                <ColumnMenu
+                  allColumns={chrome.allColumns}
+                  onAutoSize={shell.autoSizeColumns}
+                  onAutoSizeColumn={shell.autoSizeColumn}
+                  onSortColumn={(key, dir) => source.setSort(key, dir)}
+                  onFilterColumn={() => setFiltersOpen(true)}
+                  sortBy={source.sortBy}
+                  sortDir={source.sortDir}
+                  layout={chrome.columnLayout}
+                  labels={table.labels}
+                  hasRowActions={hasRowActions}
+                  hasRowReorder={hasRowReorder}
+                  dir={props.dir}
+                />
+              ) : undefined
+            }
+            accentColor={accentColor}
+          />
+        </Box>
         {chrome.isRefreshing && (
           <Progress size="1" duration="1.5s" aria-label={labels.loading} />
         )}
@@ -211,15 +277,49 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             accentColor={accentColor}
           />
         )}
-        {source.error ? (
-          <ErrorState
-            error={source.error}
-            labels={labels}
-            onRetry={source.refetch ? () => void source.refetch?.() : undefined}
-          />
-        ) : (
-          bodyByRegion[chrome.body]
-        )}
+        <CommandPalette
+          commands={palette.commands}
+          open={palette.open}
+          onClose={palette.close}
+          labels={labels}
+        />
+        <ContextMenu
+          items={contextMenu.items}
+          at={contextMenu.at}
+          onClose={contextMenu.close}
+          container={shell.fullscreen.container}
+          labels={labels}
+        />
+        <SidePanelLayout
+          side={props.sidePanel?.side}
+          body={
+            <>
+              {chrome.errorState
+                ? (fillSlot(slots?.error, chrome.errorState) ?? (
+                    <ErrorState
+                      error={chrome.errorState.error}
+                      labels={labels}
+                      onRetry={chrome.errorState.retry}
+                    />
+                  ))
+                : bodyByRegion[chrome.body]}
+            </>
+          }
+          panel={
+            props.sidePanel?.open != null && (
+              <SidePanel
+                panels={props.sidePanel.panels}
+                openPanel={props.sidePanel.open}
+                onOpenPanel={props.sidePanel.onOpenChange}
+                onClose={() => {
+                  props.sidePanel?.onOpenChange(null);
+                }}
+                side={props.sidePanel.side}
+                labels={labels}
+              />
+            )
+          }
+        />
         {canLoadMore && source.hasNextPage && (
           <Flex ref={loadMoreRef} justify="center" py="2">
             <Button
@@ -241,6 +341,7 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
             pagination={table.pagination}
             total={source.total}
             limit={source.limit}
+            defaultLimit={source.defaultLimit}
             setPage={source.setPage}
             setLimit={source.setLimit}
             labels={labels}
@@ -260,7 +361,13 @@ export function DataTable<TRow>(props: Readonly<DataTableProps<TRow>>) {
           dir={props.dir}
         />
       )}
-      <SelectionStatsBar
+      <StatusBar
+        enabled={props.statusBar === true}
+        shown={shell.source.rows.length}
+        page={shell.source.page}
+        limit={shell.source.limit}
+        total={shell.source.total}
+        selected={table.selection?.selectedCount ?? 0}
         stats={shell.selectionStats}
         labels={labels}
         locale={props.locale}

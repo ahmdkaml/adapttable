@@ -3,6 +3,12 @@
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
 import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+  useHeaderFilterOverlay,
+} from "@adapttable/core";
+import {
   BatchEditBarChrome,
   type BatchEditBarProps,
   type BatchEditButtonProps,
@@ -47,6 +53,8 @@ import {
 } from "@adapttable/core/adapter";
 import { Button, Flex, IconButton, Popover, TextField } from "@radix-ui/themes";
 
+import { FiltersIcon } from "../icons";
+import { AutoFilterForm } from "./AutoFilterForm";
 import { Checkbox, NativeSelect } from "./primitives";
 
 export type {
@@ -213,6 +221,61 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
+}
+
+/** Funnel on the column header — the same field the Filters panel draws. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(props);
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger>
+        <IconButton
+          {...sessionProps}
+          type="button"
+          size="1"
+          variant={active ? "soft" : "ghost"}
+          aria-label={filterLabel(props.def)}
+          data-adapttable-part="filter-header-trigger"
+          data-active={active ? "" : undefined}
+        >
+          <FiltersIcon size={14} />
+        </IconButton>
+      </Popover.Trigger>
+      <Popover.Content
+        {...sessionProps}
+        align="start"
+        sideOffset={4}
+        data-adapttable-part="filter-header-cell"
+        style={{ minWidth: "20rem", padding: 8 }}
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onFocusOutside={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
+      >
+        <AutoFilterForm
+          defs={[props.def]}
+          source={source}
+          labels={props.labels}
+          registry={props.registry}
+        />
+      </Popover.Content>
+    </Popover.Root>
+  );
 }
 
 function FindSearch({

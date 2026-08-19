@@ -57,19 +57,23 @@ Unify the **model**, never the **pixels**. The standing pattern is
 - Branch off `main` for every change (`feat/…`, `fix/…`, `chore/…`); merge
   via PR. Never commit directly to `main`.
 - One concern per commit, named issues closed with `Closes #N` in the commit
-  body — a bare `(#N)` in the subject links but never closes.
+  body — a bare `(#N)` in the subject links but never closes. An issue closes
+  when the PR carrying that commit merges: work that is only committed locally
+  leaves its issue open, and closing one by hand is never the way it happens.
 - Screenshots and scratch artifacts are temporary: keep them in
   `.playwright-mcp/` or `/tmp`, never the repo root, and delete them when
   done.
 
 ## The quality gate — green before every push, zero suppressions
 
-`pnpm check` is the single source of truth. Husky runs `format:check` on
-every commit (fast) and the full gate on every push:
+`pnpm check` is the single source of truth for the library gate. Husky runs
+`format:check` on every commit (fast) and `pnpm check` then `pnpm test:e2e`
+on every push:
 
 ```
 format:check → lint → lint:root → check:readmes → check:docsurface
-→ typecheck → test:coverage → build → publint → smoke:dist → budget
+→ check:parts → typecheck → test:coverage → test:scripts → build
+→ publint → smoke:dist → budget → test:e2e
 ```
 
 - **Coverage floors are enforced per package** — do not lower a threshold to
@@ -79,9 +83,11 @@ format:check → lint → lint:root → check:readmes → check:docsurface
   rule. Fix the root cause; if a rule seems genuinely wrong, raise it.
 - Never weaken tests or assertions to pass. If a test fails, the code or the
   test is wrong — find out which.
-- **`pnpm test:e2e` is part of the bar** — the gate does not run it, CI
-  does. Run it before opening a PR whenever the change touches anything a
-  browser can see.
+- **`pnpm test:e2e` is part of the bar** — `pnpm check` does not run it.
+  Pre-push runs `pnpm e2e:if-needed`: skip when the diff vs `origin/main` has
+  no packages/showcase/e2e; run only changed `e2e/*.spec.ts` when that is all
+  that changed; otherwise the full suite. CI already skips the whole job on
+  the same path set. Needs Chromium once: `pnpm exec playwright install chromium`.
 - A change is not done until the gate is green with real command output —
   evidence, not assertions. Anything visual or keyboard-driven is also
   verified in a real browser.
@@ -118,6 +124,10 @@ Committed but **generated — never hand-edit**:
 - `llms-full.txt` — built by `pnpm llms` from `docs/*.md` in the `DOCS`
   array order of `scripts/build-llms-full.mjs`. Edit docs → `pnpm format` →
   regenerate → commit, in that order.
+- `apps/showcase/<adapter>/**/index.html` and the redirect stubs beside them —
+  written by `node scripts/build-showcase-html.mjs` from
+  `apps/showcase/matrix.mjs`. Edit the matrix → regenerate → commit;
+  `scripts/showcase-html.test.mjs` fails the gate when they disagree.
 - `packages/*/CHANGELOG.md` — written by changesets only.
 - `pnpm-lock.yaml`.
 
@@ -136,6 +146,23 @@ surface: the `DOCS` array in `scripts/build-llms-full.mjs` AND a link in
 
 - Each adapter demo renders only its own kit's components — mount the real
   `@adapttable/*` adapters, never cross-import kits, never mock the table.
+- A demo page is registered **once**, in `apps/showcase/pages.mjs`: Vite's
+  build inputs and the sitemap's `/demo/` URLs are both generated from that
+  manifest, and `pnpm check:sitemap` verifies the composed site against it in
+  the docs workflow. A page that must ship without being indexed — a redirect
+  stub — sets `indexable: false`.
+- The demo is **adapter-first**: each adapter has a landing page
+  (`/demo/mantine/`) and one page per feature (`/demo/mantine/pivot/`), so a
+  reader searching for a Mantine pivot table lands on one. Those pages are not
+  written by hand — the adapters, the features and every word on the pages live
+  in `apps/showcase/matrix.mjs`, which `pages.mjs` expands into the manifest,
+  `scripts/build-showcase-html.mjs` writes the static HTML from, and
+  `src/matrix/MatrixPage.tsx` renders. Add a feature there and it appears in the
+  build, the sitemap, the nav and the served HTML at once.
+- Column groups, RTL, realtime, rows, nested tables and accessibility are
+  matrix features — one page per kit, same as filtering. Pagination is not a
+  demo destination; the docs page owns that search. `/demo/rtl/` is a redirect
+  stub to `/demo/mantine/rtl/`.
 - Overlay contracts:
   - `filtersMode="popover"` (default) is a lightweight anchored card with
     **no backdrop**. It anchors under its trigger (flipping for RTL), closes

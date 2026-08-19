@@ -18,6 +18,7 @@ export type {
   ColorScheme,
   ColumnDef,
   ColumnFooterContext,
+  ColumnGroupShow,
   ColumnHeaderContext,
   ColumnHeaderController,
   Direction,
@@ -50,6 +51,20 @@ export {
 
 /* ── Shared prop surface + orchestration ───────────────────────────── */
 /* ── Declarative filters & data tiers ──────────────────────────────── */
+export type { Command } from "./actions/commandRegistry";
+export { filterCommands, tableCommands } from "./actions/commandRegistry";
+export type {
+  ContextMenuActions,
+  ContextMenuItem,
+  ContextMenuTarget,
+} from "./actions/contextMenuModel";
+export type { CommandPaletteOptions } from "./actions/useCommandPalette";
+export {
+  DEFAULT_SHORTCUTS,
+  type Shortcut,
+  useShortcuts,
+} from "./actions/useShortcuts";
+export type { ContextMenuOptions } from "./actions/useTableContextMenu";
 export {
   aggregate,
   AGGREGATE_NAMES,
@@ -84,6 +99,8 @@ export {
 export {
   type FilterChromeMode,
   resolveFilterMode,
+  showSimpleFilterFields,
+  toolbarShowsFilters,
 } from "./filters/filterChrome";
 export {
   AUTO_OPTIONS_LIMIT,
@@ -161,6 +178,13 @@ export {
   setFilterTreeCombinator,
   walkFilterTreeConditions,
 } from "./filters/filterTreeMutations";
+export {
+  bindHeaderFilterDismiss,
+  headerFilterFieldIsComplete,
+  type HeaderFilterSessionProps,
+  useHeaderFilterOverlay,
+  usePointerDismiss,
+} from "./filters/headerFilterOverlay";
 export {
   DATE_OP_LABEL_KEYS,
   DATE_OPS,
@@ -285,7 +309,23 @@ export {
   useGridFocus,
   type UseGridFocusOptions,
 } from "./focus/useGridFocus";
-export type { BaseDataTableProps } from "./props";
+export type { SidePanelEntry } from "./layout/SidePanelChrome";
+export { type FullscreenState, useFullscreen } from "./layout/useFullscreen";
+export type {
+  BaseDataTableProps,
+  SidePanelOptions,
+  ToolbarSlots,
+} from "./props";
+export type {
+  MobileCardField,
+  MobileCardModel,
+  MobileCardRenderer,
+} from "./rows/mobileCard";
+export {
+  type HighlightedCell,
+  type HighlightState,
+  useHighlight,
+} from "./rows/useHighlight";
 export {
   type AggregateFn,
   isFilterGroup,
@@ -311,6 +351,13 @@ export {
   type UseTableDataOptions,
   type UseTableDataResult,
 } from "./source/useTableData";
+export type { Slot, TableErrorState } from "./state/errorState";
+export {
+  type Density,
+  useDensityUrlState,
+  type UseDensityUrlStateOptions,
+  type UseDensityUrlStateResult,
+} from "./url/useDensityUrlState";
 export {
   type ChromeBodyData,
   type TableChrome,
@@ -343,12 +390,20 @@ export {
   type UrlStateAdapter,
 } from "./url/adapter";
 export {
+  routerUrlAdapter,
+  type RouterUrlAdapterOptions,
+} from "./url/routerAdapter";
+export {
   useColumnLayoutUrlState,
   type UseColumnLayoutUrlStateOptions,
   type UseColumnLayoutUrlStateResult,
 } from "./url/useColumnLayoutUrlState";
 export {
+  SAVED_VIEW_VERSION,
   type SavedView,
+  type SavedViewMigration,
+  type SavedViewsStore,
+  type SavedViewVisibility,
   useSavedViews,
   type UseSavedViewsOptions,
   type UseSavedViewsResult,
@@ -449,18 +504,40 @@ export {
 } from "./columns/columnReorder";
 export { columnResizeHandleProps } from "./columns/columnResize";
 export {
+  applyCollapsedColumnGroups,
+  type ColumnGroupDef,
+  type ColumnGroupRecord,
+  type ColumnInput,
+  flattenColumnTree,
+  type FlattenedColumns,
+  isColumnGroup,
+  marriedOrderHolds,
+} from "./columns/columnTree";
+export {
   parsePxWidth,
   resolveColumnWidth,
   tableMinWidth,
 } from "./columns/columnWidths";
 export {
-  applyCollapsedColumnGroups,
   COLUMN_GROUP_ID_SEP,
+  COLUMN_GROUP_RENDER_PREFIX,
+  COLUMN_GROUP_STUB_PREFIX,
+  COLUMN_GROUP_STUB_WIDTH,
+  columnGroupHeaderCaption,
   columnGroupId,
   columnGroupPath,
+  columnGroupStubStyle,
+  groupedHeaderAlign,
+  groupedHeaderCellStyle,
+  groupedHeaderChildRule,
   type HeaderGroupCell,
   headerGroupRow,
   headerGroupRows,
+  type HtmlGroupedHeaderCell,
+  htmlGroupedHeaderPlan,
+  isColumnGroupRenderKey,
+  isColumnGroupStubKey,
+  isColumnGroupSummaryKey,
   toggleCollapsedColumnGroup,
 } from "./columns/headerGroups";
 export {
@@ -533,8 +610,11 @@ export { stableKey } from "./utils/stableKey";
 
 export {
   type BodyCell,
+  bodyCellsHaveRowSpan,
   buildBodyCells,
   cellsForRow,
+  type CellSpanAppearance,
+  cellSpanMark,
   type CellSpanRequest,
   coveredAddressSet,
   type GetCellSpan,
@@ -543,12 +623,21 @@ export {
   spanningArmed,
 } from "./rows/cellSpan";
 export {
+  EXTRA_OVER_SPAN_ROW_STYLE,
+  EXTRA_OVER_SPAN_STYLE,
   EXTRA_ROW_PARTS,
+  extraCountBeforeRowIds,
+  extraCoveredTableSlots,
   type ExtraEntry,
+  extraHostFillStyle,
   type ExtraRow,
   type ExtraRowKind,
   extraRowsArmed,
+  extraRowsForSection,
+  extraUncoveredColSpans,
+  inflateBodyCellRowSpans,
   insertExtraRows,
+  insertExtrasBeforeRows,
   isExtraEntry,
 } from "./rows/extraRows";
 export {
@@ -584,9 +673,17 @@ export {
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowCellStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   pinnedRowStickyStyle,
   useOffsetHeight,
 } from "./rows/pinnedRowChrome";
+export {
+  type RowActionsLayout,
+  type RowActionsRenderContext,
+  type RowActionsRenderer,
+  visibleRowActions,
+} from "./rows/rowActions";
 export {
   DELETE_ROW_ACTION_KEY,
   DUPLICATE_ROW_ACTION_KEY,
@@ -739,6 +836,12 @@ export {
   type EditUnit,
 } from "./editing/editingEvents";
 export {
+  type MultiSelectEditorCheckboxProps,
+  MultiSelectEditorChrome,
+  type MultiSelectEditorChromeProps,
+  type MultiSelectEditorSlots,
+} from "./editing/MultiSelectEditorChrome";
+export {
   type RowEditDrafts,
   type RowEditingState,
   useRowEditing,
@@ -838,12 +941,17 @@ export {
 export {
   buildTableCsv,
   downloadTableCsv,
+  EXPORT_FETCH_ALL_MAX_ROWS,
   exportableColumns,
   type ExportColumnScope,
   type ExportContext,
   type ExportCsvOptions,
   type ExportInfo,
+  type ExportQuery,
+  type ExportRequest,
   type ExportRowScope,
+  type FetchAllExport,
+  fetchAllExportRows,
   makeExportCsvHandler,
   resolveExportColumns,
   resolveExportCsv,

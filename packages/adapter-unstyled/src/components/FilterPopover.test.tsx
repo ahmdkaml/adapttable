@@ -41,6 +41,7 @@ describe("FilterPopover", () => {
     )!;
     expect(card).toHaveStyle({ left: "0px" });
     expect(card).toHaveAttribute("data-dir", "rtl");
+    expect(card).toHaveAttribute("dir", "rtl");
   });
 
   it("does not render the card when closed", () => {

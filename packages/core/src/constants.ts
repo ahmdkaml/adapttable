@@ -13,20 +13,27 @@ export const DEFAULT_LIMIT = 25;
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
 /**
- * Page-size options to render in a rows-per-page selector, guaranteeing the
- * currently-active `limit` is present. A `limit` that isn't one of the
- * standard {@link PAGE_SIZE_OPTIONS} (e.g. restored from a shared URL) is
- * prepended so the control shows a valid selection instead of going blank.
+ * Page-size options to render in a rows-per-page selector, guaranteeing every
+ * given size is present. Pass the active `limit` alone, or `[limit,
+ * defaultLimit]` so a host default (scale's 500, a shared-URL 15) stays
+ * listed after the user picks 10 / 25 / 50 / 100 — otherwise it vanishes
+ * and cannot be selected again.
  *
- * @param limit - The currently-active page size.
+ * Off-list values are prepended in the order given, de-duplicated.
+ *
+ * @param limit - The currently-active page size, or several sizes that must
+ *   stay listed (active + the table's default page size).
  * @param sizes - The standard options to offer (defaults to {@link PAGE_SIZE_OPTIONS}).
- * @returns The options to render, with `limit` guaranteed present.
+ * @returns The options to render, with every given size guaranteed present.
  */
 export function pageSizeOptions(
-  limit: number,
+  limit: number | readonly number[],
   sizes: readonly number[] = PAGE_SIZE_OPTIONS
 ): readonly number[] {
-  return sizes.includes(limit) ? sizes : [limit, ...sizes];
+  const extras = (typeof limit === "number" ? [limit] : limit).filter(
+    (n, i, all) => !sizes.includes(n) && all.indexOf(n) === i
+  );
+  return extras.length > 0 ? [...extras, ...sizes] : sizes;
 }
 
 /** Default debounce (ms) for the search input before it commits to state. */

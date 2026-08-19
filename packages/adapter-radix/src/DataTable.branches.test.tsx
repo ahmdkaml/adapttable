@@ -277,6 +277,11 @@ describe("tables.tsx branches", () => {
       .getAllByRole("columnheader")
       .find((th) => getComputedStyle(th).position === "sticky");
     expect(header).toBeTruthy();
+    expect(
+      header
+        ?.closest(".adapttable-radix-scroll")
+        ?.classList.contains("adapttable-radix-page-stick")
+    ).toBe(true);
   });
 
   it("uses the column key for a non-string sortable header (columnName key branch)", () => {
@@ -299,11 +304,16 @@ describe("tables.tsx branches", () => {
     mount({ stickyHeader: true, stickyTop: 12, maxHeight: 240 });
     // Inside a maxHeight scroll box the box itself is the sticky context, so
     // the header pins to ITS top (0px) — a viewport stickyTop offset would
-    // float the header mid-box.
+    // float the header mid-box. Page-stick is for window sticky only.
     const header = screen
       .getAllByRole("columnheader")
       .find((th) => getComputedStyle(th).position === "sticky")!;
     expect(getComputedStyle(header).top).toBe("0px");
+    expect(
+      header
+        .closest(".adapttable-radix-scroll")
+        ?.classList.contains("adapttable-radix-page-stick")
+    ).toBe(false);
   });
 
   it("sticks the selection edge cell flush left alongside a left-pinned column", () => {

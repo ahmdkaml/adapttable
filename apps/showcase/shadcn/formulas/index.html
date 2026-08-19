@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
+    <meta name="description" content="Add computed columns to a shadcn data table from spreadsheet formulas — ROUND, IF, UPPER, string joins and aggregates, with errors reported in the cell that caused them." />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/shadcn/formulas/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content="shadcn table formulas — AdaptTable" />
+    <meta property="og:description" content="Add computed columns to a shadcn data table from spreadsheet formulas — ROUND, IF, UPPER, string joins and aggregates, with errors reported in the cell that caused them." />
+    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/shadcn/formulas/" />
+    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="shadcn table formulas — AdaptTable" />
+    <meta name="twitter:description" content="Add computed columns to a shadcn data table from spreadsheet formulas — ROUND, IF, UPPER, string joins and aggregates, with errors reported in the cell that caused them." />
+    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"Add computed columns to a shadcn data table from spreadsheet formulas — ROUND, IF, UPPER, string joins and aggregates, with errors reported in the cell that caused them.","url":"https://orwa-mahmoud.github.io/adapttable/demo/shadcn/formulas/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
+    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <title>shadcn table formulas — AdaptTable</title>
+    <script>
+      try {
+        if (localStorage.getItem("adapttable-demo-theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch {}
+    </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback p {
+        text-wrap: pretty;
+      }
+      .at-fallback__kicker {
+        margin: 0 0 0.75rem;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+      .at-fallback h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback pre {
+        overflow-x: auto;
+        padding: 1rem 1.1rem;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        background: #fafafa;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.8rem;
+        line-height: 1.7;
+        color: #3f3f46;
+      }
+      .at-fallback p code {
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: #f4f4f5;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.86em;
+        color: #27272a;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback pre {
+        border-color: #3f3f46;
+        background: #18181b;
+        color: #d4d4d8;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Replaced by React on mount — the served markup carries the page's
+         own words so a crawler, and anyone whose bundle has not arrived, reads
+         a real page. Written by scripts/build-showcase-html.mjs. -->
+    <div id="root" data-matrix-page="shadcn/formulas">
+      <main class="at-fallback">
+        <p class="at-fallback__kicker">AdaptTable for shadcn</p>
+        <h1>Spreadsheet formulas in shadcn</h1>
+        <p>A formula column is a column nobody wrote code for: type <code>=ROUND(budget * 0.15, 0)</code> and the table computes it per row, sorts it, filters it and exports it like any other column.</p>
+        <p>The engine covers arithmetic, comparison, string joins, IF, and the aggregate functions a footer needs. A bad reference reports in the cell that caused it rather than blanking the table, and a circular reference reports <code>#CYCLE!</code> instead of recursing.</p>
+        <p>Formula columns serialize to the URL with everything else, so a derived column travels in the same link as the filters it sits beside.</p>
+        <p>A computed column is an ordinary cell wearing the preset's padding, and an error token is the text inside it — the preset gives errors no colour of their own here.</p>
+        <h2>The code</h2>
+        <pre><code>import { DataTable } from &quot;@adapttable/shadcn&quot;;
+import { buildFormulaColumns } from &quot;@adapttable/core/formula&quot;;
+
+const derived = buildFormulaColumns([
+  {
+    key: &quot;margin&quot;,
+    header: &quot;Margin&quot;,
+    formula: &quot;=ROUND(budget * 0.15, 0)&quot;,
+  },
+  {
+    key: &quot;tag&quot;,
+    header: &quot;Tag&quot;,
+    formula: '=UPPER(team) &amp; &quot; · &quot; &amp; role',
+  },
+]);
+
+export function People({ rows, columns }) {
+  return (
+    &lt;DataTable
+      data={rows}
+      columns={[...columns, ...derived]}
+      rowKey={(row) =&gt; row.id}
+    /&gt;
+  );
+}</code></pre>
+        <h2>Install</h2>
+        <pre><code>pnpm add @adapttable/shadcn @adapttable/core</code></pre>
+        <p>
+          Reference: <a href="https://orwa-mahmoud.github.io/adapttable/formulas/">formulas</a>. More of this kit:
+          <a href="../">AdaptTable for shadcn</a>, or
+          <a href="/adapttable/demo/">the live demo</a>.
+        </p>
+      </main>
+    </div>
+    <script type="module" src="/src/entry-matrix.tsx"></script>
+  </body>
+</html>

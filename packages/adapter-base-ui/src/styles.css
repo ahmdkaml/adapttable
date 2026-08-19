@@ -492,6 +492,7 @@
 
 /* Multi-select options as chips (portaled filter forms) — label only, no box. */
 .adapttable-filter-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--adapttable-border);
@@ -517,9 +518,26 @@
   font-weight: 600;
 }
 
-.adapttable-filter-chip:focus-visible {
+.adapttable-filter-chip:has(:focus-visible) {
   outline: 2px solid var(--adapttable-accent);
   outline-offset: 2px;
+}
+
+/* Kit Checkbox stays for a11y; the chip is the look — no box inside the pill. */
+.adapttable-filter-chip .adapttable-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.adapttable-filter-chip label {
+  gap: 0 !important;
 }
 
 .adapttable-tooltip {
@@ -560,6 +578,14 @@
 [data-theme="dark"] .adapttable-drawer,
 .adapttable-drawer[data-theme="dark"] {
   color: #fafafa;
+}
+
+.adapttable-drawer-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 
 .adapttable-drawer-title {

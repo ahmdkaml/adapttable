@@ -70,6 +70,15 @@ export interface UseGridFocusOptions<TRow> {
   /** Off unless the host asked for it; when false the hook does nothing. */
   enabled: boolean;
   /**
+   * Offer a checkbox in every column header that selects that column.
+   *
+   * Ctrl/Cmd+click is the gesture for a keyboard and a mouse, and a touch
+   * device has neither — there is no Ctrl key to hold. This is the same
+   * state reached by a control a finger can hit, and the same state a
+   * screen reader can name. Off unless asked for.
+   */
+  headerCheckbox?: boolean;
+  /**
    * Rows in the whole dataset. This is the ARIA number — `aria-rowcount` — and
    * deliberately NOT what movement is clamped to; see the note on navigable
    * bounds below.
@@ -197,6 +206,25 @@ export interface GridFocusState {
    * 100,000 rows cannot be selected while 500 are in hand.
    */
   selectColumn: (col: number, extend?: boolean) => void;
+  /**
+   * Whether an adapter should draw the per-column header checkbox: the host
+   * asked for it AND cell navigation is on, resolved here so a header cell
+   * renders on one boolean instead of checking two.
+   */
+  columnCheckbox: boolean;
+  /**
+   * Whether the selection is exactly this column, over every loaded row.
+   *
+   * Exactly — a column inside a wider rectangle reads as unchecked, because a
+   * checkbox that ticks while its neighbours are also selected says the
+   * selection is one column when it is four.
+   */
+  isColumnSelected: (col: number) => boolean;
+  /**
+   * What the header checkbox does: select this column alone, or clear the
+   * selection when it is already the only thing selected.
+   */
+  toggleColumn: (col: number) => void;
   /** Move focus programmatically — the fill handle and clipboard will need it. */
   focusCell: (cell: GridCell) => void;
   /**
@@ -214,6 +242,14 @@ export interface GridFocusState {
    * preview its own way. `null` unless a fill is being dragged.
    */
   fillPreview: CellRange | null;
+  /**
+   * Copy or cut without the keyboard.
+   *
+   * Ctrl+C always has a focused range. A context menu does not — a
+   * right-click on a cell with nothing selected has to copy that cell — so
+   * an explicit cell wins and the selection is the fallback.
+   */
+  copyCells: (cell?: GridCell, cut?: boolean) => void;
 }
 
 /**
@@ -226,6 +262,7 @@ export function useGridFocus<TRow>(
 ): GridFocusState {
   const {
     enabled,
+    headerCheckbox = false,
     rowCount,
     columns,
     rows,
@@ -384,6 +421,22 @@ export function useGridFocus<TRow>(
     pending.current = null;
     element.focus();
   }, [enabled, active, rows, firstRowIndex]);
+
+  /**
+   * Copy or cut, for a caller that is not the keyboard.
+   *
+   * The key handler always has a focused range to work from. A context
+   * menu does not: a right-click on a cell with nothing selected should
+   * copy THAT cell, so an explicit one wins and the selection is the
+   * fallback rather than the requirement.
+   */
+  const copyCells = useEventCallback((cell?: GridCell, cut?: boolean) => {
+    const selection: CellRange | null = cell
+      ? { anchor: cell, head: cell }
+      : range;
+    if (!selection) return;
+    copySelection(selection, cut === true);
+  });
 
   /** Ctrl/Cmd+C and Ctrl/Cmd+X — the rectangle, as a spreadsheet reads it. */
   const copySelection = useEventCallback(
@@ -701,6 +754,46 @@ export function useGridFocus<TRow>(
     [firstRowIndex, lastLoadedRow, range, selectRange, focusCell]
   );
 
+  /**
+   * Whether the selection is exactly this column.
+   *
+   * Both bounds are checked, not just the columns: a rectangle three rows tall
+   * inside one column is not that column selected, and a checkbox claiming it
+   * is would be wrong in the direction that matters — the reader would think a
+   * copy or an export covers rows it does not.
+   */
+  const isColumnSelected = useCallback(
+    (col: number) => {
+      if (!enabled || !range) return false;
+      const bounds = cellRangeBounds(range);
+      return (
+        bounds.fromCol === col &&
+        bounds.toCol === col &&
+        bounds.fromRow === firstRowIndex &&
+        bounds.toRow === lastLoadedRow
+      );
+    },
+    [enabled, range, firstRowIndex, lastLoadedRow]
+  );
+
+  /**
+   * What the header checkbox does.
+   *
+   * Ticking selects the column alone — the same rectangle a plain click makes.
+   * Unticking clears, because nothing selected is the only state one checkbox
+   * can return to: a rectangle cannot lose a column out of its middle.
+   */
+  const toggleColumn = useCallback(
+    (col: number) => {
+      if (isColumnSelected(col)) {
+        selectRange(null);
+        return;
+      }
+      selectColumn(col);
+    },
+    [isColumnSelected, selectRange, selectColumn]
+  );
+
   /** Props for a column header that selects its column when clicked. */
   const getColumnHeaderProps = useCallback(
     (col: number, options?: { sortable?: boolean }) => {
@@ -777,12 +870,16 @@ export function useGridFocus<TRow>(
       range: enabled ? range : null,
       selectRange,
       selectColumn,
+      columnCheckbox: enabled && headerCheckbox,
+      isColumnSelected,
+      toggleColumn,
       getColumnHeaderProps,
       focusCell,
       fillHandleCell,
       getFillHandleProps,
       fillHandleLabel: labels?.gridFillHandle ?? "Fill from selection",
       fillPreview: enabled ? fillPreview : null,
+      copyCells,
     }),
     [
       enabled,
@@ -796,12 +893,16 @@ export function useGridFocus<TRow>(
       range,
       selectRange,
       selectColumn,
+      headerCheckbox,
+      isColumnSelected,
+      toggleColumn,
       getColumnHeaderProps,
       focusCell,
       fillHandleCell,
       getFillHandleProps,
       labels,
       fillPreview,
+      copyCells,
     ]
   );
 }

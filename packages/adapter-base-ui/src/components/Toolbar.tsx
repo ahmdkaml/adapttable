@@ -2,19 +2,22 @@
 import { pageSizeOptions } from "@adapttable/core";
 import {
   ExportAnnouncer,
-  FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
 } from "@adapttable/core/adapter";
 import { type ReactNode } from "react";
 
+import { FiltersIcon } from "../icons";
 import type { BaseUiAccentColor } from "../types";
 import { Badge, Box, Button, Flex, Spinner, TextField } from "../ui";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect, type SelectOption } from "./primitives";
 
-export function pageSizeSelectOptions(limit: number): SelectOption[] {
-  return pageSizeOptions(limit).map((n) => ({
+export function pageSizeSelectOptions(
+  limit: number,
+  defaultLimit: number = limit
+): SelectOption[] {
+  return pageSizeOptions([limit, defaultLimit]).map((n) => ({
     value: String(n),
     label: String(n),
   }));
@@ -43,6 +46,19 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
+  onPrint,
+  printLabel,
+  density,
+  onDensityChange,
+  onToggleFullscreen,
+  isFullscreen,
   hasFilters,
   activeFilterCount,
   filtersMode,
@@ -94,12 +110,14 @@ export function Toolbar<TRow>({
 
   return (
     <Flex
+      data-adapttable-part="toolbar"
       gap="2"
       wrap="wrap"
       justify="between"
       align="center"
       className={className}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <Box style={{ flex: 1, minWidth: 160, maxWidth: 360 }}>
           <TextField.Root
@@ -153,6 +171,30 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              size="2"
+              variant="soft"
+              color="gray"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              size="2"
+              variant="soft"
+              color="gray"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <Button
             size="2"
@@ -165,7 +207,7 @@ export function Toolbar<TRow>({
             {/* This adapter's own Spinner — the same one the filter form uses
                 while options load, so "working" looks the same everywhere in
                 the kit. */}
-            {exportBusy && <Spinner size="1" />}
+            {exportBusy && <Spinner size="1" label={labels.loading} />}
             {exportLabel}
           </Button>
         )}
@@ -180,13 +222,59 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {onPrint && (
+          <Button
+            size="2"
+            variant="soft"
+            color="gray"
+            data-adapttable-part="print-button"
+            onClick={onPrint}
+          >
+            {printLabel}
+          </Button>
+        )}
+        {onDensityChange && (
+          <Button
+            size="2"
+            variant="soft"
+            color="gray"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            onClick={() => {
+              onDensityChange(
+                density === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {density === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </Button>
+        )}
+        {onToggleFullscreen && (
+          <Button
+            size="2"
+            variant="soft"
+            color="gray"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </Button>
+        )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <NativeSelect
             size="2"
             width="90px"
             aria-label={labels.rowsPerPage}
             value={String(source.limit)}
-            options={pageSizeSelectOptions(source.limit)}
+            options={pageSizeSelectOptions(source.limit, source.defaultLimit)}
             onValueChange={(value) => source.setLimit(Number(value))}
           />
         )}

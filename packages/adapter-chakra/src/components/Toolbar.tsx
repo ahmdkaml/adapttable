@@ -2,13 +2,13 @@
 import { pageSizeOptions } from "@adapttable/core";
 import {
   ExportAnnouncer,
-  FiltersIcon,
   SearchIcon,
   type ToolbarChromeProps,
 } from "@adapttable/core/adapter";
 import { Badge, Button, HStack, Input, InputGroup } from "@chakra-ui/react";
 import { type ReactNode } from "react";
 
+import { FiltersIcon } from "../icons";
 import { FilterPopover } from "./FilterPopover";
 import { NativeSelect } from "./primitives";
 
@@ -34,6 +34,19 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
+  onPrint,
+  printLabel,
+  density,
+  onDensityChange,
+  onToggleFullscreen,
+  isFullscreen,
   hasFilters,
   activeFilterCount,
   filtersMode,
@@ -85,6 +98,7 @@ export function Toolbar<TRow>({
 
   return (
     <HStack
+      data-adapttable-part="toolbar"
       gap={2}
       flexWrap="wrap"
       rowGap={2}
@@ -92,6 +106,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <InputGroup
           maxW="360px"
@@ -151,6 +166,28 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </>
+        )}
         {onExportCsv && (
           <>
             {/* Chakra's own loading Button: its Spinner replaces the label and
@@ -179,6 +216,49 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {onPrint && (
+          <Button
+            size="sm"
+            variant="outline"
+            data-adapttable-part="print-button"
+            onClick={onPrint}
+          >
+            {printLabel}
+          </Button>
+        )}
+        {onDensityChange && (
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            onClick={() => {
+              onDensityChange(
+                density === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {density === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </Button>
+        )}
+        {onToggleFullscreen && (
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </Button>
+        )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <NativeSelect
             size="sm"
@@ -187,7 +267,7 @@ export function Toolbar<TRow>({
             value={source.limit}
             onChange={(e) => source.setLimit(Number(e.target.value))}
           >
-            {pageSizeOptions(source.limit).map((n) => (
+            {pageSizeOptions([source.limit, source.defaultLimit]).map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>
