@@ -129,16 +129,13 @@ describe("DesktopTable", () => {
       },
       { key: "email", header: "Email", sortable: false },
     ];
-    props.table.getSortButtonProps = (column: any) =>
-      column.sortable
-        ? {
-            type: "button" as const,
-            disabled: false,
-            "aria-label": `Sort by: ${column.header}`,
-            "data-sort-index": 1,
-            onClick: vi.fn(),
-          }
-        : undefined;
+    props.table.getSortButtonProps = (column: any) => ({
+      type: "button" as const,
+      disabled: false,
+      "aria-label": `Sort by: ${column.header}`,
+      ...(column.sortable ? { "data-sort-index": 1 } : {}),
+      onClick: vi.fn(),
+    });
 
     render(<DesktopTable {...props} size="sm" dir="rtl" />);
 
