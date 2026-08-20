@@ -3,6 +3,12 @@
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
 import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+  useHeaderFilterOverlay,
+} from "@adapttable/core";
+import {
   BatchEditBarChrome,
   type BatchEditBarProps,
   type BatchEditButtonProps,
@@ -47,7 +53,9 @@ import {
 } from "@adapttable/core/adapter";
 import { Popover } from "@base-ui/react/popover";
 
+import { FiltersIcon } from "../icons";
 import { Button, IconButton, TextField } from "../ui";
+import { AutoFilterForm } from "./AutoFilterForm";
 import { Checkbox, NativeSelect } from "./primitives";
 
 export type {
@@ -75,6 +83,8 @@ const ACTIVATE_STYLE = {
   boxSizing: "border-box",
   display: "block",
   width: "100%",
+  height: "100%",
+  minHeight: "1.25em",
   cursor: "text",
   textAlign: "inherit",
 } as const;
@@ -220,6 +230,78 @@ export function FilterHeaderControl<TRow>(
   props: Readonly<FilterHeaderControlProps<TRow>>
 ) {
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
+}
+
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
+}
+
+/** Funnel on the column header — the same field the Filters panel draws. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(
+    props,
+    { nestedSelector: "[role='listbox'],[data-base-ui-portal]" }
+  );
+  return (
+    <Popover.Root
+      open={open}
+      onOpenChange={(next, eventDetails) => {
+        if (
+          !next &&
+          (eventDetails.reason === "outside-press" ||
+            eventDetails.reason === "focus-out")
+        ) {
+          eventDetails.cancel();
+          return;
+        }
+        setOpen(next);
+      }}
+    >
+      <Popover.Trigger
+        render={
+          <IconButton
+            {...sessionProps}
+            type="button"
+            size="1"
+            variant={active ? "soft" : "ghost"}
+            aria-label={filterLabel(props.def)}
+            data-adapttable-part="filter-header-trigger"
+            data-active={active ? "" : undefined}
+          >
+            <FiltersIcon size={14} />
+          </IconButton>
+        }
+      />
+      <Popover.Portal>
+        <Popover.Positioner side="bottom" align="start" sideOffset={4}>
+          <Popover.Popup
+            {...sessionProps}
+            data-adapttable-part="filter-header-cell"
+            style={{ minWidth: "20rem", padding: 8 }}
+          >
+            <AutoFilterForm
+              defs={[props.def]}
+              source={source}
+              labels={props.labels}
+              registry={props.registry}
+            />
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
 }
 
 function FindSearch({

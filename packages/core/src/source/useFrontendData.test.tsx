@@ -94,6 +94,26 @@ describe("useFrontendData", () => {
     expect(result.current.rows.map((r) => r.id)).toEqual(["c", "b", "a"]);
   });
 
+  it("lets a column's own null sort value stand instead of reading its accessor", () => {
+    // A declared `sortValue` owns the whole column: `null` means this row has
+    // no place in the order, so it groups at the end either way round. Reading
+    // the accessor for those rows would order one column by two different
+    // extractors at once — Bob by his name, everyone else by their count.
+    const columns: ColumnDef<Row>[] = [
+      {
+        key: "count",
+        header: "Count",
+        accessor: (r) => r.name,
+        sortValue: (r) => (r.name === "Bob" ? null : r.count),
+        sortable: true,
+      },
+    ];
+    const asc = render("sortBy=count&sortDir=asc", { columns });
+    expect(asc.result.current.rows.map((r) => r.id)).toEqual(["c", "a", "b"]);
+    const desc = render("sortBy=count&sortDir=desc", { columns });
+    expect(desc.result.current.rows.map((r) => r.id)).toEqual(["a", "c", "b"]);
+  });
+
   it("applies filterFn against the extra bag, after search", () => {
     const { result } = render("f_only=Bob", {
       filterFn: (row, extra) => extra.only == null || row.name === extra.only,

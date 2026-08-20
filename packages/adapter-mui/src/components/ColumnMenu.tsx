@@ -385,13 +385,25 @@ export function ColumnMenu<TRow>({
         open={anchor !== null}
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        marginThreshold={0}
       >
         <Box
           dir={dir}
           sx={{
             p: 0.75,
             minWidth: 250,
-            maxHeight: "min(70vh, 480px)",
+            maxHeight: anchor
+              ? Math.max(
+                  120,
+                  Math.min(
+                    480,
+                    window.innerHeight -
+                      anchor.getBoundingClientRect().bottom -
+                      8
+                  )
+                )
+              : 480,
             overflowY: "auto",
           }}
         >

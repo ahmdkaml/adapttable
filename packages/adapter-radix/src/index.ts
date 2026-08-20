@@ -40,11 +40,13 @@ export {
   TreeToggle,
   type TreeToggleProps,
 } from "./components/kitControls";
+export { PivotPanel } from "./components/PivotPanel";
 export {
   type SavedViewsLabels,
   SavedViewsMenu,
   type SavedViewsMenuProps,
 } from "./components/SavedViewsMenu";
+export { SavedViewsPanel } from "./components/SavedViewsPanel";
 export { SelectionStatsBar } from "./components/SelectionStatsBar";
 export { DataTable } from "./DataTable";
 export type {
@@ -62,6 +64,9 @@ export {
   type ColorScheme,
   type ColumnDef,
   type ColumnFilter,
+  type ColumnGroupDef,
+  type ColumnGroupShow,
+  type ColumnInput,
   type ConfirmHandler,
   type ConfirmRequest,
   createFilterRegistry,

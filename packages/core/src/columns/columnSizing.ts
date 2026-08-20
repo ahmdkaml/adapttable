@@ -12,6 +12,7 @@
 import type { CSSProperties } from "react";
 
 import type { ColumnDef } from "../types";
+import { columnGroupStubStyle, isColumnGroupStubKey } from "./headerGroups";
 
 /** What the sizing needs to know about the table as a whole. */
 export interface ColumnSizingOptions<TRow> {
@@ -71,6 +72,9 @@ export function columnSizeStyle<TRow>(
   shares: Readonly<Record<string, number>> = {},
   userWidth?: number
 ): CSSProperties | undefined {
+  if (isColumnGroupStubKey(column.key)) {
+    return columnGroupStubStyle();
+  }
   const share = shares[column.key];
   const width =
     userWidth ??

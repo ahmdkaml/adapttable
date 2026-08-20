@@ -3,6 +3,12 @@
  * Same `data-adapttable-part` names the chrome and the e2e suite already use.
  */
 import {
+  defaultFilterRegistry,
+  filterLabel,
+  filterStateKeys,
+  useHeaderFilterOverlay,
+} from "@adapttable/core";
+import {
   BatchEditBarChrome,
   type BatchEditBarProps,
   type BatchEditButtonProps,
@@ -45,8 +51,11 @@ import {
   type TreeToggleProps,
   type TreeToggleSlots,
 } from "@adapttable/core/adapter";
-import { Button, Checkbox, Dropdown, Input, Select } from "antd";
-import type { ReactNode } from "react";
+import { Button, Checkbox, Dropdown, Input, Popover, Select } from "antd";
+import { type ReactNode } from "react";
+
+import { FiltersIcon } from "../icons";
+import { AutoFilterForm } from "./AutoFilterForm";
 
 export type {
   BatchEditBarProps,
@@ -73,6 +82,8 @@ const ACTIVATE_STYLE = {
   boxSizing: "border-box",
   display: "block",
   width: "100%",
+  height: "100%",
+  minHeight: "1.25em",
   cursor: "text",
   textAlign: "inherit",
 } as const;
@@ -252,6 +263,66 @@ export function FilterHeaderControl<TRow>(
   return <FilterHeaderControlChrome {...props} slots={headerSlots} />;
 }
 
+function headerFilterActive<TRow>(
+  props: FilterHeaderControlProps<TRow>
+): boolean {
+  return filterStateKeys(
+    props.def,
+    props.registry ?? defaultFilterRegistry
+  ).some((key) => {
+    const value = props.source.extra[key];
+    if (value == null || value === "") return false;
+    return !(Array.isArray(value) && value.length === 0);
+  });
+}
+
+/** Funnel on the column header — the same field the Filters panel draws. */
+export function FilterHeaderTrigger<TRow>(
+  props: Readonly<FilterHeaderControlProps<TRow>>
+) {
+  const active = headerFilterActive(props);
+  const { open, setOpen, source, sessionProps } = useHeaderFilterOverlay(
+    props,
+    {
+      nestedSelector: ".ant-popover,.ant-select-dropdown,.ant-picker-dropdown",
+    }
+  );
+  return (
+    <Popover
+      trigger={[]}
+      open={open}
+      placement="bottomLeft"
+      destroyOnHidden
+      content={
+        <div
+          {...sessionProps}
+          data-adapttable-part="filter-header-cell"
+          style={{ minWidth: "20rem" }}
+        >
+          <AutoFilterForm
+            defs={[props.def]}
+            source={source}
+            labels={props.labels}
+            registry={props.registry}
+          />
+        </div>
+      }
+    >
+      <Button
+        {...sessionProps}
+        type={active ? "primary" : "text"}
+        size="small"
+        aria-label={filterLabel(props.def)}
+        data-adapttable-part="filter-header-trigger"
+        data-active={active ? "" : undefined}
+        onClick={() => setOpen(!open)}
+      >
+        <FiltersIcon size={14} />
+      </Button>
+    </Popover>
+  );
+}
+
 function FindSearch({
   label,
   placeholder,
@@ -425,7 +496,12 @@ function MoreButton({ label, onClick }: GroupMoreButtonSlotProps) {
       type="link"
       size="small"
       data-adapttable-part="group-more"
-      onClick={onClick}
+      // Group headers toggle on click; revealing more rows must not also
+      // fold the group the reader is reading.
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
     >
       {label}
     </Button>

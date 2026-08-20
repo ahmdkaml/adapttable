@@ -1,5 +1,7 @@
 import type {
   BaseDataTableProps,
+  Slot,
+  TableErrorState,
   TableSource,
   UrlStateAdapter,
   UseSavedViewsOptions,
@@ -22,6 +24,15 @@ export interface DataTableSlots {
    * `empty` would otherwise replace in both situations.
    */
   noResults?: ReactNode;
+  /**
+   * Replace the load-failure state.
+   *
+   * Unlike the other slots this one also takes a function, because an error
+   * state is about something: the function receives the error being reported
+   * and the retry the source can actually perform, so a replacement can offer
+   * both. Pass a plain node when the message is fixed.
+   */
+  error?: Slot<TableErrorState>;
 }
 
 /** Per-part class name overrides. */
@@ -88,13 +99,6 @@ interface DataTablePropsBase<TRow> extends Omit<
   slots?: DataTableSlots;
   /** Per-part class name overrides. */
   classNames?: DataTableClassNames;
-  /**
-   * Keep the toolbar sticky while the page scrolls, parked at `stickyTop`.
-   * The sticky HEADER then offsets below it automatically. Off by default —
-   * `stickyTop` alone means the same thing here as in every other adapter:
-   * the sticky-header inset.
-   */
-  stickyToolbar?: boolean;
   /**
    * Animate rows/cards on mount (dependency-free; honors reduced motion).
    * Off by default.

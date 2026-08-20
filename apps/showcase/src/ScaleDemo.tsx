@@ -1,14 +1,17 @@
 import type { CellProps, ColumnDef } from "@adapttable/core";
 import {
   applyRowPatches,
+  applyRowPatchesWithLog,
   updateRow,
   useFrontendData,
   useServerData,
 } from "@adapttable/core";
 import { getLabels } from "@adapttable/i18n";
-import { DataTable } from "@adapttable/mantine";
-import { MantineProvider } from "@mantine/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { kitClassNames, KitProvider, kitTable } from "./kitProviders";
+import type { FeatureBodyProps } from "./matrix/featureBodies";
+import { useNavHeight } from "./sections";
 
 interface BigPerson {
   id: number;
@@ -154,6 +157,7 @@ function scaleParams(): {
   server: boolean;
   edit: boolean;
   patches: number;
+  incremental: boolean;
   tree: boolean;
   variableHeight: boolean;
 } {
@@ -165,6 +169,7 @@ function scaleParams(): {
     server: false,
     edit: false,
     patches: 0,
+    incremental: false,
     virtualCols: false,
     tree: false,
     variableHeight: false,
@@ -184,6 +189,7 @@ function scaleParams(): {
     server: p.get("tier") === "server",
     edit: p.get("edit") === "1",
     patches: int("patch"),
+    incremental: p.get("incremental") === "1",
     tree: p.get("tree") === "1",
     variableHeight: p.get("rowHeight") === "1",
   };
@@ -266,6 +272,7 @@ function ServerScaleTable({
   virtualCols,
   variableHeight,
   dark,
+  kit,
 }: Readonly<{
   total: number;
   columns: ColumnDef<BigPerson>[];
@@ -273,6 +280,7 @@ function ServerScaleTable({
   virtualCols: boolean;
   variableHeight: boolean;
   dark: boolean;
+  kit: string;
 }>) {
   const [page, setPage] = useState({ from: 0, limit: 500 });
   const rows = useMemo(
@@ -286,33 +294,39 @@ function ServerScaleTable({
     rows,
     total,
     urlKey: "scale",
+    urlSync: false,
     paginationMode: "infinite",
     defaults: { limit: 500 },
     onQueryChange: (query) => {
       setPage({ from: (query.page - 1) * query.limit, limit: query.limit });
     },
   });
+  const Table = kitTable<BigPerson>(kit);
+  const navHeight = useNavHeight();
   return (
-    <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
-      <DataTable
+    <KitProvider kit={kit} dark={dark}>
+      <Table
         source={source}
         columns={columns}
         rowKey={(r) => String(r.id)}
         labels={getLabels("en")}
+        urlSync={false}
         searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
         virtualize={virtual}
         virtualizeColumns={virtualCols}
         estimateRowSize={48}
         rowHeight={variableHeight ? variableRowHeight : undefined}
+        classNames={kitClassNames(kit)}
         stickyHeader
-        stickyTop={62}
+        stickyTop={navHeight}
       />
-    </MantineProvider>
+    </KitProvider>
   );
 }
 
-/** The real Mantine adapter, element-virtualized over tens of thousands of rows. */
-export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
+/** The kit's own table, element-virtualized over tens of thousands of rows. */
+export function ScaleDemo({ dark, adapter }: Readonly<FeatureBodyProps>) {
+  const kit = adapter;
   const {
     total,
     virtual,
@@ -322,35 +336,47 @@ export function ScaleDemo({ dark }: Readonly<{ dark: boolean }>) {
     server,
     edit,
     patches,
+    incremental,
     tree,
     variableHeight,
   } = scaleParams();
   const columns = useMemo(() => widen(COLUMNS, cols, edit), [cols, edit]);
   if (server) {
     return (
-      <ServerScaleTable
-        total={total}
-        columns={columns}
-        virtual={virtual}
-        virtualCols={virtualCols}
-        variableHeight={variableHeight}
-        dark={dark}
-      />
+      <div className="mx-demo">
+        <div className="mx-demo__body" data-adapter={kit}>
+          <ServerScaleTable
+            total={total}
+            columns={columns}
+            virtual={virtual}
+            virtualCols={virtualCols}
+            variableHeight={variableHeight}
+            dark={dark}
+            kit={kit}
+          />
+        </div>
+      </div>
     );
   }
   return (
-    <FrontendScaleTable
-      total={total}
-      columns={columns}
-      virtual={virtual}
-      virtualCols={virtualCols}
-      variableHeight={variableHeight}
-      all={all}
-      edit={edit}
-      patches={patches}
-      tree={tree}
-      dark={dark}
-    />
+    <div className="mx-demo">
+      <div className="mx-demo__body" data-adapter={kit}>
+        <FrontendScaleTable
+          total={total}
+          columns={columns}
+          virtual={virtual}
+          virtualCols={virtualCols}
+          variableHeight={variableHeight}
+          all={all}
+          edit={edit}
+          patches={patches}
+          incremental={incremental}
+          tree={tree}
+          dark={dark}
+          kit={kit}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -364,8 +390,10 @@ function FrontendScaleTable({
   all,
   edit,
   patches,
+  incremental,
   tree,
   dark,
+  kit,
 }: Readonly<{
   total: number;
   columns: ColumnDef<BigPerson>[];
@@ -375,37 +403,61 @@ function FrontendScaleTable({
   all: boolean;
   edit: boolean;
   patches: number;
+  incremental: boolean;
   tree: boolean;
   dark: boolean;
+  kit: string;
 }>) {
   const initial = useMemo(() => makeBigList(total), [total]);
   const [rows, setRows] = useState<readonly BigPerson[]>(initial);
   // Realtime patches: `?patch=N` applies N updates through the patch API the
-  // same way a websocket would, then marks the DOM so the benchmark can time
-  // the whole burst rather than guess at it.
+  // same way a websocket would. `?incremental=1` keeps the patch log, which is
+  // what engages the incremental engine — without it the pipeline rebuilds the
+  // whole view per patch, and the benchmark runs both to make the difference a
+  // measured number rather than a claim.
   const [applied, setApplied] = useState(0);
+  const [burstMs, setBurstMs] = useState<number | undefined>(undefined);
+  const pipelineName = incremental ? "incremental" : "full";
+  const burstStart = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (patches <= 0) return;
     let done = 0;
     const byId = (row: BigPerson) => String(row.id);
+    // Stamped before the first patch is dispatched, read after the last one
+    // has been committed to the DOM — the burst, not the mount.
+    const startedAt = performance.now();
     const tick = () => {
-      setRows((current) =>
-        applyRowPatches(
-          current,
-          [
-            updateRow<BigPerson>(String((done % total) + 1), {
-              budget: 40000 + ((done * 977) % 180000),
-            }),
-          ],
-          byId
-        )
-      );
+      setRows((current) => {
+        const patch = [
+          updateRow<BigPerson>(String((done % total) + 1), {
+            budget: 40000 + ((done * 977) % 180000),
+          }),
+        ];
+        const next = applyRowPatchesWithLog(current, patch, byId).rows;
+        // The log is memoized against the returned array, and `applyRowPatches`
+        // is the same call underneath — so choosing between the two APIs does
+        // not choose a pipeline. Copying the array is the documented way to
+        // drop the log, and it is what makes this arm a real full rebuild.
+        return incremental ? next : [...next];
+      });
       done += 1;
       setApplied(done);
       if (done < patches) queueMicrotask(tick);
     };
+    burstStart.current = startedAt;
     tick();
-  }, [patches, total]);
+  }, [patches, total, incremental]);
+
+  // React commits the DOM before effects run, so the render carrying the final
+  // patch is already on screen here — this is "after the last one rendered",
+  // not "after the last one was dispatched".
+  useEffect(() => {
+    if (patches <= 0 || applied < patches) return;
+    const startedAt = burstStart.current;
+    if (startedAt === undefined) return;
+    burstStart.current = undefined;
+    setBurstMs(performance.now() - startedAt);
+  }, [applied, patches]);
   // `?tree=1` reads the same flat list as a hierarchy — every tenth row is a
   // root and the nine after it are its children — so the benchmark measures
   // the tree model's cost over rows it already builds, with nothing else
@@ -427,6 +479,7 @@ function FrontendScaleTable({
     data: rows,
     columns,
     urlKey: "scale",
+    urlSync: false,
     // Virtualization needs a continuous list, not pages: infinite mode keeps
     // ONE growing window that the virtualizer extends automatically whenever
     // the scroller nears the end (no Load-more button needed). `?all=1` loads
@@ -434,15 +487,25 @@ function FrontendScaleTable({
     paginationMode: "infinite",
     defaults: { limit: all ? total : 500 },
   });
+  const Table = kitTable<BigPerson>(kit);
+  const navHeight = useNavHeight();
   return (
-    <MantineProvider forceColorScheme={dark ? "dark" : "light"}>
-      {/* The benchmark reads this to know the patch burst finished. */}
-      <div data-bench-patches={patches > 0 ? applied : undefined}>
-        <DataTable
+    <KitProvider kit={kit} dark={dark}>
+      {/* The benchmark reads these to know the burst finished and how long
+          it took: the count to wait on, the elapsed time to report. */}
+      <div
+        data-bench-patches={patches > 0 ? applied : undefined}
+        data-bench-burst-ms={
+          burstMs === undefined ? undefined : burstMs.toFixed(2)
+        }
+        data-bench-pipeline={patches > 0 ? pipelineName : undefined}
+      >
+        <Table
           source={source}
           columns={columns}
           rowKey={(r) => String(r.id)}
           labels={getLabels("en")}
+          urlSync={false}
           searchPlaceholder={`Filter ${total.toLocaleString("en-US")} rows…`}
           virtualize={virtual}
           virtualizeColumns={virtualCols}
@@ -450,10 +513,11 @@ function FrontendScaleTable({
           expandedIds={treeShape?.expandedIds}
           estimateRowSize={48}
           rowHeight={variableHeight ? variableRowHeight : undefined}
+          classNames={kitClassNames(kit)}
           // Page-scroll window mode with a pinned header: the page itself
           // scrolls the 50k rows while the header sticks under the app nav.
           stickyHeader
-          stickyTop={62}
+          stickyTop={navHeight}
           onCellEdit={
             edit
               ? (row, _key, nextValue) => {
@@ -473,6 +537,6 @@ function FrontendScaleTable({
           }
         />
       </div>
-    </MantineProvider>
+    </KitProvider>
   );
 }

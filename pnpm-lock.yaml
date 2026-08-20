@@ -5,6 +5,15 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  '@adapttable/antd': workspace:*
+  '@adapttable/base-ui': workspace:*
+  '@adapttable/chakra': workspace:*
+  '@adapttable/core': workspace:*
+  '@adapttable/mantine': workspace:*
+  '@adapttable/mui': workspace:*
+  '@adapttable/radix': workspace:*
+  '@adapttable/shadcn': workspace:*
+  '@adapttable/unstyled': workspace:*
   eslint-plugin-sonarjs>minimatch: ^10.2.3
   undici: ^7.29.0
   fast-uri: ^3.1.5
@@ -314,7 +323,7 @@ importers:
   packages/adapter-antd:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -348,7 +357,7 @@ importers:
   packages/adapter-base-ui:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -385,7 +394,7 @@ importers:
   packages/adapter-bootstrap:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -422,7 +431,7 @@ importers:
   packages/adapter-chakra:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -465,7 +474,7 @@ importers:
   packages/adapter-mantine:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -511,7 +520,7 @@ importers:
   packages/adapter-mui:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -551,7 +560,7 @@ importers:
   packages/adapter-radix:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -585,7 +594,7 @@ importers:
   packages/adapter-shadcn:
     dependencies:
       '@adapttable/unstyled':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../adapter-unstyled
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -619,7 +628,7 @@ importers:
   packages/adapter-unstyled:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
       react-compiler-runtime:
         specifier: ^1.0.0
@@ -680,7 +689,7 @@ importers:
   packages/i18n:
     dependencies:
       '@adapttable/core':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../core
     devDependencies:
       react:
@@ -690,14 +699,20 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
 
+  packages/server:
+    dependencies:
+      '@adapttable/core':
+        specifier: workspace:*
+        version: link:../core
+
   starters/antd:
     dependencies:
       '@adapttable/antd':
-        specifier: ^2.0.0
-        version: 2.0.0(antd@6.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-antd
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       antd:
         specifier: ^6.5.0
         version: 6.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -727,11 +742,11 @@ importers:
   starters/base-ui:
     dependencies:
       '@adapttable/base-ui':
-        specifier: ^2.0.0
-        version: 2.0.0(@base-ui/react@1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-base-ui
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@base-ui/react':
         specifier: ^1.6.0
         version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -761,11 +776,11 @@ importers:
   starters/chakra:
     dependencies:
       '@adapttable/chakra':
-        specifier: ^2.0.0
-        version: 2.0.0(@chakra-ui/react@3.36.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-chakra
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@chakra-ui/react':
         specifier: ^3.36.0
         version: 3.36.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -798,11 +813,11 @@ importers:
   starters/mantine:
     dependencies:
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@adapttable/mantine':
-        specifier: ^2.0.0
-        version: 2.0.0(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.4.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-mantine
       '@mantine/core':
         specifier: ^9.4.1
         version: 9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -835,11 +850,11 @@ importers:
   starters/mui:
     dependencies:
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@adapttable/mui':
-        specifier: ^2.0.0
-        version: 2.0.0(@mui/material@9.2.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-mui
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.2.17)(react@19.2.7)
@@ -875,11 +890,11 @@ importers:
   starters/radix:
     dependencies:
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@adapttable/radix':
-        specifier: ^2.0.0
-        version: 2.0.0(@radix-ui/themes@3.3.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-radix
       '@radix-ui/themes':
         specifier: ^3.3.0
         version: 3.3.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -909,11 +924,11 @@ importers:
   starters/shadcn:
     dependencies:
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@adapttable/shadcn':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-shadcn
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -946,11 +961,11 @@ importers:
   starters/unstyled:
     dependencies:
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@adapttable/unstyled':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-unstyled
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -977,11 +992,11 @@ importers:
   starters/unstyled-tailwind:
     dependencies:
       '@adapttable/core':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/core
       '@adapttable/unstyled':
-        specifier: ^2.0.0
-        version: 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: workspace:*
+        version: link:../../packages/adapter-unstyled
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -1012,74 +1027,6 @@ importers:
         version: 8.1.3(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)
 
 packages:
-
-  '@adapttable/antd@2.0.0':
-    resolution: {integrity: sha512-9Scou15+9O+AEwv5bYT6HEwuO1KH9ji73QEX3Hj08+nUCZgUfjRjvJwCH2l67eMTw7z/ioWeB/Ei70jKZWS3/w==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      antd: ^6.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/base-ui@2.0.0':
-    resolution: {integrity: sha512-US+jXtLyn6Cadlf6Fw40EFLVqQcB+ARK3d/MMTmZYW/mATyij1NXQmgRFOeuEPEIfcHUp+QVAs+JyUGGE9kWqQ==}
-    peerDependencies:
-      '@base-ui/react': ^1.6.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/chakra@2.0.0':
-    resolution: {integrity: sha512-ZBz2pXbTVYLRLtEyGhYVQOlKDGv5mPL8c6P7HvGU3i0/XjO4MOMiFK7/jVhFDQX5lq024X6m2SAz2CElshdx7g==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      '@chakra-ui/react': ^3.13.0
-      '@emotion/react': ^11.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/core@2.0.0':
-    resolution: {integrity: sha512-Wuqar0LByVy5y+sXQrFYwojqHmTVxCQfe/0IBg7AcZM8N8RGssyE2ANoucYYmrntCo6xAMcQR+FV1C5FCaQw/Q==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-
-  '@adapttable/mantine@2.0.0':
-    resolution: {integrity: sha512-8Jx+SJAVmdiEl7CvuX4L7TebTnBYkcvWyPOm/JMBTuTUOPamnaSsbwjoBP3k2/uG3Q/uGtK1PNzYV4j8ad7eiA==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      '@mantine/core': ^7.2.0 || ^8.0.0 || ^9.0.0
-      '@mantine/hooks': ^7.2.0 || ^8.0.0 || ^9.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/mui@2.0.0':
-    resolution: {integrity: sha512-PXuFLxU8cXJ7XrrzwYfnS6W1jzNfdHKBw4oSgTn/Qx/O1JVMnnRZp8w8Ryo+Vm5RKifG1USz39fPnhmkzo9RsA==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      '@mui/material': ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/radix@2.0.0':
-    resolution: {integrity: sha512-8LvCcYlor9F7l/oey9VwnJkCkittuxpZRpZd5KzdBjqElp1Z7vzHVeTzCkiARRZCv7dA3l+PyPjEgIs/yVrC/Q==}
-    peerDependencies:
-      '@radix-ui/themes': ^3.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/shadcn@2.0.0':
-    resolution: {integrity: sha512-GAVFP7oYnQ2sgSHhmZNAlCea7CfXj86QuXMCHwSX7bN0Be5My4y2zeE7VmZoKrx3zvJI/eSPsXD3W8VC9Cgq5w==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
-  '@adapttable/unstyled@2.0.0':
-    resolution: {integrity: sha512-l1jJnlmcYBDOkgRr03z4zzU8/1E3Pvin5Xgu/B1w2V1N8uLiOPyFe1yPUYW0djYPCzMPp5T5YrtgsFa1K4+iaw==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
 
   '@adobe/css-tools@4.5.0':
     resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
@@ -8023,78 +7970,6 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
-
-  '@adapttable/antd@2.0.0(antd@6.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      antd: 6.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/base-ui@2.0.0(@base-ui/react@1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@base-ui/react': 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/chakra@2.0.0(@chakra-ui/react@3.36.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@chakra-ui/react': 3.36.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@emotion/react': 11.14.0(@types/react@19.2.17)(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/core@2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@tanstack/react-virtual': 3.14.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-    transitivePeerDependencies:
-      - react-dom
-
-  '@adapttable/mantine@2.0.0(@mantine/core@9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.4.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@mantine/core': 9.4.1(@mantine/hooks@9.4.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@mantine/hooks': 9.4.1(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/mui@2.0.0(@mui/material@9.2.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@mui/material': 9.2.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/radix@2.0.0(@radix-ui/themes@3.3.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/themes': 3.3.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/shadcn@2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/unstyled': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@adapttable/unstyled@2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@adapttable/core': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-compiler-runtime: 1.0.0(react@19.2.7)
-      react-dom: 19.2.7(react@19.2.7)
 
   '@adobe/css-tools@4.5.0': {}
 

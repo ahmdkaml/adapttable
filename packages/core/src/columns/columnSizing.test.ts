@@ -13,6 +13,7 @@ import {
   columnSizeStyle,
   fittedTableStyle,
 } from "./columnSizing";
+import { COLUMN_GROUP_STUB_PREFIX, columnGroupStubStyle } from "./headerGroups";
 
 interface Row {
   id: string;
@@ -72,8 +73,12 @@ describe("columnFlexShares", () => {
 });
 
 describe("columnSizeStyle", () => {
-  it("says nothing about a column that says nothing about size", () => {
-    expect(columnSizeStyle(cols({})[0]!)).toBeUndefined();
+  it("locks a collapsed arrow stub so leftover table space cannot stretch it", () => {
+    expect(
+      columnSizeStyle(
+        cols({ key: `${COLUMN_GROUP_STUB_PREFIX}Delivery:0` })[0]!
+      )
+    ).toEqual(columnGroupStubStyle());
   });
 
   it("carries the bounds a column declares", () => {

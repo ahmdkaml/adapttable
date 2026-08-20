@@ -6,17 +6,19 @@ import {
   ACTIONS_COLUMN_KEY,
   REORDER_COLUMN_KEY,
 } from "./columns/columnMenuModel";
+import { flattenColumnTree } from "./columns/columnTree";
 import { asGesture, useTableEditHistory } from "./editing/editHistory";
 import { makeExportCsvHandler, resolveExportCsv } from "./export/tableCsv";
 import { useExportHandler } from "./export/useExportHandler";
 import type { FacetMap } from "./filters/facets";
-import { resolveFilterMode } from "./filters/filterChrome";
+import { resolveFilterMode, toolbarShowsFilters } from "./filters/filterChrome";
 import type { FilterDef } from "./filters/filterDefs";
 import type { FilterTypeRegistry } from "./filters/filterRegistry";
 import { useFindFocus, useFindInTable } from "./find/useFindInTable";
 import { cellFillHandler, cellPasteHandler } from "./focus/pasteRange";
 import { selectionStats } from "./focus/selectionStats";
 import { useGridFocus } from "./focus/useGridFocus";
+import { useFullscreen } from "./layout/useFullscreen";
 import type { BaseDataTableProps } from "./props";
 import { coveredAddressSet } from "./rows/cellSpan";
 import type { RowPinState } from "./rows/rowPinning";
@@ -30,10 +32,13 @@ import {
 import { type UrlStateAdapter, useResolvedAdapter } from "./url/adapter";
 import { useRowPinningUrlState } from "./url/useRowPinningUrlState";
 import {
+  printToolbar,
+  undoRedoToolbar,
   useChromeBodyData,
   useChromeScrollReset,
   useFilterTriggerToggle,
   useTableChrome,
+  viewControlsToolbar,
 } from "./useTableChrome";
 import { useColumnWindow } from "./virtual/useColumnWindow";
 
@@ -113,6 +118,10 @@ export function useDataTableShell<TRow>(
     props.urlSync === false ? undefined : props.urlAdapter,
     props.urlSync !== false
   );
+  const dataColumns = useMemo(
+    () => flattenColumnTree(props.columns).leaves,
+    [props.columns]
+  );
   // Resolve the data tier (source > onQueryChange server > frontend) and the
   // declarative-filter runtime (defs, chip labels, URL keys, predicate).
   const { source, runtime } = useTableData<TRow>({
@@ -130,7 +139,7 @@ export function useDataTableShell<TRow>(
     // the tier hooks would otherwise apply it a second time — routing the
     // active tier to a private store that saved views cannot see.
     urlKey: props.urlKey,
-    columns: props.columns,
+    columns: dataColumns,
     filters: props.filters,
     filterTypes: props.filterTypes,
     defaults: props.defaults,
@@ -139,8 +148,10 @@ export function useDataTableShell<TRow>(
     facetKeys: props.facetKeys,
     facets: props.facets,
   });
-  const { history, onCellEdit: recordingCellEdit } =
-    useTableEditHistory<TRow>(props);
+  const { history, onCellEdit: recordingCellEdit } = useTableEditHistory<TRow>({
+    ...props,
+    columns: dataColumns,
+  });
 
   // Declarative `filters` array → the auto-built form; JSX passes through.
   const autoForm =
@@ -209,6 +220,7 @@ export function useDataTableShell<TRow>(
   );
   const gridFocus = useGridFocus<TRow>({
     enabled: props.cellNavigation === true,
+    headerCheckbox: props.columnSelectionCheckbox === true,
     rowCount: Math.max(
       chrome.source.total,
       windowStart + chrome.source.rows.length
@@ -272,7 +284,11 @@ export function useDataTableShell<TRow>(
     // it without the host retyping a translated string.
     resolveExportCsv(props.exportCsv)?.writer?.extension
   );
-  const rootRef = useRef<HTMLDivElement>(null);
+  // The chrome owns it: progressive column hiding measures this element.
+  const rootRef = chrome.rootRef;
+  // Fullscreen also decides where every overlay portals: promoted, the rest
+  // of the document is hidden, so a menu on `document.body` is invisible.
+  const fullscreen = useFullscreen(rootRef.current);
   useChromeScrollReset(rootRef, chrome, chromeProps);
   // Name the root the way the scroll box is named: the column menu sizes
   // columns by measuring cells, and it has to know which table is its own.
@@ -292,12 +308,12 @@ export function useDataTableShell<TRow>(
         chrome.columnLayout.visibleColumns.map((column) => column.key),
         chrome.columnLayout.setWidth
       ),
-    [chrome.columnLayout]
+    [chrome.columnLayout, rootRef]
   );
   const autoSizeColumn = useCallback(
     (key: string) =>
       autoSizeAllColumns(rootRef.current, [key], chrome.columnLayout.setWidth),
-    [chrome.columnLayout]
+    [chrome.columnLayout, rootRef]
   );
   const {
     virtualization,
@@ -364,6 +380,8 @@ export function useDataTableShell<TRow>(
     gridFocus,
     rows: chrome.editingRows,
     rowActions,
+    rowActionsLayout: props.rowActionsLayout,
+    renderRowActions: props.renderRowActions,
     actionsPinned,
     rowReorder,
     reorderPinned,
@@ -371,6 +389,7 @@ export function useDataTableShell<TRow>(
     pinnedBottomRows,
     rowPinning: chrome.rowPinning,
     getCellSpan: props.getCellSpan,
+    cellSpanAppearance: props.cellSpanAppearance,
     extraRows: props.extraRows,
     windowStart,
     confirm,
@@ -387,6 +406,7 @@ export function useDataTableShell<TRow>(
     stickyTop: props.stickyTop,
     headerFilters:
       resolveFilterMode(props.filtersMode, props.headerFilters) === "header",
+    closeHeaderFilterOnSelect: props.closeHeaderFilterOnSelect === true,
     filterDefs: runtime.defs,
     filterRegistry: runtime.registry,
     pinOffset: chrome.columnLayout.pinOffset,
@@ -400,10 +420,12 @@ export function useDataTableShell<TRow>(
     rowClassName: props.rowClassName,
     collapsibleColumnGroups: props.collapsibleColumnGroups === true,
     collapsedColumnGroups: chrome.columnLayout.state.collapsedGroups,
+    columnGroups: chrome.columnGroups,
     onToggleColumnGroup: chrome.columnLayout.toggleColumnGroup,
     rowStyle: props.rowStyle,
     rowHeight: props.rowHeight,
     renderRowDetail: chrome.detail?.render,
+    renderCard: props.renderCard,
     summaryRow: props.summaryRow,
     expansion: chrome.detail?.expansion,
     editing: chrome.editing,
@@ -419,9 +441,15 @@ export function useDataTableShell<TRow>(
     searchPlaceholder: props.searchPlaceholder,
     sortByOptions: props.sortByOptions,
     toolbar: props.toolbar,
-    hasFilters:
-      resolveFilterMode(props.filtersMode, props.headerFilters) !== "header" &&
+    toolbarSlots: props.toolbarSlots,
+    ...undoRedoToolbar(props.undoRedoButtons, history, labels),
+    ...printToolbar(props.printButton, props.onPrint, labels),
+    ...viewControlsToolbar(props, fullscreen),
+    hasFilters: toolbarShowsFilters(
+      resolveFilterMode(props.filtersMode, props.headerFilters),
       Boolean(filtersNode),
+      Boolean(table.source.setFilterTree)
+    ),
     activeFilterCount: chrome.activeFilterCount,
     filters: filtersNode,
     onClearFilters: chrome.clearFilters,
@@ -458,6 +486,8 @@ export function useDataTableShell<TRow>(
     setFiltersOpen,
     filtersTrigger,
     rootRef,
+    /** Fullscreen state, and the portal container overlays need with it. */
+    fullscreen,
     /** Size every rendered column to its content. */
     autoSizeColumns,
     autoSizeColumn,

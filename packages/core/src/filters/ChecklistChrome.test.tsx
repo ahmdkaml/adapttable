@@ -64,6 +64,32 @@ const slots: ChecklistSlots = {
   ),
 };
 
+/** `count` distinct team values, zero-padded so ordering is lexical. */
+function teams(count: number): Row[] {
+  return Array.from({ length: count }, (_, i) => ({
+    team: `Team ${String(i).padStart(3, "0")}`,
+  }));
+}
+
+function listElement(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    '[data-adapttable-part="filter-checklist-list"]'
+  );
+}
+
+/**
+ * jsdom has no layout, so the scroll position is defined onto the element the
+ * way the antd virtual-holder tests do it — a plain assignment reads back as 0.
+ */
+function scrollTo(list: HTMLElement, scrollTop: number): void {
+  Object.defineProperty(list, "scrollTop", {
+    get: () => scrollTop,
+    set: () => undefined,
+    configurable: true,
+  });
+  fireEvent.scroll(list);
+}
+
 function Harness({ rows = ROWS }: Readonly<{ rows?: readonly Row[] | null }>) {
   const [extra, setExtra] = useState<Record<string, string[] | undefined>>({});
   return (
@@ -134,27 +160,78 @@ describe("ChecklistChrome", () => {
     expect(screen.getByRole("checkbox", { name: /Core/ })).not.toBeChecked();
   });
 
-  it("wraps every option instead of stacking one value per row", () => {
-    const many = Array.from(
-      { length: CHECKLIST_VIRTUALIZE_AT + 5 },
-      (_, i) => ({
-        team: `Team ${String(i).padStart(2, "0")}`,
-      })
-    );
-    render(<Harness rows={many} />);
-    const list = document.querySelector(
-      '[data-adapttable-part="filter-checklist-list"]'
-    );
+  it("wraps a short list instead of stacking one value per row", () => {
+    const rows = teams(CHECKLIST_VIRTUALIZE_AT - 5);
+    render(<Harness rows={rows} />);
+    const list = listElement();
+    expect(list).toHaveAttribute("data-virtualized", "false");
+    expect(list).toHaveStyle({ flexWrap: "wrap" });
+    // Under the threshold nothing is windowed: every value is mounted.
+    expect(screen.getAllByRole("checkbox")).toHaveLength(rows.length);
+    expect(
+      screen.getByRole("checkbox", { name: /Team 000/ })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: /Team 034/ })
+    ).toBeInTheDocument();
+  });
+
+  it("windows a long list rather than mounting every checkbox", () => {
+    render(<Harness rows={teams(200)} />);
+    const list = listElement();
     expect(list).toHaveAttribute("data-virtualized", "true");
     expect(list).toHaveStyle({ flexWrap: "wrap" });
-    expect(screen.getAllByRole("checkbox")).toHaveLength(
-      CHECKLIST_VIRTUALIZE_AT + 5
+    expect(screen.getAllByRole("checkbox").length).toBeLessThan(
+      CHECKLIST_VIRTUALIZE_AT
     );
     expect(
-      screen.getByRole("checkbox", { name: /Team 00/ })
+      screen.getByRole("checkbox", { name: /Team 000/ })
     ).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /Team 199/ })).toBeNull();
+  });
+
+  it("mounts a different slice once the list is scrolled", () => {
+    render(<Harness rows={teams(200)} />);
+    const list = listElement()!;
     expect(
-      screen.getByRole("checkbox", { name: /Team 38/ })
+      screen.getByRole("checkbox", { name: /Team 000/ })
     ).toBeInTheDocument();
+
+    scrollTo(list, 2000);
+
+    expect(screen.queryByRole("checkbox", { name: /Team 000/ })).toBeNull();
+    expect(
+      screen.getByRole("checkbox", { name: /Team 055/ })
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("checkbox").length).toBeLessThan(
+      CHECKLIST_VIRTUALIZE_AT
+    );
+  });
+
+  it("keeps the whole list scrollable while windowed", () => {
+    render(<Harness rows={teams(200)} />);
+    const list = listElement()!;
+    const spacers = [...list.children].filter((child) =>
+      child.getAttribute("style")?.includes("flex-basis: 100%")
+    );
+    // One spacer below at rest; scrolling adds the one above.
+    expect(spacers).toHaveLength(1);
+    scrollTo(list, 2000);
+    expect(
+      [...list.children].filter((child) =>
+        child.getAttribute("style")?.includes("flex-basis: 100%")
+      )
+    ).toHaveLength(2);
+  });
+
+  it("searching down to a short set stops windowing", () => {
+    render(<Harness rows={teams(200)} />);
+    expect(listElement()).toHaveAttribute("data-virtualized", "true");
+    fireEvent.change(screen.getByLabelText("Search values"), {
+      target: { value: "Team 01" },
+    });
+    // "Team 010".."Team 019" — ten matches, under the threshold.
+    expect(listElement()).toHaveAttribute("data-virtualized", "false");
+    expect(screen.getAllByRole("checkbox")).toHaveLength(10);
   });
 });

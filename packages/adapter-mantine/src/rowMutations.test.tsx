@@ -63,6 +63,8 @@ describe("row mutations (mantine)", () => {
     table({ onDuplicateRow });
     const actions = buttonsNamed(/duplicate row/i);
     expect(actions).toHaveLength(ROWS.length);
+    expect(actions[0]!.querySelector("svg")).not.toBeNull();
+    expect(actions[0]!.textContent?.trim()).toBe("");
     fireEvent.click(actions[1]!);
     expect(onDuplicateRow).toHaveBeenCalledWith(ROWS[1]);
   });

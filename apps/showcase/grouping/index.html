@@ -4,82 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-    <meta
-      name="description"
-      content="AdaptTable row grouping demo — nest rows by multiple columns, collapse groups, show per-group subtotals, and export the grouped sheet."
-    />
-    <link
-      rel="canonical"
-      href="https://orwa-mahmoud.github.io/adapttable/demo/grouping/"
-    />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AdaptTable" />
-    <meta
-      property="og:title"
-      content="AdaptTable demo — row grouping with subtotals"
-    />
-    <meta
-      property="og:description"
-      content="AdaptTable row grouping demo — nest rows by multiple columns, collapse groups, show per-group subtotals, and export the grouped sheet."
-    />
-    <meta
-      property="og:url"
-      content="https://orwa-mahmoud.github.io/adapttable/demo/grouping/"
-    />
-    <meta
-      property="og:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="AdaptTable demo — row grouping with subtotals"
-    />
-    <meta
-      name="twitter:description"
-      content="AdaptTable row grouping demo — nest rows by multiple columns, collapse groups, show per-group subtotals, and export the grouped sheet."
-    />
-    <meta
-      name="twitter:image"
-      content="https://orwa-mahmoud.github.io/adapttable/og.png"
-    />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "AdaptTable",
-        "description": "AdaptTable row grouping demo — nest rows by multiple columns, collapse groups, show per-group subtotals, and export the grouped sheet.",
-        "url": "https://orwa-mahmoud.github.io/adapttable/demo/grouping/",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Any",
-        "license": "https://opensource.org/license/mit",
-        "programmingLanguage": "TypeScript",
-        "codeRepository": "https://github.com/orwa-mahmoud/adapttable",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-      }
-    </script>
-    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
-    ></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
-      rel="stylesheet"
-      media="print"
-      onload="this.media = 'all'"
-    />
-    <title>AdaptTable demo — row grouping and per-group subtotals</title>
+    <!-- Static hosting has no redirect layer, so the move is declared in the
+         document: meta-refresh carries a reader across, and the canonical
+         link tells a crawler which URL is the real one. -->
+    <meta http-equiv="refresh" content="0; url=../mantine/grouping/" />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/mantine/grouping/" />
+    <meta name="description" content="The AdaptTable grouping demo is now row grouping in mantine at /demo/mantine/grouping/ — the same table, with that kit's install line and code on the page." />
+    <title>AdaptTable demo — grouping moved to /demo/mantine/grouping/</title>
     <script>
       try {
         if (localStorage.getItem("adapttable-demo-theme") === "dark")
@@ -87,15 +18,11 @@
       } catch {}
     </script>
     <style>
-      /* The pre-mount fallback inside #root. React replaces it on mount, so
-         this paints only while the bundle is still downloading — or
-         permanently, when JavaScript is unavailable. Styled so that moment
-         reads as the page arriving rather than as broken markup. */
       .at-fallback {
         max-width: 44rem;
         margin: 0 auto;
         padding: 4.5rem 1.5rem;
-        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-family: ui-sans-serif, system-ui, sans-serif;
         color: #52525b;
         line-height: 1.65;
       }
@@ -106,27 +33,18 @@
         margin: 0 0 1rem;
         letter-spacing: -0.01em;
       }
-      .at-fallback h2 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #18181b;
-        margin: 2rem 0 0.6rem;
-      }
-      .at-fallback ul {
-        padding-inline-start: 1.2rem;
-        margin: 0;
-      }
-      .at-fallback li {
-        margin: 0.4rem 0;
-      }
       .at-fallback a {
         color: #4f46e5;
       }
       [data-theme="dark"] .at-fallback {
         color: #a1a1aa;
       }
-      [data-theme="dark"] .at-fallback :is(h1, h2) {
+      [data-theme="dark"] .at-fallback h1 {
         color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
       }
       [data-theme="dark"] .at-fallback a {
         color: #a5b4fc;
@@ -134,42 +52,19 @@
     </style>
   </head>
   <body>
-    <!-- Replaced by React on mount — see the note in the showcase root
-         index.html for why the served HTML carries content at all. -->
-    <div id="root">
-      <main class="at-fallback">
-        <h1>AdaptTable demo — row grouping</h1>
-        <p>
-          Group by any column and the table reorganises into collapsible
-          sections with per-group headers and counts. Grouping is a view over
-          the same data rather than a different data structure, so filters,
-          sorting, selection and editing all keep working inside and across
-          groups.
-        </p>
-        <h2>What you can drive here</h2>
-        <ul>
-          <li>Group by one column, then expand and collapse sections.</li>
-          <li>
-            Group headers carry aggregate counts and stay pinned while their
-            rows scroll.
-          </li>
-          <li>
-            Selecting a group header selects its rows, including rows on other
-            pages.
-          </li>
-          <li>Filtering narrows within groups and empties groups cleanly.</li>
-        </ul>
-        <p>
-          Documentation:
-          <a href="/adapttable/row-grouping/">row grouping</a>,
-          <a href="/adapttable/selection/">selection</a>,
-          <a href="/adapttable/filtering/">filtering</a>,
-          <a href="/adapttable/row-expansion/">row expansion</a>. Other demos:
-          <a href="/adapttable/demo/">the main showcase</a>,
-          <a href="/adapttable/demo/editing/">inline cell editing</a>.
-        </p>
-      </main>
-    </div>
-    <script type="module" src="/src/entry-grouping.tsx"></script>
+    <main class="at-fallback">
+      <h1>This demo is now at /demo/mantine/grouping/</h1>
+      <p>
+        The demo is adapter-first: this page became
+        <a href="../mantine/grouping/">row grouping in mantine</a>, which carries the
+        same table plus Mantine's own install line, imports
+        and code. Every capability that lived at this address lives there.
+      </p>
+      <p>
+        Your browser follows the move on its own. If it has not, open
+        <a href="../mantine/grouping/">/demo/mantine/grouping/</a> directly, or start from
+        <a href="/adapttable/demo/">the main showcase</a>.
+      </p>
+    </main>
   </body>
 </html>

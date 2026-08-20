@@ -160,6 +160,13 @@ describe("<AutoFilterForm> (Base UI)", () => {
     expect(screen.getByRole("checkbox", { name: "Beta" })).not.toBeChecked();
   });
 
+  it("multiSelect: chips hide the checkbox box and keep the label", () => {
+    renderForm([{ key: "tags", type: "multiSelect", options: TAG_OPTIONS }]);
+    const box = screen.getByRole("checkbox", { name: "Alpha" });
+    expect(box).toHaveClass("adapttable-visually-hidden");
+    expect(box.closest(".adapttable-filter-chip")).toHaveTextContent("Alpha");
+  });
+
   it("dateRange: a lower-bound state mounts as On or after; typing writes only the From key", () => {
     const { setExtras } = renderForm([{ key: "hiredAt", type: "dateRange" }], {
       hiredAtFrom: "2026-01-01",

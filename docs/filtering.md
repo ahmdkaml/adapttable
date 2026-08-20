@@ -4,7 +4,8 @@
 
 Declare a filter once and AdaptTable derives everything from it: the
 kit-native widget, the `f_<key>` URL param, the removable chip, and (on
-frontend data) the row predicate — no wiring.
+frontend data) the row predicate — no wiring. Nested AND/OR groups are
+the [advanced filter tree](./filter-tree.md).
 
 ## Example
 
@@ -159,16 +160,17 @@ export function PeopleTable() {
 
 `<DataTable>` filter props:
 
-| Prop                | Type                                | Default        | Description                                                                                                                               |
-| ------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `filters`           | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
-| `filtersMode`       | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
-| `onClearFilters`    | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
-| `filterLabels`      | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
-| `extraChips`        | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
-| `activeFilterCount` | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
-| `headerFilters`     | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
-| `filterTypes`       | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
+| Prop                        | Type                                | Default        | Description                                                                                                                               |
+| --------------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `filters`                   | `FilterDef[] \| ReactNode`          | —              | Declarative array → the adapter builds the form; JSX → you draw it (escape hatch).                                                        |
+| `filtersMode`               | `"popover" \| "drawer" \| "header"` | `"popover"`    | One container. Popover: anchored card, no backdrop. Drawer: panel + backdrop. Header: compact per-column row; hides the Filters button.   |
+| `onClearFilters`            | `() => void`                        | built-in clear | Clear handler used by the drawer and the chip strip.                                                                                      |
+| `filterLabels`              | `Record<string, ChipLabelResolver>` | derived        | Per-key chip label resolvers. Derived automatically by declarative filters; needed only for JSX filters (or to override a derived label). |
+| `extraChips`                | `ActiveFilterChip[]`                | —              | Extra chips driven by non-URL state, merged with the derived chips.                                                                       |
+| `activeFilterCount`         | `number`                            | chip count     | Overrides the Filters-button badge.                                                                                                       |
+| `headerFilters`             | `boolean`                           | `false`        | Alias for `filtersMode="header"`. Desktop only. Never stacked with the popover or drawer.                                                 |
+| `closeHeaderFilterOnSelect` | `boolean`                           | `false`        | Close a header-filter overlay after a finished single-control write (select/boolean, or a valueless operator). Off by default.            |
+| `filterTypes`               | `FilterTypeSpec[]`                  | built-ins      | Extra or replacement filter types merged onto `defaultFilterRegistry`. Same `type` replaces.                                              |
 
 ## Headless filter primitives
 
@@ -200,16 +202,16 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   `FILTER_TREE_PARAM` / `FILTER_TREE_VERSION` / `parseFilterTree` /
   `serializeFilterTree` / `isActiveFilterTree` / `evaluateFilterTree` /
   `conditionToExtra` over a `QueryFilterGroup` of `QueryCondition`s
-  (`isFilterGroup` narrows a child). The builder UI is a later issue;
-  the engine stores `ft=1.{…}` and evaluates the tree on the frontend
-  tier (ANDed with the flat extra bag). `useTableData` wires
-  `evaluateFilterTree` itself; a host that calls `useFrontendData`
+  (`isFilterGroup` narrows a child). Each adapter's `FilterTreeBuilder`
+  sits at the top of the Filters form when `source.setFilterTree` is
+  set; `toolbarShowsFilters` keeps the toolbar button in header mode
+  for that tree. The engine stores `ft=1.{…}` and evaluates the tree
+  on the frontend tier (ANDed with the flat extra bag). `useTableData`
+  wires `evaluateFilterTree` itself; a host that calls `useFrontendData`
   directly passes `filterTreeFn` over the same defs as `filterFn`. A
   server that declares `supports.filterTree` receives the same tree on
-  `query.filterTree`. The filter panel mounts each adapter's
-  `FilterTreeBuilder` — add condition, add group, AND/OR — over that
-  same model, with that kit's controls. Tree
-  leaves become chips via `useFilterTreeChips`; Clear all drops `ft`.
+  `query.filterTree`. Tree leaves become chips via `useFilterTreeChips`;
+  Clear all drops `ft`. See [filter-tree](./filter-tree.md).
 - **Facet counts**: `computeFilterFacets` / `rowsExcludingFilter` /
   `FacetMap` / `FacetCounts` count what selecting a value _would_ keep —
   the filtered set with that facet's own filter removed. Frontend
@@ -242,7 +244,12 @@ The pieces behind the auto-built forms are exported for custom filter UIs:
   header cell so `fixed` columns stay on antd's own header. Compact
   range inputs default the operator to `gte` (no picker in the header);
   checklist / multiSelect open a closed menu of checkboxes, not a native
-  `<select multiple>`.
+  `<select multiple>`. The funnel overlay stays open while you fill a
+  multi-input field; nested kit dropdowns are not treated as outside
+  clicks. Pass `closeHeaderFilterOnSelect` to dismiss after a finished
+  single-control write (`useHeaderFilterOverlay` /
+  `bindHeaderFilterDismiss` / `headerFilterFieldIsComplete` /
+  `usePointerDismiss` / `HeaderFilterSessionProps`).
 - **Range widgets**: `useRangeFilterWidget` is the kit-agnostic logic behind
   `numberRange` / `dateRange` fields — it returns a `RangeWidgetState` whose
   `RangeFieldWidget` entries carry the visible bounds, the active

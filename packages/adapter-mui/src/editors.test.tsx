@@ -135,10 +135,16 @@ describe("editor set (mui)", () => {
     );
   });
 
+  /**
+   * MUI's multiple select is a native `<select>` inside the TextField the part
+   * names, so the control is reached through the part rather than being it.
+   */
+  const multiSelect = () => editor().querySelector("select")!;
+
   it("commits a multi-select as the array it chose", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
+    const select = multiSelect();
     expect(select.multiple).toBe(true);
     // Seeded from the stored array — no `editValue` needed for the round trip.
     expect([...select.selectedOptions].map((o) => o.value)).toEqual(["urgent"]);
@@ -155,7 +161,7 @@ describe("editor set (mui)", () => {
   it("commits an empty multi-select as an empty array, not an empty string", () => {
     const { onCellEdit } = table();
     open(4);
-    const select = editor() as HTMLSelectElement;
+    const select = multiSelect();
     select.options[0]!.selected = false;
     fireEvent.change(select);
     fireEvent.blur(select);

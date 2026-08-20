@@ -23,6 +23,7 @@ function TreeSelect({
   value,
   part,
   options,
+  className,
   onChange,
 }: FilterTreeSelectProps) {
   return (
@@ -31,11 +32,13 @@ function TreeSelect({
       size="small"
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      data-adapttable-part={part}
+      className={className}
       slotProps={{
-        htmlInput: { "aria-label": label, "data-adapttable-part": part },
-        select: { native: false },
+        htmlInput: { "aria-label": label },
+        select: { native: false, MenuProps: { sx: { zIndex: 10051 } } },
       }}
-      sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+      sx={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}
     >
       {options.map((option) => (
         <MenuItem key={option.value} value={option.value}>
@@ -46,30 +49,39 @@ function TreeSelect({
   );
 }
 
-function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
+function TreeInput({
+  label,
+  value,
+  type,
+  className,
+  onChange,
+}: FilterTreeInputProps) {
   return (
     <TextField
       size="small"
       type={type}
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      slotProps={{
-        htmlInput: {
-          "aria-label": label,
-          "data-adapttable-part": "filter-input",
-        },
-      }}
+      data-adapttable-part="filter-input"
+      className={className}
+      slotProps={{ htmlInput: { "aria-label": label } }}
       sx={{ flex: "1 1 7rem", minWidth: "7rem" }}
     />
   );
 }
 
-function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
+function TreeButton({
+  label,
+  part,
+  className,
+  onClick,
+}: FilterTreeButtonProps) {
   return (
     <Button
       type="button"
       size="small"
       data-adapttable-part={part}
+      className={className}
       onClick={onClick}
     >
       {label}
@@ -94,9 +106,9 @@ function TreeDisclosure({
       data-adapttable-part="filter-tree"
       onChange={(_, next) => onExpandedChange(next)}
       sx={{
-        mt: 0.5,
-        pt: 1,
-        borderTop: 1,
+        mb: 0.5,
+        pb: 2,
+        borderBottom: 1,
         borderColor: "divider",
         background: "transparent",
         "&::before": { display: "none" },

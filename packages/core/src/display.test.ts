@@ -8,6 +8,7 @@ import {
   isCurrentMatchCell,
   isMatchedCell,
   logicalAlign,
+  mergedCellStyle,
   pinnedDataCellStyle,
   pinnedEdgeCellStyle,
   resolveMobileLabel,
@@ -21,6 +22,19 @@ describe("logicalAlign", () => {
     expect(logicalAlign("end")).toBe("end");
     expect(logicalAlign("start")).toBe("start");
     expect(logicalAlign(undefined)).toBe("start");
+  });
+});
+
+describe("mergedCellStyle", () => {
+  it("centers and fills a span, and stays off for 1×1 or plain", () => {
+    expect(mergedCellStyle(1, 1)).toBeUndefined();
+    expect(mergedCellStyle(2, 1, "plain")).toBeUndefined();
+    const merged = mergedCellStyle(2, 1);
+    expect(merged?.textAlign).toBe("center");
+    expect(merged?.verticalAlign).toBe("middle");
+    expect(merged?.background).toContain("--adapttable-cell-span-fill");
+    expect(mergedCellStyle(2, 1, "merged", "off")?.background).toBeUndefined();
+    expect(mergedCellStyle(2, 1, "merged", "off")?.textAlign).toBe("center");
   });
 });
 

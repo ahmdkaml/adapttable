@@ -1,6 +1,6 @@
 {
   "name": "@adapttable/core",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Headless, UI-agnostic React data table engine — state, URL sync, virtualization, prop-getters, and a unified client/server TableSource. Zero UI-kit imports.",
   "keywords": [
     "react",
@@ -76,6 +76,36 @@
       "require": {
         "types": "./dist/pdf.d.cts",
         "default": "./dist/pdf.cjs"
+      }
+    },
+    "./formula": {
+      "import": {
+        "types": "./dist/formula.d.ts",
+        "default": "./dist/formula.js"
+      },
+      "require": {
+        "types": "./dist/formula.d.cts",
+        "default": "./dist/formula.cjs"
+      }
+    },
+    "./pivot": {
+      "import": {
+        "types": "./dist/pivot.d.ts",
+        "default": "./dist/pivot.js"
+      },
+      "require": {
+        "types": "./dist/pivot.d.cts",
+        "default": "./dist/pivot.cjs"
+      }
+    },
+    "./query": {
+      "import": {
+        "types": "./dist/query.d.ts",
+        "default": "./dist/query.js"
+      },
+      "require": {
+        "types": "./dist/query.d.cts",
+        "default": "./dist/query.cjs"
       }
     },
     "./sparkline": {

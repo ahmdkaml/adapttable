@@ -32,6 +32,12 @@ import type { ReactNode } from "react";
 
 import { ChecklistFilter } from "./ChecklistFilter";
 
+/** Above the filter popover (`zIndex: 10050`) so a MenuItem is clickable. */
+const FILTER_SELECT_SLOTS = {
+  native: false,
+  MenuProps: { sx: { zIndex: 10051 } },
+} as const;
+
 /** The slice of the source the auto-built form reads and writes. */
 type FilterBag<TRow> = Pick<
   TableSource<TRow>,
@@ -77,7 +83,7 @@ function TextFilter<TRow>({
     useTextFilterWidget(def, source);
   return (
     <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
-      <FormLabel component="legend" sx={{ mb: 0.75 }}>
+      <FormLabel component="legend" sx={{ mb: 3 }}>
         {label}
       </FormLabel>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
@@ -91,7 +97,7 @@ function TextFilter<TRow>({
           }}
           data-adapttable-part="filter-operator"
           slotProps={{
-            select: { native: false },
+            select: FILTER_SELECT_SLOTS,
             htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
@@ -140,7 +146,7 @@ function BooleanFilter<TRow>({
       }}
       data-adapttable-part="filter-select"
       slotProps={{
-        select: { native: false },
+        select: FILTER_SELECT_SLOTS,
         inputLabel: { shrink: true },
       }}
     >
@@ -163,7 +169,7 @@ function SelectFilter<TRow>({ def, source }: Readonly<FieldProps<TRow>>) {
       value={scalarText(source.extra[def.key])}
       onChange={(e) => source.setExtra(def.key, e.target.value)}
       slotProps={{
-        select: { native: false },
+        select: FILTER_SELECT_SLOTS,
         inputLabel: { shrink: true },
       }}
     >
@@ -236,7 +242,7 @@ function RelativeTokenField({
           if (found) onValue(joinRelativeToken(found, n));
         }}
         slotProps={{
-          select: { native: false },
+          select: FILTER_SELECT_SLOTS,
           htmlInput: { "aria-label": labels.opRelative },
         }}
         sx={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
@@ -313,7 +319,7 @@ function RangeFilter<TRow>({
   }
   return (
     <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
-      <FormLabel component="legend" sx={{ mb: 0.75 }}>
+      <FormLabel component="legend" sx={{ mb: 3 }}>
         {label}
       </FormLabel>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
@@ -326,8 +332,9 @@ function RangeFilter<TRow>({
             setOp(next);
             write(next, a, b);
           }}
+          data-adapttable-part="filter-operator"
           slotProps={{
-            select: { native: false },
+            select: FILTER_SELECT_SLOTS,
             htmlInput: { "aria-label": labels.operator },
           }}
           sx={{ flex: "0 0 8.5rem", width: "8.5rem" }}
@@ -390,7 +397,7 @@ export function AutoFilterForm<TRow>({
   registry = defaultFilterRegistry,
 }: Readonly<AutoFilterFormProps<TRow>>) {
   return (
-    <Stack spacing={1.5}>
+    <Stack spacing={3}>
       {defs.map((def) => (
         <FilterField
           key={def.key}

@@ -1,3 +1,4 @@
+import { SAVED_VIEW_VERSION } from "@adapttable/core";
 import {
   createMemoryAdapter,
   defaultLabels,
@@ -78,7 +79,7 @@ describe("unstyled SavedViewsMenu", () => {
     // captured (the foreign param stays out); the input reset for the next.
     expect(screen.getByRole("button", { name: "Mine" })).toBeInTheDocument();
     expect(storage.read()).toEqual([
-      { name: "Mine", search: "q=alice&page=2" },
+      { name: "Mine", search: "q=alice&page=2", version: SAVED_VIEW_VERSION },
     ]);
     expect(input).toHaveValue("");
     expect(saveButton).toBeDisabled();
@@ -113,7 +114,10 @@ describe("unstyled SavedViewsMenu", () => {
 
     expect(screen.queryByRole("button", { name: "Alpha" })).toBeNull();
     expect(screen.getByRole("button", { name: "Beta" })).toBeInTheDocument();
-    expect(storage.read()).toEqual([{ name: "Beta", search: "q=b" }]);
+    // Read at version 1 and stamped on the way in.
+    expect(storage.read()).toEqual([
+      { name: "Beta", search: "q=b", version: SAVED_VIEW_VERSION },
+    ]);
     expect(panel()).toBeInTheDocument();
   });
 

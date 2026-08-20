@@ -14,7 +14,7 @@ export interface FilterDrawerProps {
   dir?: Direction;
 }
 
-/** Right-side drawer holding the caller's filter widgets + apply/clear. */
+/** Side drawer holding the caller's filter widgets + a pinned apply/clear bar. */
 export function FilterDrawer({
   opened,
   onClose,
@@ -33,10 +33,43 @@ export function FilterDrawer({
       title={labels.filters}
       overlayProps={{ opacity: 0.4, blur: 2 }}
       closeButtonProps={{ "aria-label": labels.cancel }}
+      // Force LTR on the shell: Mantine 9 pins with flex-start/end, so a
+      // rtl dir here moves "left" to the physical right. Header/body still
+      // flip so the title, close, and fields read correctly.
+      dir="ltr"
+      styles={{
+        header: { direction: dir, flexShrink: 0 },
+        content: {
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        },
+        body: {
+          direction: dir,
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        },
+      }}
     >
-      <Stack gap="md" mih="60vh" justify="space-between">
-        <Stack gap="md">{filters}</Stack>
-        <Group justify="space-between" pt="md">
+      <Stack gap={0} style={{ flex: 1, minHeight: 0, height: "100%" }}>
+        <Stack
+          gap="md"
+          style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+          pb="md"
+        >
+          {filters}
+        </Stack>
+        <Group
+          justify="space-between"
+          pt="md"
+          style={{
+            flexShrink: 0,
+            borderTop: "1px solid var(--mantine-color-default-border)",
+          }}
+        >
           <Button
             variant="subtle"
             onClick={onClearFilters}

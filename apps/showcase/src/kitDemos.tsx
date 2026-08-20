@@ -1,3 +1,5 @@
+import type { ColumnDef, ColumnLayoutState } from "@adapttable/core";
+import type { DataTableProps } from "@adapttable/mantine";
 import {
   type ComponentType,
   lazy,
@@ -7,10 +9,11 @@ import {
 
 import { MantineDemo } from "./adapters/MantineDemo";
 import { cssVars } from "./cssVars";
-import type { Locale } from "./data";
+import type { Locale, Person } from "./data";
 import {
   type DataMode,
   type Density,
+  type Failure,
   type FiltersUi,
   type PageMode,
 } from "./Demo";
@@ -35,9 +38,70 @@ export type KitDemoProps = Readonly<{
   cellSpan?: boolean;
   extraRows?: boolean;
   rowStyle?: boolean;
+  /** Flash the row a change just landed on. */
+  highlight?: boolean;
+  /** Fail the load, so the error chrome is on screen. */
+  failure?: Failure;
+  /** What the error state's retry does. */
+  onRecover?: () => void;
+  /** Lay the mobile cards out with the demo's own `renderCard`. */
+  customCard?: boolean;
+  /** Apply live row patches on a timer, the way a socket feed would. */
+  realtime?: boolean;
   editing?: boolean;
   headerFilters?: boolean;
+  /** Mount the per-field Filters form. Default on. */
+  filterFields?: boolean;
   columnGroups?: boolean;
+  sparkline?: boolean;
+  /**
+   * Columns built from user-typed formulas, appended after the declared set.
+   * The page builds them, because the page is where the formula is typed and
+   * where a parse error has to be shown.
+   */
+  formulaColumns?: readonly ColumnDef<Person>[];
+  /**
+   * Write the id-derived fields (`status`, `budget`, `utilization`) onto the
+   * rows. A formula reads fields, not accessors, so `=budget * 0.15` needs a
+   * row that carries `budget`.
+   */
+  derivedFields?: boolean;
+  /** Add the boolean and multi-select editor columns. */
+  editorShowcase?: boolean;
+  columnMenu?: boolean;
+  filterControls?: boolean;
+  /** Bulk actions, which are what turn row selection on. */
+  bulkActions?: boolean;
+  /** The strip under the table: row range, selection count, selection sums. */
+  statusBar?: boolean;
+  /** Right-click menus on headers, rows and cells. */
+  contextMenu?: boolean;
+  /** The toolbar's density control. */
+  densityChooser?: boolean;
+  /** Reports the density the user picked. */
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  /** The toolbar's fullscreen toggle. */
+  fullscreen?: boolean;
+  /** The Cmd/Ctrl+K command palette. */
+  commandPalette?: boolean;
+  /** What Print prints — a palette command, and the toolbar button's action. */
+  onPrint?: () => void;
+  /** A Print button in the toolbar. Needs `onPrint` to draw anything. */
+  printButton?: boolean;
+  /** Undo and Redo in the toolbar. Needs editing armed to do anything. */
+  undoRedoButtons?: boolean;
+  /** A settings panel docked beside the table. */
+  sidePanel?: DataTableProps<Person>["sidePanel"];
+  /** Use the wide, horizontally-scrolling column set with Person pinned. */
+  wide?: boolean;
+  /** The column layout a page starts from. */
+  defaultColumnLayout?: Partial<ColumnLayoutState>;
+  /** Arrow-key cell navigation and Shift+arrow range selection. */
+  cellNavigation?: boolean;
+  /** A checkbox in every column header that selects the column. */
+  columnSelectionCheckbox?: boolean;
+  /** The toolbar Export button's configuration. */
+  exportCsv?: DataTableProps<Person>["exportCsv"];
   forceMobile?: boolean;
   pageMode?: PageMode;
   focused?: boolean;
@@ -135,9 +199,8 @@ export function DemoFallback() {
   );
 }
 
-/** The kit lives in the URL (`?kit=mui`) so docs, posts and teammates can
- * link straight to a specific adapter. Unknown/missing values fall back
- * to Mantine. */
+/** The live demo at `/` is the only page that reads `?kit=`. Unknown or
+ * missing values fall back to Mantine. */
 export function readKitFromUrl(): string {
   if (typeof window === "undefined") return "mantine";
   const kit = new URLSearchParams(window.location.search).get("kit");
@@ -148,10 +211,13 @@ export function KitSwitcher({
   adapter,
   dark,
   onChange,
+  urlSync = false,
 }: Readonly<{
   adapter: string;
   dark: boolean;
   onChange: (key: string) => void;
+  /** Write `?kit=` so a link opens this adapter. Live demo only. */
+  urlSync?: boolean;
 }>) {
   return (
     <div className="adapterbar">
@@ -164,10 +230,12 @@ export function KitSwitcher({
           aria-pressed={adapter === a.key}
           style={cssVars({ "--c": dark ? a.accentDark : a.accentLight })}
           onClick={() => {
-            const url = new URL(window.location.href);
-            if (a.key === "mantine") url.searchParams.delete("kit");
-            else url.searchParams.set("kit", a.key);
-            window.history.replaceState(null, "", url);
+            if (urlSync) {
+              const url = new URL(window.location.href);
+              if (a.key === "mantine") url.searchParams.delete("kit");
+              else url.searchParams.set("kit", a.key);
+              window.history.replaceState(null, "", url);
+            }
             startTransition(() => onChange(a.key));
           }}
         >

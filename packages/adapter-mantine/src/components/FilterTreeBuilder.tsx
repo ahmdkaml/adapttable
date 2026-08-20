@@ -16,13 +16,16 @@ function TreeSelect({
   value,
   part,
   options,
+  className,
   onChange,
 }: FilterTreeSelectProps) {
   return (
     <Select
       size="xs"
+      comboboxProps={{ withinPortal: true, zIndex: 10051 }}
       aria-label={label}
       data-adapttable-part={part}
+      className={className}
       value={value}
       onChange={(next) => {
         if (next) onChange(next);
@@ -32,12 +35,18 @@ function TreeSelect({
         label: option.label,
       }))}
       allowDeselect={false}
-      style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
+      style={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}
     />
   );
 }
 
-function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
+function TreeInput({
+  label,
+  value,
+  type,
+  className,
+  onChange,
+}: FilterTreeInputProps) {
   return (
     <TextInput
       size="xs"
@@ -46,18 +55,25 @@ function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
       value={value}
       onChange={(event) => onChange(event.currentTarget.value)}
       data-adapttable-part="filter-input"
+      className={className}
       style={{ flex: "1 1 7rem", minWidth: "7rem" }}
     />
   );
 }
 
-function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
+function TreeButton({
+  label,
+  part,
+  className,
+  onClick,
+}: FilterTreeButtonProps) {
   return (
     <Button
       type="button"
       size="compact-xs"
       variant="default"
       data-adapttable-part={part}
+      className={className}
       onClick={onClick}
     >
       {label}
@@ -80,18 +96,20 @@ function TreeDisclosure({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 8,
-        marginBlockStart: 4,
-        paddingBlockStart: 8,
-        borderBlockStart: "1px solid var(--mantine-color-default-border)",
+        gap: 12,
+        marginBlockEnd: 4,
+        paddingBlockEnd: 16,
+        borderBlockEnd: "1px solid var(--mantine-color-default-border)",
       }}
     >
       <Button
         type="button"
         size="compact-sm"
-        variant="subtle"
+        variant="transparent"
+        color="gray"
         fullWidth
         justify="space-between"
+        px={0}
         className={summaryClassName}
         aria-expanded={expanded}
         data-adapttable-part="filter-tree-summary"

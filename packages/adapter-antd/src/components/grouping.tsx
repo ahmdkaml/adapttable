@@ -14,6 +14,7 @@ import { Button, Checkbox, Space, Typography } from "antd";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 
 import { ChevronRightIcon } from "../icons";
+import { GroupMoreButton } from "./kitControls";
 
 /** Marker field on synthetic antd dataSource rows that represent a group header. */
 export const ADAPTTABLE_GROUP = "__adapttableGroup" as const;
@@ -233,17 +234,13 @@ export function GroupHeaderCell({
         />
       )}
       {group.more ? (
-        <Typography.Link
-          data-adapttable-part="group-more"
-          onClick={(event) => {
-            event.stopPropagation();
-            onShowMore?.(group.more!);
-          }}
-        >
-          {group.more.scope === "groups"
-            ? labels.moreGroups(group.more.remaining)
-            : labels.moreRowsInGroup(group.more.remaining)}
-        </Typography.Link>
+        <GroupMoreButton
+          scope={group.more.scope}
+          remaining={group.more.remaining}
+          groupKey={group.more.groupKey}
+          labels={labels}
+          onShowMore={(entry) => onShowMore?.(entry)}
+        />
       ) : (
         <Typography.Text strong data-adapttable-part="group-label">
           {group.footer === true ? labels.groupTotal(group.label) : group.label}
@@ -255,7 +252,12 @@ export function GroupHeaderCell({
         </Typography.Text>
       )}
       {aggregate != null && aggregate !== false ? (
-        <Typography.Text type="secondary">{aggregate}</Typography.Text>
+        <Typography.Text
+          type="secondary"
+          data-adapttable-part="group-aggregate"
+        >
+          {aggregate}
+        </Typography.Text>
       ) : null}
     </Space>
   );
@@ -274,6 +276,7 @@ export function GroupSelectionCheckbox({
   const state = groupSelectionState(group.leafIds, selection.selectedIds);
   return (
     <Checkbox
+      data-adapttable-part="group-select"
       // Name the GROUP, not a row: "Select all: <group>" — the generic
       // row label made every group checkbox indistinguishable.
       aria-label={`${labels.selectAll}: ${group.label}`}
@@ -330,14 +333,13 @@ export function GroupHeaderCard({
         }}
       />
       {group.more ? (
-        <Typography.Link
-          data-adapttable-part="group-more"
-          onClick={() => onShowMore?.(group.more!)}
-        >
-          {group.more.scope === "groups"
-            ? labels.moreGroups(group.more.remaining)
-            : labels.moreRowsInGroup(group.more.remaining)}
-        </Typography.Link>
+        <GroupMoreButton
+          scope={group.more.scope}
+          remaining={group.more.remaining}
+          groupKey={group.more.groupKey}
+          labels={labels}
+          onShowMore={(entry) => onShowMore?.(entry)}
+        />
       ) : (
         <Typography.Text strong data-adapttable-part="group-label">
           {group.label}

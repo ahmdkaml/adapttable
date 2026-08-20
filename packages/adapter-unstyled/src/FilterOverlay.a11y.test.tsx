@@ -108,6 +108,18 @@ describe("filter overlay a11y (axe) — unstyled", () => {
   // first (see closeOverlay) so the document-level listeners detach cleanly.
   afterEach(cleanup);
 
+  it("puts the AND/OR builder first in the form", async () => {
+    renderTable();
+    await openFilterForm();
+    const form = document.querySelector(
+      '[data-adapttable-part="filters-form"]'
+    );
+    expect(form?.firstElementChild?.getAttribute("data-adapttable-part")).toBe(
+      "filter-tree"
+    );
+    await closeOverlay();
+  });
+
   it("toggles aria-expanded on the popover trigger across open/close", async () => {
     renderTable();
     // Closed: the trigger advertises a collapsed disclosure.

@@ -1,0 +1,157 @@
+/* ============================================================================
+   AdaptTable showcase — the design system
+   ============================================================================
+
+   THE IDEA: ENGINE AND SKIN, WITH A VISIBLE SEAM
+
+   The product's claim is that one headless engine wears eight different UI
+   kits. The demo is the proof, so the pages are built to say the same thing:
+
+     - The page chrome is the ENGINE. It is neutral, precise and annotated in
+       monospace — a datasheet rather than a brochure. It never borrows a kit's
+       look, because it is not any kit's.
+     - The table is the SKIN. Everything inside the demo surface is drawn by
+       the adapter, and nothing here restyles it.
+     - Between them runs the SEAM: a hairline rule broken by a monospace tag
+       naming the package that renders below it. It is the one decorative
+       device on the page, and it encodes something true — above it is ours,
+       below it is the kit's.
+
+   THE ADAPTER TINT
+
+   Each adapter page sets `--kit` to that kit's accent. Everything the chrome
+   tints — the heading's kit name, the seam, card edges, focus rings, the dot
+   on a nav item — reads from it. Mantine's pages are Mantine blue, MUI's are
+   Material indigo, shadcn's are near-black, and no component knows which.
+
+   `--kit` is a display colour, not a text colour. On a white page a mid-chroma
+   accent clears 3:1 but not 4.5:1, so it is used only for type at 18px+ bold,
+   for borders, and for marks. Small accent text takes `--kit-ink`, which mixes
+   the accent toward the page's ink until it passes at body size.
+
+   TYPE
+
+   Schibsted Grotesk carries the brand and does the display work: 800 weight,
+   -0.035em tracking, 1.05 line height — tight enough to read as a product
+   name rather than a paragraph. JetBrains Mono is not only for code: every
+   eyebrow, key and tag is set in it at 11px/0.14em uppercase, which is what
+   makes the chrome read as a spec sheet. Body copy is 15px/1.62 at 62ch.
+
+   The pairing is deliberate: a grotesque with real personality against a
+   monospace with none, so the two never compete. The kit's own typography
+   lives inside the table and is left alone.
+
+   SPACE, SHAPE, MOTION
+
+   An 8px grid, doubling: 4 8 12 16 24 32 48 64 96. Radii step 8/12/16/22 —
+   the page chrome is rounder than a form control and squarer than a pill.
+   Motion is 140ms for state and 220ms for movement, on one easing curve, and
+   it is only ever used to acknowledge an interaction. Nothing animates on
+   scroll; a page of live tables has enough happening.
+
+   WHAT THIS DESIGN REFUSES
+
+   - Gradient hero blobs, glassmorphism, and mesh backgrounds. The subject is
+     a data table; ambient decoration would be the loudest thing on screen.
+   - 01 / 02 / 03 numbering. The twelve features are a set, not a sequence,
+     and numbering them would claim an order that does not exist.
+   - Marketing fluff above the install line. Every landing page carries the
+     real install command in the first screen.
+   - Emoji as icons, and any icon without an accessible name.
+   - Restyling anything a kit renders. The tables on these pages are the
+     product; a showcase that touches their pixels is showing its own work.
+   ========================================================================= */
+
+:root,
+[data-theme="light"] {
+  /* --- page surfaces and ink (the engine's own palette) --- */
+  --page-bg: oklch(0.985 0.004 264);
+  --page-surface: oklch(1 0 0);
+  --page-surface-2: oklch(0.975 0.004 264);
+  --page-border: oklch(0.91 0.005 264);
+  --page-border-soft: oklch(0.945 0.004 264);
+  --ink: oklch(0.22 0.014 264);
+  --ink-2: oklch(0.46 0.012 264);
+  --ink-3: oklch(0.62 0.01 264);
+  --brand: oklch(0.55 0.19 274);
+  --brand-soft: oklch(0.95 0.04 274);
+  --shadow-card:
+    0 1px 2px oklch(0.2 0.02 264 / 0.04), 0 8px 28px oklch(0.2 0.02 264 / 0.06);
+  /* How far a raised card lifts off the page — used on the hero plate and the
+     feature cards, where a flat border alone reads as a table. */
+  --shadow-lift:
+    0 1px 2px oklch(0.2 0.02 264 / 0.05), 0 18px 48px oklch(0.2 0.02 264 / 0.1);
+}
+
+[data-theme="dark"] {
+  --page-bg: oklch(0.16 0.007 264);
+  --page-surface: oklch(0.2 0.008 264);
+  --page-surface-2: oklch(0.235 0.009 264);
+  --page-border: oklch(0.3 0.01 264);
+  --page-border-soft: oklch(0.26 0.009 264);
+  --ink: oklch(0.95 0.005 264);
+  --ink-2: oklch(0.72 0.01 264);
+  --ink-3: oklch(0.56 0.01 264);
+  --brand: oklch(0.72 0.15 274);
+  --brand-soft: oklch(0.3 0.06 274);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 10px 34px oklch(0 0 0 / 0.4);
+  --shadow-lift: 0 1px 2px oklch(0 0 0 / 0.4), 0 22px 56px oklch(0 0 0 / 0.55);
+}
+
+:root {
+  /* --- the adapter tint ---
+     `--kit` is set per page from the adapter's token (see `themeTokens.ts`);
+     the page falls back to the brand when no adapter owns it. Everything below
+     is derived, so one assignment retints the whole page. */
+  --kit: var(--brand);
+  /* The accent, walked toward the page's ink until body-size text on
+     `--page-surface` clears 4.5:1. Small tinted text uses this, never `--kit`. */
+  --kit-ink: color-mix(in oklch, var(--kit) 62%, var(--ink));
+  /* A border that reads as tinted without becoming a coloured rule. */
+  --kit-line: color-mix(in oklch, var(--kit) 34%, var(--page-border));
+  /* The faintest wash a surface can carry and still be a surface.
+     Mixed in oklab, not oklch: the page surface is written with hue 0, and
+     oklch interpolates hue — 7% of a blue accent against it lands on pink. */
+  --kit-wash: color-mix(in oklab, var(--kit) 7%, var(--page-surface));
+  /* Halo for a hovered or focused card. */
+  --kit-glow: color-mix(in oklch, var(--kit) 18%, transparent);
+
+  /* --- space: an 8px grid that doubles --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* --- shape --- */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+
+  /* --- type --- */
+  --font-sans: "Schibsted Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  --fs-display: clamp(30px, 4.2vw, 46px);
+  --fs-h2: clamp(19px, 2vw, 24px);
+  --fs-h3: 16px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-micro: 11px;
+  --lh-display: 1.05;
+  --lh-body: 1.62;
+  --track-display: -0.035em;
+  --track-key: 0.14em;
+  /* The measure body copy is set to. Wider than this and the eye loses the
+     line return; narrower and a three-sentence intro becomes a column. */
+  --measure: 62ch;
+
+  /* --- motion: two durations, one curve --- */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-state: 140ms;
+  --dur-move: 220ms;
+}

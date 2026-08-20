@@ -2,6 +2,7 @@ import type { TableLabels, UseSavedViewsOptions } from "@adapttable/core";
 import { useSavedViews } from "@adapttable/core";
 import type { CSSProperties } from "react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { DataTableClassNames } from "../types";
 import { MENU_PANEL_STYLE, useMenuPopover } from "./menuPopover";
@@ -43,7 +44,7 @@ export function SavedViewsMenu({
   classNames,
 }: Readonly<SavedViewsMenuProps>) {
   const { views, save, apply, remove } = useSavedViews(options);
-  const { open, setOpen, rootRef, triggerRef } = useMenuPopover();
+  const { open, setOpen, rootRef, triggerRef, panelRef } = useMenuPopover();
   const [name, setName] = useState("");
   const trimmed = name.trim();
 
@@ -67,73 +68,76 @@ export function SavedViewsMenu({
       >
         {labels.savedViews}
       </button>
-      {open && (
-        <div
-          data-adapttable-part="views-panel"
-          className={classNames.viewsPanel}
-          style={MENU_PANEL_STYLE}
-        >
-          {views.map((view) => (
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef}
+            data-adapttable-part="views-panel"
+            className={classNames.viewsPanel}
+            style={MENU_PANEL_STYLE}
+          >
+            {views.map((view) => (
+              <div
+                key={view.name}
+                data-adapttable-part="views-row"
+                className={classNames.viewsRow}
+                style={ROW_STYLE}
+              >
+                <button
+                  type="button"
+                  data-adapttable-part="views-item"
+                  className={classNames.viewsItem}
+                  onClick={() => {
+                    apply(view.name);
+                    setOpen(false);
+                  }}
+                >
+                  {view.name}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`${labels.deleteView}: ${view.name}`}
+                  data-adapttable-part="views-delete"
+                  className={classNames.viewsDelete}
+                  onClick={() => remove(view.name)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <hr
+              data-adapttable-part="views-divider"
+              className={classNames.viewsDivider}
+            />
             <div
-              key={view.name}
-              data-adapttable-part="views-row"
-              className={classNames.viewsRow}
+              data-adapttable-part="views-save-row"
+              className={classNames.viewsSaveRow}
               style={ROW_STYLE}
             >
+              <input
+                aria-label={labels.viewName}
+                placeholder={labels.viewName}
+                data-adapttable-part="views-input"
+                className={classNames.viewsInput}
+                value={name}
+                onChange={(e) => setName(e.currentTarget.value)}
+              />
               <button
                 type="button"
-                data-adapttable-part="views-item"
-                className={classNames.viewsItem}
+                disabled={trimmed === ""}
+                data-adapttable-part="views-save"
+                className={classNames.viewsSave}
                 onClick={() => {
-                  apply(view.name);
-                  setOpen(false);
+                  save(trimmed);
+                  setName("");
                 }}
               >
-                {view.name}
-              </button>
-              <button
-                type="button"
-                aria-label={`${labels.deleteView}: ${view.name}`}
-                data-adapttable-part="views-delete"
-                className={classNames.viewsDelete}
-                onClick={() => remove(view.name)}
-              >
-                ×
+                {labels.saveView}
               </button>
             </div>
-          ))}
-          <hr
-            data-adapttable-part="views-divider"
-            className={classNames.viewsDivider}
-          />
-          <div
-            data-adapttable-part="views-save-row"
-            className={classNames.viewsSaveRow}
-            style={ROW_STYLE}
-          >
-            <input
-              aria-label={labels.viewName}
-              placeholder={labels.viewName}
-              data-adapttable-part="views-input"
-              className={classNames.viewsInput}
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-            />
-            <button
-              type="button"
-              disabled={trimmed === ""}
-              data-adapttable-part="views-save"
-              className={classNames.viewsSave}
-              onClick={() => {
-                save(trimmed);
-                setName("");
-              }}
-            >
-              {labels.saveView}
-            </button>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

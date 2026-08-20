@@ -29,11 +29,12 @@ import {
   IconButton,
   Input,
   Popover,
-  Portal,
   Separator,
   Text,
 } from "@chakra-ui/react";
 import { useState } from "react";
+
+import { KitPortal } from "./kitPortal";
 
 /**
  * Props for the column menu — the shared core contract, plus the injected
@@ -289,7 +290,10 @@ export function ColumnMenu<TRow>({
   const reorderHidden = layout.isHidden(REORDER_COLUMN_KEY);
   const reorderPinned = layout.state.pinned[REORDER_COLUMN_KEY] !== undefined;
   return (
-    <Popover.Root positioning={{ placement: "bottom-end" }} lazyMount>
+    <Popover.Root
+      positioning={{ placement: "bottom-end", flip: false }}
+      lazyMount
+    >
       <Popover.Trigger asChild>
         <Button
           size="sm"
@@ -299,7 +303,7 @@ export function ColumnMenu<TRow>({
           {labels.columns}
         </Button>
       </Popover.Trigger>
-      <Portal>
+      <KitPortal>
         <Popover.Positioner>
           <Popover.Content
             minW="260px"
@@ -425,7 +429,7 @@ export function ColumnMenu<TRow>({
             </Popover.Body>
           </Popover.Content>
         </Popover.Positioner>
-      </Portal>
+      </KitPortal>
     </Popover.Root>
   );
 }

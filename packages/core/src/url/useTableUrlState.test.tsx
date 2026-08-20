@@ -90,8 +90,10 @@ describe("useTableUrlState", () => {
 
   it("setLimit resets page and drops the param at the default", () => {
     const { result, adapter } = renderWith("page=4");
+    expect(result.current.defaultLimit).toBe(25);
     act(() => result.current.setLimit(50));
     expect(adapter.getSearch()).toBe("limit=50");
+    expect(result.current.defaultLimit).toBe(25);
     act(() => result.current.setLimit(25));
     expect(adapter.getSearch()).toBe("");
   });

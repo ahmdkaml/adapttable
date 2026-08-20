@@ -27,12 +27,37 @@ export interface GetCellSpanArgs<TRow> {
   rowIndex: number;
   /** Index in the full visible column list. */
   columnIndex: number;
+  /**
+   * Rows in visual body order (pinned top, then scroll, then pinned
+   * bottom). Walk this list for a consecutive merge so pinning a teammate
+   * does not split one Team run into two cells.
+   */
+  sectionRows: readonly TRow[];
+  /** Index of `row` in {@link GetCellSpanArgs.sectionRows}. */
+  sectionRowIndex: number;
 }
 
 /** Host callback that decides a cell's span. */
 export type GetCellSpan<TRow> = (
   args: GetCellSpanArgs<TRow>
 ) => CellSpanRequest | undefined;
+
+/**
+ * How a spanned cell is painted. `"merged"` (the default) is the spreadsheet
+ * look: centered content, one fill across the span. `"plain"` is geometry
+ * only — same chrome as a 1×1 cell — so a host can draw a calendar bar
+ * themselves.
+ */
+export type CellSpanAppearance = "merged" | "plain";
+
+/** `"2x1"` when this cell owns more than one slot; otherwise nothing. */
+export function cellSpanMark(
+  colSpan: number,
+  rowSpan: number
+): string | undefined {
+  if (colSpan <= 1 && rowSpan <= 1) return undefined;
+  return `${colSpan}x${rowSpan}`;
+}
 
 /** One body cell a kit renders — covered cells never appear. */
 export interface BodyCell<TRow> {
@@ -41,6 +66,18 @@ export interface BodyCell<TRow> {
   columnIndex: number;
   colSpan: number;
   rowSpan: number;
+}
+
+/** True when any origin cell is taller than one row. */
+export function bodyCellsHaveRowSpan(
+  cellsByRow: ReadonlyMap<string, readonly { rowSpan: number }[]>
+): boolean {
+  for (const cells of cellsByRow.values()) {
+    for (const cell of cells) {
+      if (cell.rowSpan > 1) return true;
+    }
+  }
+  return false;
 }
 
 /** True when the host asked for any span. */
@@ -179,6 +216,7 @@ function originSpan<TRow>(options: {
   firstRowIndex: number;
   remainingCols: number;
   remainingRows: number;
+  sectionRows: readonly TRow[];
   getCellSpan: GetCellSpan<TRow> | undefined;
   armed: boolean;
 }): { colSpan: number; rowSpan: number } {
@@ -190,6 +228,7 @@ function originSpan<TRow>(options: {
     firstRowIndex,
     remainingCols,
     remainingRows,
+    sectionRows,
     getCellSpan,
     armed,
   } = options;
@@ -200,6 +239,8 @@ function originSpan<TRow>(options: {
       column,
       rowIndex: firstRowIndex + localRow,
       columnIndex: col,
+      sectionRows,
+      sectionRowIndex: localRow,
     },
     getCellSpan,
     remainingCols,
@@ -230,6 +271,7 @@ function collectOrigins<TRow>(options: {
         firstRowIndex,
         remainingCols: columns.length - col,
         remainingRows: rows.length - localRow,
+        sectionRows: rows,
         getCellSpan,
         armed,
       });
@@ -310,9 +352,10 @@ function emitRowCells<TRow>(
 }
 
 /**
- * Per-row body cells for one rendered section (pinned top, scroll, or
- * pinned bottom). Row spans stay inside the section — they cannot cross a
- * tbody.
+ * Per-row body cells for the visual body (pinned top, scroll, then pinned
+ * bottom). A consecutive merge walks that whole list so pinning a teammate
+ * does not split one Team run. HTML `rowSpan` still needs those rows in
+ * one tbody.
  */
 export function buildBodyCells<TRow>(options: {
   rows: readonly TRow[];
@@ -387,6 +430,8 @@ export function coveredAddressSet<TRow>(options: {
           column: columns[col]!,
           rowIndex: firstRowIndex + localRow,
           columnIndex: col,
+          sectionRows: rows,
+          sectionRowIndex: localRow,
         },
         getCellSpan,
         columns.length - col,

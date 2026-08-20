@@ -31,6 +31,19 @@ export function Toolbar<TRow>({
   searchPlaceholder,
   sortByOptions,
   toolbar,
+  toolbarSlots,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
+  onPrint,
+  printLabel,
+  density,
+  onDensityChange,
+  onToggleFullscreen,
+  isFullscreen,
   hasFilters,
   activeFilterCount,
   onToggleFilters,
@@ -89,6 +102,7 @@ export function Toolbar<TRow>({
       align="center"
       className={className}
     >
+      {toolbarSlots?.start}
       {searchable !== false && (
         <TextInput
           {...searchProps}
@@ -132,6 +146,28 @@ export function Toolbar<TRow>({
           ))}
         {savedViewsMenu}
         {columnMenu}
+        {onUndo && onRedo && (
+          <Button.Group>
+            <Button
+              variant="default"
+              size="sm"
+              data-adapttable-part="undo-button"
+              disabled={canUndo !== true}
+              onClick={onUndo}
+            >
+              {undoLabel}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              data-adapttable-part="redo-button"
+              disabled={canRedo !== true}
+              onClick={onRedo}
+            >
+              {redoLabel}
+            </Button>
+          </Button.Group>
+        )}
         {onExportCsv && (
           <>
             {/* Mantine's own loading Button: it swaps in the kit's Loader and
@@ -159,6 +195,49 @@ export function Toolbar<TRow>({
             {addRowLabel}
           </Button>
         )}
+        {onPrint && (
+          <Button
+            variant="default"
+            size="sm"
+            data-adapttable-part="print-button"
+            onClick={onPrint}
+          >
+            {printLabel}
+          </Button>
+        )}
+        {onDensityChange && (
+          <Button
+            variant="default"
+            size="sm"
+            aria-label={labels.density}
+            data-adapttable-part="density-toggle"
+            onClick={() => {
+              onDensityChange(
+                density === "compact" ? "comfortable" : "compact"
+              );
+            }}
+          >
+            {density === "compact"
+              ? labels.densityCompact
+              : labels.densityComfortable}
+          </Button>
+        )}
+        {onToggleFullscreen && (
+          <Button
+            variant="default"
+            size="sm"
+            aria-label={
+              isFullscreen === true
+                ? labels.exitFullscreen
+                : labels.enterFullscreen
+            }
+            data-adapttable-part="fullscreen-toggle"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen === true ? "\u2715" : "\u26f6"}
+          </Button>
+        )}
+        {toolbarSlots?.end}
         {showRowsPerPage && (
           <Group gap="xs" align="center">
             <Text fz="xs" c="dimmed">
@@ -166,10 +245,12 @@ export function Toolbar<TRow>({
             </Text>
             <Select
               aria-label={labels.rowsPerPage}
-              data={pageSizeOptions(source.limit).map((n) => ({
-                value: String(n),
-                label: String(n),
-              }))}
+              data={pageSizeOptions([source.limit, source.defaultLimit]).map(
+                (n) => ({
+                  value: String(n),
+                  label: String(n),
+                })
+              )}
               value={String(source.limit)}
               // `allowDeselect={false}` keeps the value non-null.
               onChange={(v) => source.setLimit(Number(v!))}

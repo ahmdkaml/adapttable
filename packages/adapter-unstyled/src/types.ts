@@ -1,5 +1,7 @@
 import type {
   BaseDataTableProps,
+  Slot,
+  TableErrorState,
   TableSource,
   UrlStateAdapter,
   UseSavedViewsOptions,
@@ -68,6 +70,40 @@ export interface DataTableClassNames {
   treeSpacer?: string;
   /** The Add-row toolbar button (when `onAddRow` is set). */
   addRow?: string;
+  /** The density toggle (when `densityChooser` is set). */
+  densityToggle?: string;
+  /** The fullscreen toggle (when `fullscreen` is set). */
+  fullscreenToggle?: string;
+  /** The command palette's surface (when `commandPalette` is set). */
+  commandPalette?: string;
+  /** Its search box. */
+  commandInput?: string;
+  /** One command row. */
+  commandItem?: string;
+  /** The "nothing matched" line. */
+  commandEmpty?: string;
+  /** The right-click menu (when `contextMenu` is set). */
+  contextMenu?: string;
+  /** One entry in it. */
+  contextMenuItem?: string;
+  /** The divider between groups of entries. */
+  contextMenuSeparator?: string;
+  /** The docked settings panel (when `sidePanel` is set). */
+  sidePanel?: string;
+  /** One tab in the side panel's strip. */
+  sidePanelTab?: string;
+  /** The side panel's close control. */
+  sidePanelClose?: string;
+  /** The status bar under the table (when `statusBar` is set). */
+  statusBar?: string;
+  /** One figure inside the status bar. */
+  statusItem?: string;
+  /** The Undo toolbar button (when `undoRedoButtons` is set). */
+  undoButton?: string;
+  /** The Redo toolbar button (when `undoRedoButtons` is set). */
+  redoButton?: string;
+  /** The Print toolbar button (when `printButton` and `onPrint` are set). */
+  printButton?: string;
   /** The Export CSV toolbar button (when `exportCsv` is set). */
   exportCsvButton?: string;
   /**
@@ -196,8 +232,12 @@ export interface DataTableClassNames {
   thead?: string;
   headerRow?: string;
   headerCell?: string;
+  /** The header checkbox that selects a column (`columnSelectionCheckbox`). */
+  columnSelect?: string;
   /** Compact per-column filter row under the header. */
   filterHeaderRow?: string;
+  /** Funnel icon that opens a per-column header filter overlay. */
+  filterHeaderTrigger?: string;
   /** One cell in the header filter row. */
   filterHeaderCell?: string;
   /** The input inside a header filter cell. */
@@ -216,6 +256,12 @@ export interface DataTableClassNames {
   tbody?: string;
   row?: string;
   cell?: string;
+  /**
+   * A spanned cell (`getCellSpan` / `column.colSpan`). `data-cell-span` is on
+   * the element too (`"2x1"`). The default look is centered + one fill;
+   * `cellSpanAppearance="plain"` skips that paint.
+   */
+  cellSpan?: string;
   /** The leading expand-chevron header cell (row expansion). */
   expandHeader?: string;
   /** The leading expand-chevron body cell on each row. */
@@ -232,6 +278,10 @@ export interface DataTableClassNames {
   actionsHeader?: string;
   actionsCell?: string;
   actionButton?: string;
+  /** The 3-dot control that opens the row-actions menu. */
+  rowActionsTrigger?: string;
+  /** The row-actions menu surface (`rowActionsLayout="menu"`). */
+  rowActionsMenu?: string;
   /** The leading row-reorder header cell. */
   reorderHeader?: string;
   /** The leading row-reorder body cell on each row. */
@@ -356,6 +406,15 @@ export interface DataTableSlots {
   noResults?: ReactNode;
   /** Replace the loading skeleton. */
   skeleton?: ReactNode;
+  /**
+   * Replace the load-failure state.
+   *
+   * Unlike the other slots this one also takes a function, because an error
+   * state is about something: the function receives the error being reported
+   * and the retry the source can actually perform, so a replacement can offer
+   * both. Pass a plain node when the message is fixed.
+   */
+  error?: Slot<TableErrorState>;
 }
 
 /** Props for the unstyled `<DataTable>`. */

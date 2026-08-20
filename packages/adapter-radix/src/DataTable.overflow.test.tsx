@@ -126,6 +126,15 @@ describe("desktop wrapper horizontal overflow (no maxHeight, no pins)", () => {
     expect(getComputedStyle(wrapper.querySelector("th")!).position).toBe(
       "sticky"
     );
+    // Radix Table.Root's ScrollArea would otherwise trap sticky inside the
+    // table; the always-on scroll fix restores overflow so thead pins to
+    // the window, and the page-stick class marks that window-offset path.
+    expect(wrapper.classList.contains("adapttable-radix-page-stick")).toBe(
+      true
+    );
+    expect(wrapper.querySelector("style")!.textContent ?? "").toContain(
+      ".rt-ScrollAreaViewport{overflow:visible!important"
+    );
   });
 
   it("re-binds the sticky header to the box top once the table overflows", () => {
@@ -141,8 +150,16 @@ describe("desktop wrapper horizontal overflow (no maxHeight, no pins)", () => {
       ro.fireFor(wrapper);
     });
     // The wrapper is now the scroll container: pin to ITS top, or the
-    // header floats down into the rows.
+    // header floats down into the rows. Page-stick drops (window offset
+    // would land mid-box) but the ScrollArea stay neutralized — toggling
+    // that override used to loop scrollbar gutters until React crashed.
     expect(getComputedStyle(wrapper.querySelector("th")!).top).toBe("0px");
+    expect(wrapper.classList.contains("adapttable-radix-page-stick")).toBe(
+      false
+    );
+    expect(wrapper.querySelector("style")!.textContent ?? "").toContain(
+      ".rt-ScrollAreaViewport{overflow:visible!important"
+    );
   });
 
   it("gains overflow-x auto once the table measures wider than the wrapper", () => {
@@ -196,6 +213,9 @@ describe("column-pin sticky fix (Radix ScrollArea workaround)", () => {
     const rule = wrapper.querySelector("style")!.textContent ?? "";
     expect(rule).toContain(".rt-TableRootTable{overflow:visible");
     expect(rule).toContain("min-width:var(--adapttable-min-width");
+    expect(rule).toContain(
+      ".adapttable-radix-scroll .rt-ScrollAreaViewport{overflow:visible!important"
+    );
     // The fixed-column min-width is fed in as the custom property the rule
     // reads, so the table (not Radix's ScrollArea viewport) is what overflows —
     // which is what lets the pinned/edge sticky cells stick.

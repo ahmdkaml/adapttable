@@ -44,6 +44,9 @@ for (const adapter of ADAPTERS) {
         .getByRole("button", { name: "On", exact: true })
         .click();
 
+      const simulate = part(page, "demo-live-update");
+      await expect(simulate).toBeDisabled();
+
       // Not the source's first row: the demo simulation must follow whichever
       // visible editor is active after sort/filter changes.
       const row = demo(page).locator("[data-stagger]").nth(2);
@@ -54,13 +57,45 @@ for (const adapter of ADAPTERS) {
       await activate.dblclick();
       const editor = part(page, "edit-cell-editor");
       await expect(editor).toBeVisible();
+      await expect(simulate).toBeEnabled();
+      await editor.fill("typed");
+
+      await simulate.click();
+      await expect(part(page, "edit-cell-conflict")).toBeVisible();
+      await expect(part(page, "edit-cell-incoming")).toBeVisible();
+      await expect(part(page, "edit-cell-incoming")).not.toHaveText(/typed/);
+      await part(page, "edit-cell-keep-mine").click();
+      await expect(part(page, "edit-cell-conflict")).toHaveCount(0);
+      await expect(editor).toHaveValue("typed");
+    });
+
+    test("asks, then takes the incoming value", async ({ page }) => {
+      await openDemo(page, adapter);
+      await page
+        .getByRole("group", { name: "editing" })
+        .getByRole("button", { name: "On", exact: true })
+        .click();
+
+      const row = demo(page).locator("[data-stagger]").nth(2);
+      await row
+        .locator('[data-adapttable-part="edit-cell-activate"]')
+        .first()
+        .dblclick();
+      const editor = part(page, "edit-cell-editor");
+      await expect(editor).toBeVisible();
       await editor.fill("typed");
 
       await part(page, "demo-live-update").click();
       await expect(part(page, "edit-cell-conflict")).toBeVisible();
-      await part(page, "edit-cell-keep-mine").click();
+      await expect(part(page, "edit-cell-incoming")).toBeVisible();
+      await expect(part(page, "edit-cell-incoming")).not.toHaveText(
+        /Theirs:\s*$/
+      );
+      await expect(part(page, "edit-cell-incoming")).not.toHaveText(/typed/);
+      await part(page, "edit-cell-take-theirs").click();
       await expect(part(page, "edit-cell-conflict")).toHaveCount(0);
-      await expect(editor).toHaveValue("typed");
+      await expect(editor).not.toHaveValue("typed");
+      await expect(editor).not.toHaveValue("");
     });
   });
 }

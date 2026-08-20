@@ -271,6 +271,34 @@ describe("<DataTable> (Chakra)", () => {
     expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
   });
 
+  it("lets the host replace the error state, error and retry in hand", () => {
+    const refetch = vi.fn();
+    renderHarness({
+      error: new Error("boom"),
+      refetch,
+      override: {
+        slots: {
+          error: (state) => (
+            <output>
+              mine: {state.error.message}
+              <button type="button" onClick={state.retry}>
+                again
+              </button>
+            </output>
+          ),
+        },
+      },
+    });
+
+    // The built-in went away entirely — not layered under the replacement.
+    expect(screen.getByText(/mine: boom/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+
+    // And the retry it was handed is the source's, not a decoration.
+    fireEvent.click(screen.getByRole("button", { name: "again" }));
+    expect(refetch).toHaveBeenCalled();
+  });
+
   it("commits debounced search to the URL", () => {
     renderHarness();
     fireEvent.change(screen.getByLabelText("Search"), {
@@ -834,21 +862,21 @@ describe("custom header and footer", () => {
   });
 });
 
-describe("header filter row", () => {
-  it("writes a compact name filter under the header", () => {
+describe("header filter trigger", () => {
+  it("puts a filter icon on the column header instead of a second row", () => {
     renderHarness({
       override: {
         headerFilters: true,
         filters: [{ key: "name", type: "text", label: "Name" }],
       },
     });
-    const input = screen.getByLabelText("Name");
-    fireEvent.change(input, { target: { value: "Ali" } });
-    expect(input).toHaveValue("Ali");
-    expect(screen.getByRole("row", { name: "Column filters" })).toBeVisible();
+    expect(screen.queryByRole("row", { name: "Column filters" })).toBeNull();
+    expect(
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
+    ).not.toBeNull();
   });
 
-  it("hides the header filter row on mobile cards", () => {
+  it("hides the header filter trigger on mobile cards", () => {
     renderHarness({
       isMobile: true,
       override: {
@@ -857,7 +885,7 @@ describe("header filter row", () => {
       },
     });
     expect(
-      document.querySelector('[data-adapttable-part="filter-header-row"]')
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
     ).toBeNull();
   });
 });

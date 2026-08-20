@@ -4,10 +4,12 @@ import {
   type ConfirmHandler,
   type EditableCellEditing,
   type GroupedFlatEntry,
+  type MobileCardRenderer,
   type RowAction,
+  type RowActionsLayout,
+  type RowActionsRenderer,
   type RowExpansionState,
   type RowReorderState,
-  runRowAction,
   type TableLabels,
   treeCardStyle,
   type TreeEntry,
@@ -19,7 +21,6 @@ import {
   insertExtraRows,
   isExtraEntry,
   orderedCardEntries,
-  resolveDisabledReason,
   resolveMobileLabel,
   resolveRowStyle,
   rowClickProps,
@@ -30,10 +31,9 @@ import {
   useSummaryCells,
   type VirtualTableRow,
 } from "@adapttable/core/adapter";
-import { Button, Card, Checkbox, Descriptions, Space } from "antd";
+import { Card, Checkbox, Descriptions, Space } from "antd";
 import { type CSSProperties, memo, type ReactNode, useMemo } from "react";
 
-import { isDangerColor } from "../colors";
 import { EditableDataCell } from "./EditableCell";
 import { ExpandToggle } from "./ExpandToggle";
 import {
@@ -42,49 +42,7 @@ import {
   GroupHeaderCard,
 } from "./grouping";
 import { RowEditActions, RowReorderButtons, TreeToggle } from "./kitControls";
-
-/** Row-action buttons for a single card. */
-function CardActions<TRow>({
-  row,
-  rowActions,
-  confirm,
-  labels,
-}: Readonly<{
-  row: TRow;
-  rowActions: readonly RowAction<TRow>[];
-  confirm: ConfirmHandler;
-  labels: Required<TableLabels>;
-}>) {
-  return (
-    <Space size="small" wrap>
-      {rowActions.map((action) => {
-        if (action.isHidden?.(row)) return null;
-        const reason = resolveDisabledReason(action.disabledReason?.(row));
-        const disabled =
-          reason !== undefined || (action.isDisabled?.(row) ?? false);
-        return (
-          <Button
-            key={action.key}
-            size="small"
-            danger={isDangerColor(action.color)}
-            disabled={disabled}
-            title={reason}
-            aria-label={action.label}
-            // The disabled attribute already blocks activation, so attach
-            // the handler only when the action can run.
-            onClick={
-              disabled
-                ? undefined
-                : () => runRowAction(action, row, confirm, labels.cancel)
-            }
-          >
-            {action.icon ?? action.label}
-          </Button>
-        );
-      })}
-    </Space>
-  );
-}
+import { RowActionButtons } from "./RowActionButtons";
 
 /**
  * The mobile counterpart of the desktop footer summary: one trailing card
@@ -122,6 +80,8 @@ function SummaryCard<TRow>({
 
 /** Per-card inputs for the memoized {@link CardItemBase}. */
 interface CardItemProps<TRow> {
+  /** Replace the card's body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** This card's place in the tree, when the table is one. */
   treeEntry?: TreeEntry<TRow>;
   /** Open or close this node. */
@@ -134,6 +94,8 @@ interface CardItemProps<TRow> {
   labels: Required<TableLabels>;
   confirm: ConfirmHandler;
   rowActions?: readonly RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Resolved `rowClassName(row, index)`, compared as a plain string. */
   className?: string;
   /** Resolved `rowStyle` + `rowHeight`. Compared via `styleSignature`. */
@@ -192,6 +154,8 @@ function cardItemPropsEqual<TRow>(
     prev.labels === next.labels &&
     prev.confirm === next.confirm &&
     prev.rowActions === next.rowActions &&
+    prev.rowActionsLayout === next.rowActionsLayout &&
+    prev.renderRowActions === next.renderRowActions &&
     prev.className === next.className &&
     prev.styleSignature === next.styleSignature &&
     prev.selected === next.selected &&
@@ -205,6 +169,7 @@ function cardItemPropsEqual<TRow>(
     prev.reorderSignature === next.reorderSignature &&
     prev.windowStart === next.windowStart &&
     prev.rowCount === next.rowCount &&
+    prev.renderCard === next.renderCard &&
     // Or a folder opens and its own chevron never turns.
     prev.treeEntry === next.treeEntry
   );
@@ -220,6 +185,8 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     labels,
     confirm,
     rowActions,
+    rowActionsLayout,
+    renderRowActions,
     className,
     style,
     selected,
@@ -237,8 +204,29 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
     rowReorder,
     windowStart,
     rowCount,
+    renderCard,
   } = props;
   const actions = rowActions && rowActions.length > 0 ? rowActions : null;
+  // Built once and used by both paths, so a custom card shows the very same
+  // value node the built-in would have — cell renderers and editors included.
+  const fields = columns.map((column) => ({
+    column,
+    label: resolveMobileLabel(column),
+    value: (
+      <EditableDataCell
+        editing={editing}
+        row={row}
+        column={column}
+        rowId={id}
+        rowIndex={rowIndex}
+        rows={rows}
+        columns={columns}
+        rowKey={getRowId}
+        editLabel={labels.editCell}
+        undoLabel={labels.undoEdit}
+      />
+    ),
+  }));
   return (
     <Card
       size="small"
@@ -288,38 +276,32 @@ function CardItemBase<TRow>(props: Readonly<CardItemProps<TRow>>) {
               />
             )}
             {actions && (
-              <CardActions
+              <RowActionButtons
                 row={row}
-                rowActions={actions}
+                actions={actions}
                 confirm={confirm}
                 labels={labels}
+                layout={rowActionsLayout}
+                render={renderRowActions}
               />
             )}
           </Space>
         ) : undefined
       }
     >
-      <Descriptions column={1} size="small" colon={false}>
-        {columns.map((column) => (
-          <Descriptions.Item
-            key={column.key}
-            label={resolveMobileLabel(column)}
-          >
-            <EditableDataCell
-              editing={editing}
-              row={row}
-              column={column}
-              rowId={id}
-              rowIndex={rowIndex}
-              rows={rows}
-              columns={columns}
-              rowKey={getRowId}
-              editLabel={labels.editCell}
-              undoLabel={labels.undoEdit}
-            />
-          </Descriptions.Item>
-        ))}
-      </Descriptions>
+      {renderCard ? (
+        renderCard(row, { index: rowIndex, fields, selected, expanded })
+      ) : (
+        // The whole `Descriptions` goes, not just its items: a
+        // `Descriptions.Item` only means anything inside one.
+        <Descriptions column={1} size="small" colon={false}>
+          {fields.map(({ column, label, value }) => (
+            <Descriptions.Item key={column.key} label={label}>
+              {value}
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
+      )}
       {rowReorder && (
         <RowReorderButtons
           reorder={rowReorder}
@@ -354,6 +336,8 @@ export function MobileCards<TRow>({
   cardClassName,
   rows,
   rowActions,
+  rowActionsLayout,
+  renderRowActions,
   confirm,
   getRowId,
   prefetch,
@@ -378,12 +362,15 @@ export function MobileCards<TRow>({
   pinnedTopRows = [],
   pinnedBottomRows = [],
   extraRows,
+  renderCard,
 }: Readonly<{
   table: UseDataTableResult<TRow>;
   /** Class applied to every card (merged before `rowClassName`). */
   cardClassName?: string;
   rows: readonly TRow[];
   rowActions?: readonly RowAction<TRow>[];
+  rowActionsLayout?: RowActionsLayout;
+  renderRowActions?: RowActionsRenderer<TRow>;
   confirm: ConfirmHandler;
   getRowId: (row: TRow) => string;
   prefetch?: (row: TRow) => void;
@@ -402,6 +389,8 @@ export function MobileCards<TRow>({
   expansion?: RowExpansionState;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /** Replace each card's body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /** Opt-in editing bundle — omit and cells stay display-only. */
@@ -482,6 +471,8 @@ export function MobileCards<TRow>({
           labels={labels}
           confirm={confirm}
           rowActions={rowActions}
+          rowActionsLayout={rowActionsLayout}
+          renderRowActions={renderRowActions}
           className={
             [cardClassName, rowClassName?.(row, index)]
               .filter(Boolean)
@@ -508,6 +499,7 @@ export function MobileCards<TRow>({
           windowStart={windowStart}
           rowCount={rows.length}
           reorderSignature={rowReorderSignature(rowReorder, id, index)}
+          renderCard={renderCard}
         />
       </li>
     );

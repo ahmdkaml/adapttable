@@ -99,7 +99,8 @@ through the rename table below.
   `classNames`; Chakra/Radix/Base UI export their `DataTableClassNames`.
 - **`density` has a visual effect in every adapter** and kit `size`
   overrides it; `stickyTop` means the sticky-header inset everywhere
-  (Mantine's toolbar stickiness became an explicit `stickyToolbar` prop);
+  (`stickyToolbar` follows `stickyHeader` on page-scroll tables; pass
+  `false` to let the toolbar scroll away);
   Mantine's `SavedViewsMenu` takes the same `options` shape as the other
   kits.
 - **Accessibility**: editable cells expose the VALUE as their accessible

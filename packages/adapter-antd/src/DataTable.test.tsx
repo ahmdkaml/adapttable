@@ -113,6 +113,47 @@ describe("<DataTable> (Ant Design)", () => {
     expect(onRowClick).toHaveBeenCalledTimes(1);
   });
 
+  it("collapses row actions into a 3-dot menu when layout is menu", async () => {
+    const onAction = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onAction }],
+        rowActionsLayout: "menu",
+      },
+    });
+    const trigger = document.querySelector(
+      '[data-adapttable-part="row-actions-trigger"]'
+    );
+    expect(trigger).toHaveAttribute("aria-label", "Row actions");
+    fireEvent.click(trigger!);
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    expect(onAction).toHaveBeenCalled();
+  });
+
+  it("lets renderRowActions replace the actions cell", () => {
+    const onEdit = vi.fn();
+    renderHarness({
+      override: {
+        rowActions: [{ key: "e", label: "Edit", onClick: onEdit }],
+        rowActionsLayout: "menu",
+        renderRowActions: ({ row }) => (
+          <button
+            type="button"
+            aria-label="custom-e"
+            onClick={() => onEdit(row)}
+          >
+            Custom
+          </button>
+        ),
+      },
+    });
+    expect(
+      document.querySelector('[data-adapttable-part="row-actions-trigger"]')
+    ).toBeNull();
+    fireEvent.click(screen.getAllByLabelText("custom-e")[0]!);
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0]);
+  });
+
   it("renders rows with values", () => {
     renderHarness();
     expect(screen.getByText("Alice")).toBeInTheDocument();
@@ -187,6 +228,34 @@ describe("<DataTable> (Ant Design)", () => {
     renderHarness({ error: new Error("boom") });
     expect(screen.getByText(/boom/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+  });
+
+  it("lets the host replace the error state, error and retry in hand", () => {
+    const refetch = vi.fn();
+    renderHarness({
+      error: new Error("boom"),
+      refetch,
+      override: {
+        slots: {
+          error: (state) => (
+            <output>
+              mine: {state.error.message}
+              <button type="button" onClick={state.retry}>
+                again
+              </button>
+            </output>
+          ),
+        },
+      },
+    });
+
+    // The built-in went away entirely — not layered under the replacement.
+    expect(screen.getByText(/mine: boom/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+
+    // And the retry it was handed is the source's, not a decoration.
+    fireEvent.click(screen.getByRole("button", { name: "again" }));
+    expect(refetch).toHaveBeenCalled();
   });
 
   it("commits debounced search to the URL", () => {
@@ -485,6 +554,9 @@ describe("<DataTable> (Ant Design)", () => {
     expect(screen.getByText("filter body")).toBeInTheDocument();
     // No drawer is mounted in popover mode.
     expect(document.querySelector(".ant-drawer")).toBeNull();
+    expect(
+      screen.getByText("filter body").closest("[dir='rtl']")
+    ).not.toBeNull();
   });
 
   it("renders the filters in a drawer when filtersMode is drawer", () => {
@@ -1922,19 +1994,16 @@ describe("custom header and footer", () => {
   });
 });
 
-describe("header filter row", () => {
-  it("writes a compact name filter under the header cell", () => {
+describe("header filter trigger", () => {
+  it("puts a filter icon on the column header instead of a second row", () => {
     renderHarness({
       override: {
         headerFilters: true,
         filters: [{ key: "name", type: "text", label: "Name" }],
       },
     });
-    const input = screen.getByLabelText("Name");
-    fireEvent.change(input, { target: { value: "Ali" } });
-    expect(input).toHaveValue("Ali");
     expect(
-      document.querySelector('[data-adapttable-part="filter-header-cell"]')
+      document.querySelector('[data-adapttable-part="filter-header-trigger"]')
     ).not.toBeNull();
   });
 });

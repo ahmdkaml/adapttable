@@ -3,12 +3,17 @@
  * rendering the table injects the stylesheet exactly once, without any
  * separate CSS import (the doc-claimed behavior).
  */
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DataTable } from "./DataTable";
 import type { ColumnDef } from "./index";
+import { ADAPTTABLE_BASE_UI_CSS } from "./injectStyles";
 
 interface Row {
   id: string;
@@ -40,5 +45,13 @@ describe("base-ui chrome styles", () => {
     expect(
       document.head.querySelectorAll("style[data-adapttable-base-ui]")
     ).toHaveLength(1);
+  });
+
+  it("injected chrome matches styles.css", () => {
+    const css = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "styles.css"),
+      "utf8"
+    );
+    expect(ADAPTTABLE_BASE_UI_CSS).toBe(css);
   });
 });

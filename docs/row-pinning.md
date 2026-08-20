@@ -2,10 +2,11 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — pass `onPinnedRowIdsChange` and pin actions appear. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [the live demo](https://orwa-mahmoud.github.io/adapttable/demo/) — turn **Pin rows** on. Pin to top keeps a row under the header; pin to bottom keeps it on the floor of the scroll box.
+▶ **See it working:** [pin, reorder and merge rows in Mantine](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rows/) — sticky pins, a drag grip, Team written once down consecutive teammates (pin keeps that one merge), and a 3-dot menu. The same page exists for MUI, Chakra, antd, Radix, Base UI, shadcn and Tailwind.
 
-Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains Pin to
-top / Pin to bottom / Unpin. Omit both and nothing renders, nothing ships in
+Pass `pinnedRowIds` and/or `onPinnedRowIdsChange` and every row gains icon-only
+Pin to top / Pin to bottom / Unpin (labels on hover and as the accessible name).
+Omit both and nothing renders, nothing ships in
 the hot path — the same opt-in rule as `onCellEdit`. The value is
 `{ top, bottom }` lists of row ids, not a flat array: which edge a row
 sticks to is the feature.
@@ -39,9 +40,9 @@ URL itself. Saved views capture `rowPin` with the rest of the table.
 
 ## Outside the virtual window
 
-A pinned row is **removed** from the scroll list and rendered in a sticky
-section above or below it (`data-adapttable-part="pinned-top"` /
-`"pinned-bottom"`). Leave it in the window and it draws twice. The
+A pinned row is **removed** from the scroll list and rendered first or last
+in the body (`data-adapttable-part="pinned-top"` /
+`"pinned-bottom"` on the row). Leave it in the window and it draws twice. The
 virtualizer windows only the unpinned rows; ARIA `rowCount` and
 `windowStart` still describe the whole dataset.
 
@@ -72,7 +73,9 @@ digest so a virtualized row repaints when it is pinned or unpinned.
 `EMPTY_ROW_PIN_STATE` is `{ top: [], bottom: [] }`.
 
 From `@adapttable/core/adapter`: `pinnedRowStickyStyle` / `pinnedRowCellStyle`
-are the sticky CSS kits spread; `orderedCardEntries` is the card-list order;
+are the sticky CSS kits spread; `pinnedRowPart` names the row's
+`data-adapttable-part`; `pinnedRowSticky` is the sticky style when the
+kit asked for sticky pins; `orderedCardEntries` is the card-list order;
 `useOffsetHeight` measures the header so top pins sit under it;
 `PINNED_TOP_PART` / `PINNED_BOTTOM_PART` name the sections.
 `rowSourceIndex(entry)` is the dataset index when pinning remapped the

@@ -13,7 +13,7 @@ export function ErrorState({
   onRetry?: () => void;
 }>) {
   return (
-    <Alert.Root status="error" borderRadius="md">
+    <Alert.Root role="alert" status="error" borderRadius="md">
       <Alert.Indicator />
       <Alert.Content flex="1">
         <Alert.Title fontWeight="bold">{labels.errorTitle}</Alert.Title>

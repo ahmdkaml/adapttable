@@ -12,7 +12,12 @@ import { Checkbox } from "./primitives";
 
 export type { ChecklistFilterProps };
 
-function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
+function ChecklistSearch({
+  label,
+  value,
+  className,
+  onChange,
+}: ChecklistSearchProps) {
   return (
     <Input
       size="sm"
@@ -20,6 +25,7 @@ function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
       aria-label={label}
       placeholder={label}
       data-adapttable-part="filter-checklist-search"
+      className={className}
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
@@ -38,12 +44,19 @@ function ChecklistBox({
   label,
   count,
   checked,
+  className,
   countClassName,
   onChange,
 }: ChecklistCheckboxProps) {
   return (
-    <Checkbox size="sm" checked={checked} onToggle={() => onChange(!checked)}>
-      <span data-adapttable-part="filter-checkbox">
+    <Checkbox
+      size="sm"
+      data-adapttable-part="filter-checkbox"
+      className={className}
+      checked={checked}
+      onToggle={() => onChange(!checked)}
+    >
+      <span>
         {label}{" "}
         <span
           data-adapttable-part="filter-checklist-count"

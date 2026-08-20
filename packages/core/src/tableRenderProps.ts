@@ -15,6 +15,7 @@
 import { type ReactNode, useMemo, useRef } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
+import type { ColumnGroupRecord } from "./columns/columnTree";
 import type { PinOffset } from "./columns/useColumnLayout";
 import type { EditableCellEditing } from "./editing/editableCellController";
 import type { FilterDef } from "./filters/filterDefs";
@@ -26,10 +27,17 @@ import type { GroupCollapseState } from "./grouping/useGroupCollapse";
 import {
   type BodyCell,
   buildBodyCells,
+  type CellSpanAppearance,
   type GetCellSpan,
 } from "./rows/cellSpan";
-import type { ExtraRow } from "./rows/extraRows";
+import {
+  extraCoveredTableSlots,
+  type ExtraRow,
+  inflateBodyCellRowSpans,
+} from "./rows/extraRows";
 import { incrementalViewOf } from "./rows/incremental";
+import type { MobileCardRenderer } from "./rows/mobileCard";
+import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import type { RowPinningState } from "./rows/rowPinning";
 import type { RowReorderState } from "./rows/rowReorder";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
@@ -59,6 +67,13 @@ export interface SharedTableRenderProps<TRow> {
   gridFocus?: GridFocusState;
   /** Per-row actions rendered in a trailing actions column. */
   rowActions?: RowAction<TRow>[];
+  /** How those actions render. Omit / `"buttons"` is the horizontal strip. */
+  rowActionsLayout?: RowActionsLayout;
+  /**
+   * Replace the trailing actions cell. Wins over
+   * {@link SharedTableRenderProps.rowActionsLayout}.
+   */
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Confirmation handler used before destructive row actions run. */
   confirm: ConfirmHandler;
   /** Stable row identity used for keys and selection. */
@@ -73,6 +88,8 @@ export interface SharedTableRenderProps<TRow> {
   collapsibleColumnGroups?: boolean;
   /** Collapsed column-group ids from the layout. */
   collapsedColumnGroups?: readonly string[];
+  /** Tree groups for the declared columns — collapse options, header align. */
+  columnGroups?: ReadonlyMap<string, ColumnGroupRecord<TRow>>;
   /** Toggle one column group. No-op unless collapse is armed. */
   onToggleColumnGroup?: (id: string) => void;
   /** Conditional per-row style — see `BaseDataTableProps.rowStyle`. */
@@ -81,6 +98,8 @@ export interface SharedTableRenderProps<TRow> {
   rowHeight?: RowHeight<TRow>;
   /** Detail-panel renderer — see `BaseDataTableProps.renderRowDetail`. */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /** Custom mobile-card body — see `BaseDataTableProps.renderCard`. */
+  renderCard?: MobileCardRenderer<TRow>;
   /** Footer summary builder — see `BaseDataTableProps.summaryRow`. */
   summaryRow?: (rows: readonly TRow[]) => Partial<Record<string, ReactNode>>;
   /**
@@ -113,6 +132,11 @@ export interface SharedTableRenderProps<TRow> {
    * {@link TableRenderModel.cellsByRow} omits covered cells.
    */
   getCellSpan?: GetCellSpan<TRow>;
+  /**
+   * How a spanned cell is painted. Omit / `"merged"` is the spreadsheet look.
+   * `"plain"` is geometry only.
+   */
+  cellSpanAppearance?: CellSpanAppearance;
   /** Host-injected separator / full-width slots. */
   extraRows?: readonly ExtraRow[];
   /** Expansion state, present when `renderRowDetail` is set. */
@@ -186,6 +210,11 @@ export interface SharedTableRenderProps<TRow> {
    * Driven by {@link filterDefs} and the source extra bag.
    */
   headerFilters?: boolean;
+  /**
+   * Close a header-filter overlay after a finished single-control write.
+   * Default off — see {@link BaseDataTableProps.closeHeaderFilterOnSelect}.
+   */
+  closeHeaderFilterOnSelect?: boolean;
   /** Declarative filter defs the header row matches to columns. */
   filterDefs?: readonly FilterDef<TRow>[];
   /** Type registry the header row and custom widgets read. */
@@ -240,6 +269,45 @@ export interface TableRenderModel<TRow> {
    * one `<td>` and covered neighbours are already gone.
    */
   cellsByRow: ReadonlyMap<string, readonly BodyCell<TRow>[]>;
+  /**
+   * Table-slot indexes a continuing row span already owns on extras in
+   * front of this person (`beforeRowId`). Extra rows omit a `<td>` there.
+   */
+  extraCoveredSlots: ReadonlyMap<string, ReadonlySet<number>>;
+}
+
+function pinnedIdSet<TRow>(
+  getRowId: (row: TRow) => string,
+  pinnedTop: readonly TRow[] | undefined,
+  pinnedBottom: readonly TRow[] | undefined
+): Set<string> {
+  const pinnedIds = new Set<string>();
+  for (const row of pinnedTop ?? []) pinnedIds.add(getRowId(row));
+  for (const row of pinnedBottom ?? []) pinnedIds.add(getRowId(row));
+  return pinnedIds;
+}
+
+function extraCoveredSlotMap<TRow>(
+  extraRows: readonly ExtraRow[] | undefined,
+  visualIds: readonly string[],
+  cellsByRow: ReadonlyMap<string, readonly BodyCell<TRow>[]>,
+  leadingCells: number
+): Map<string, ReadonlySet<number>> {
+  const extraCoveredSlots = new Map<string, ReadonlySet<number>>();
+  for (const extra of extraRows ?? []) {
+    if (extra.beforeRowId === undefined) continue;
+    if (extraCoveredSlots.has(extra.beforeRowId)) continue;
+    extraCoveredSlots.set(
+      extra.beforeRowId,
+      extraCoveredTableSlots(extra.beforeRowId, {
+        visualIds,
+        cellsByRow,
+        extraRows,
+        leadingCells,
+      })
+    );
+  }
+  return extraCoveredSlots;
 }
 
 /**
@@ -268,6 +336,7 @@ export function tableRenderModel<TRow>(
     | "pinOffset"
     | "tree"
     | "grouping"
+    | "extraRows"
   >
 ): TableRenderModel<TRow> {
   const { selection, labels } = props.table;
@@ -288,13 +357,11 @@ export function tableRenderModel<TRow>(
   const hasSelection = Boolean(selection);
   const leadingCells =
     (expandable ? 1 : 0) + (showReorder ? 1 : 0) + (hasSelection ? 1 : 0);
-  const pinnedIds = new Set<string>();
-  for (const row of props.pinnedTopRows ?? []) {
-    pinnedIds.add(props.getRowId(row));
-  }
-  for (const row of props.pinnedBottomRows ?? []) {
-    pinnedIds.add(props.getRowId(row));
-  }
+  const pinnedIds = pinnedIdSet(
+    props.getRowId,
+    props.pinnedTopRows,
+    props.pinnedBottomRows
+  );
   const rawEntries = resolveVirtualRows(
     props.rows,
     props.getRowId,
@@ -319,18 +386,17 @@ export function tableRenderModel<TRow>(
   const merge = (map: ReadonlyMap<string, readonly BodyCell<TRow>[]>) => {
     for (const [key, cells] of map) cellsByRow.set(key, cells);
   };
-  merge(
-    buildBodyCells({
-      ...cellOptions,
-      rows: props.pinnedTopRows ?? [],
-    })
-  );
   const scrollRows = bodyRowEntries(entries, props.tree);
+  const visualRows = [
+    ...(props.pinnedTopRows ?? []),
+    ...scrollRows.map((entry) => entry.row),
+    ...(props.pinnedBottomRows ?? []),
+  ];
+  const visualIds = visualRows.map((row) => props.getRowId(row));
   merge(
     buildBodyCells({
       ...cellOptions,
-      rows: scrollRows.map((entry) => entry.row),
-      firstRowIndex: scrollRows[0]?.sourceIndex ?? scrollRows[0]?.index ?? 0,
+      rows: visualRows,
     })
   );
   // A grouped body renders `grouping.entries`, not the row list above — its
@@ -349,11 +415,20 @@ export function tableRenderModel<TRow>(
       })
     );
   }
-  merge(
-    buildBodyCells({
-      ...cellOptions,
-      rows: props.pinnedBottomRows ?? [],
-    })
+  const spannedCells = inflateBodyCellRowSpans(
+    cellsByRow,
+    visualIds,
+    props.extraRows
+  );
+  if (spannedCells !== cellsByRow) {
+    cellsByRow.clear();
+    merge(spannedCells);
+  }
+  const extraCoveredSlots = extraCoveredSlotMap(
+    props.extraRows,
+    visualIds,
+    cellsByRow,
+    leadingCells
   );
   return {
     columns,
@@ -378,6 +453,7 @@ export function tableRenderModel<TRow>(
         }
       : undefined,
     cellsByRow,
+    extraCoveredSlots,
   };
 }
 

@@ -10,7 +10,12 @@ import { Button, Checkbox, Input } from "antd";
 
 export type { ChecklistFilterProps };
 
-function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
+function ChecklistSearch({
+  label,
+  value,
+  className,
+  onChange,
+}: ChecklistSearchProps) {
   return (
     <Input
       size="small"
@@ -18,6 +23,7 @@ function ChecklistSearch({ label, value, onChange }: ChecklistSearchProps) {
       aria-label={label}
       placeholder={label}
       data-adapttable-part="filter-checklist-search"
+      className={className}
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
@@ -41,12 +47,19 @@ function ChecklistBox({
   onChange,
 }: ChecklistCheckboxProps) {
   return (
-    <Checkbox
+    // antd routes loose props to the inner <input> and `className` to its own
+    // wrapper, which would leave the part and the class on different elements.
+    // One span outside both keeps them together, on the whole control — the
+    // element MUI and unstyled tag.
+    <span
+      data-adapttable-part="filter-checkbox"
       className={className}
-      checked={checked}
-      onChange={(event) => onChange(event.target.checked)}
+      style={{ display: "inline-flex", alignItems: "center" }}
     >
-      <span data-adapttable-part="filter-checkbox">
+      <Checkbox
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      >
         {label}{" "}
         <span
           data-adapttable-part="filter-checklist-count"
@@ -54,8 +67,8 @@ function ChecklistBox({
         >
           {count}
         </span>
-      </span>
-    </Checkbox>
+      </Checkbox>
+    </span>
   );
 }
 

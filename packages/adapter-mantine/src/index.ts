@@ -8,6 +8,8 @@
  * @packageDocumentation
  */
 
+export { PivotPanel } from "./components/PivotPanel";
+export { SavedViewsPanel } from "./components/SavedViewsPanel";
 export { DataTable } from "./DataTable";
 export type {
   DataTableClassNames,
@@ -91,6 +93,9 @@ export {
   type CellProps,
   type ColorScheme,
   type ColumnDef,
+  type ColumnGroupDef,
+  type ColumnGroupShow,
+  type ColumnInput,
   type ConfirmHandler,
   type ConfirmRequest,
   createFilterRegistry,

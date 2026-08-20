@@ -81,19 +81,15 @@ export function FilterPopover({
       placement={dir === "rtl" ? "bottom-start" : "bottom-end"}
       modifiers={[
         { name: "offset", options: { offset: [0, 4] } },
-        {
-          name: "flip",
-          options: {
-            fallbackPlacements: [dir === "rtl" ? "top-start" : "top-end"],
-          },
-        },
-        { name: "preventOverflow", options: { padding: 8 } },
+        { name: "flip", enabled: false },
+        { name: "preventOverflow", options: { padding: 8, mainAxis: false } },
       ]}
-      style={{ zIndex: 1300 }}
+      style={{ zIndex: 10050 }}
     >
       <Paper
         ref={paperRef}
         elevation={8}
+        dir={dir}
         sx={{
           width: 380,
           maxWidth: "calc(100vw - 32px)",
@@ -101,10 +97,17 @@ export function FilterPopover({
           // the window. Pinned below the trigger it has to stop at the
           // viewport edge, or its lower fields are painted off-screen and
           // cannot be reached.
-          // At most half a viewport guarantees that either the top or the
-          // bottom placement fits. Popper can then flip to the roomier side
-          // while the form itself scrolls instead of moving the page.
-          maxHeight: "min(calc(50dvh - 16px), 560px)",
+          maxHeight: anchorEl
+            ? Math.max(
+                120,
+                Math.min(
+                  560,
+                  window.innerHeight -
+                    anchorEl.getBoundingClientRect().bottom -
+                    8
+                )
+              )
+            : "min(calc(50dvh - 16px), 560px)",
           overflowY: "auto",
           borderRadius: 2,
         }}

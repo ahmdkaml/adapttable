@@ -18,15 +18,17 @@ function TreeSelect({
   value,
   part,
   options,
+  className,
   onChange,
 }: FilterTreeSelectProps) {
   return (
-    <div style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}>
+    <div style={{ flex: "0 1 8.5rem", minWidth: "8.5rem", maxWidth: "11rem" }}>
       <NativeSelect
         size="1"
         width="100%"
         aria-label={label}
         data-adapttable-part={part}
+        className={className}
         value={value}
         options={options}
         onValueChange={onChange}
@@ -35,13 +37,20 @@ function TreeSelect({
   );
 }
 
-function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
+function TreeInput({
+  label,
+  value,
+  type,
+  className,
+  onChange,
+}: FilterTreeInputProps) {
   return (
     <TextField.Root
       size="1"
       type={type}
       aria-label={label}
       data-adapttable-part="filter-input"
+      className={className}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       style={{ flex: "1 1 7rem", minWidth: "7rem" }}
@@ -49,13 +58,19 @@ function TreeInput({ label, value, type, onChange }: FilterTreeInputProps) {
   );
 }
 
-function TreeButton({ label, part, onClick }: FilterTreeButtonProps) {
+function TreeButton({
+  label,
+  part,
+  className,
+  onClick,
+}: FilterTreeButtonProps) {
   return (
     <Button
       type="button"
       size="1"
       variant="soft"
       data-adapttable-part={part}
+      className={className}
       onClick={onClick}
     >
       {label}
@@ -78,9 +93,9 @@ function TreeDisclosure({
       className={className}
       data-adapttable-part="filter-tree"
       style={{
-        marginBlockStart: 4,
-        paddingBlockStart: 8,
-        borderBlockStart: "1px solid var(--gray-a5)",
+        marginBlockEnd: 4,
+        paddingBlockEnd: 16,
+        borderBlockEnd: "1px solid var(--gray-a5)",
       }}
     >
       <Button

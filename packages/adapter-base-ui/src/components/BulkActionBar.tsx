@@ -32,11 +32,25 @@ export function BulkBar({
   } = useBulkBarState({ selection, total, confirm, labels });
   if (selectedCount === 0) return null;
   return (
-    <Flex gap="2" justify="between" wrap="wrap" align="center">
+    <Flex
+      data-adapttable-part="bulk-bar"
+      gap="2"
+      justify="between"
+      wrap="wrap"
+      align="center"
+    >
       {expandable ? (
-        <Flex gap="2" wrap="wrap" align="center">
-          <Text size="2">{banner.text}</Text>
+        <Flex
+          data-adapttable-part="select-all-banner"
+          gap="2"
+          wrap="wrap"
+          align="center"
+        >
+          <Text data-adapttable-part="select-all-text" size="2">
+            {banner.text}
+          </Text>
           <Button
+            data-adapttable-part="select-all-button"
             size="1"
             variant="ghost"
             color={accentColor}
@@ -64,6 +78,7 @@ export function BulkBar({
           return (
             <Tooltip key={action.key} label={reason ?? ""} disabled={!reason}>
               <Button
+                data-adapttable-part="bulk-button"
                 size="1"
                 color={action.color ?? accentColor}
                 disabled={reason !== undefined || pending !== null}
@@ -76,7 +91,12 @@ export function BulkBar({
           );
         })}
         {errorMessage !== null && (
-          <Text size="2" color="red" role="alert">
+          <Text
+            data-adapttable-part="bulk-error"
+            size="2"
+            color="red"
+            role="alert"
+          >
             {`${labels.errorTitle}: ${errorMessage}`}
           </Text>
         )}

@@ -75,9 +75,10 @@ export function SavedViewsMenu({
       <Popover.Content
         align="end"
         side="bottom"
+        avoidCollisions={false}
         minWidth="240px"
         maxHeight="min(70vh, 360px)"
-        style={{ overflowY: "auto" }}
+        style={{ overflowY: "auto", zIndex: 10050 }}
       >
         <Flex direction="column" gap="1">
           {views.map((view) => (

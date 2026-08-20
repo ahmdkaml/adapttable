@@ -248,12 +248,23 @@ export function filterExportView<TRow>(
  */
 export function exportViewFromChrome<TRow>(options: {
   grouping?: { entries: readonly GroupedFlatEntry<TRow>[] };
-  tree?: { entries: readonly TreeEntry<TRow>[] };
+  tree?: {
+    entries: readonly TreeEntry<TRow>[];
+    allEntries?: readonly TreeEntry<TRow>[];
+  };
   groupTotal?: (label: string) => string;
   /** Folded or paged-away leaves, for `scope: "all"` / `"selected"`. */
   includeHiddenLeaves?: boolean;
 }): ExportViewEntry<TRow>[] | undefined {
-  if (options.tree) return viewFromTreeEntries(options.tree.entries);
+  if (options.tree) {
+    // A scope that unfolds reads the whole hierarchy; the rendered entries
+    // stop at every collapsed node and would drop those subtrees entirely.
+    const entries =
+      options.includeHiddenLeaves && options.tree.allEntries
+        ? options.tree.allEntries
+        : options.tree.entries;
+    return viewFromTreeEntries(entries);
+  }
   if (options.grouping) {
     return viewFromGroupedEntries(
       options.grouping.entries,

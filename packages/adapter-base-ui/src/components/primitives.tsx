@@ -1,7 +1,12 @@
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { Select } from "@base-ui/react/select";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  isValidElement,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import type { BaseUiAccentColor } from "../types";
 import { Flex, Text } from "../ui";
@@ -50,8 +55,13 @@ export function Checkbox({
   color: _color,
   id,
   value,
+  className,
+  inputRef,
+  onKeyDown,
   "aria-label": ariaLabel,
+  "data-adapttable-part": dataPart,
   children,
+  ...rest
 }: Readonly<{
   checked: boolean;
   indeterminate?: boolean;
@@ -60,18 +70,39 @@ export function Checkbox({
   color?: BaseUiAccentColor;
   id?: string;
   value?: string;
+  className?: string;
+  /** Hands the control out, so a cell editor can take focus on mount. */
+  inputRef?: (node: { focus: () => void } | null) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
   "aria-label"?: string;
+  "data-adapttable-part"?: string;
   children?: ReactNode;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
+  // The part and the class name the WHOLE control, so with a visible label
+  // they belong to the wrapper that holds box and text together — the same
+  // element MUI tags — and only to the box when there is nothing else.
   const box = (
     <BaseCheckbox.Root
       id={id}
       value={value}
+      ref={inputRef}
       aria-label={children == null ? ariaLabel : undefined}
+      onKeyDown={onKeyDown}
+      data-adapttable-part={children == null ? dataPart : undefined}
       checked={checked}
       indeterminate={indeterminate}
       onCheckedChange={onToggle ? () => onToggle() : undefined}
-      className="adapttable-checkbox"
+      className={
+        children == null
+          ? (className ?? "adapttable-checkbox")
+          : "adapttable-checkbox"
+      }
+      {...rest}
     >
       <BaseCheckbox.Indicator className="adapttable-checkbox__indicator">
         {indeterminate ? (
@@ -86,7 +117,11 @@ export function Checkbox({
   // Native <label> (not Text-as-label): Base UI wires aria-labelledby to the
   // enclosing label id; a plain label keeps the visible text as the name.
   return (
-    <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+    <label
+      className={className}
+      data-adapttable-part={dataPart}
+      style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+    >
       {box}
       <Text as="span" size="2">
         {children}
@@ -109,6 +144,19 @@ export interface SelectOption {
 const EMPTY_VALUE = "__adapttable_empty__";
 
 /**
+ * What the kit's Select is given for a caller's value.
+ *
+ * A cleared select shows the placeholder, and Base UI shows one only for a
+ * value it has no item for — `null`. The sentinel is for a list that offers an
+ * empty CHOICE ("Any"): naming it when no such item exists printed the
+ * sentinel itself where the placeholder belonged.
+ */
+function selectedValue(value: string, offersEmpty: boolean): string | null {
+  if (value !== "") return value;
+  return offersEmpty ? EMPTY_VALUE : null;
+}
+
+/**
  * Controlled select over Base UI `Select.*`, with empty-value sentinel
  * round-trip for placeholder / clear choices.
  */
@@ -117,27 +165,37 @@ export function NativeSelect({
   value,
   placeholder,
   onValueChange,
+  onKeyDown,
   options,
   width,
+  className,
   "aria-label": ariaLabel,
   "data-adapttable-part": part,
+  ...rest
 }: Readonly<{
   size?: "1" | "2" | "3";
   value: string;
   placeholder?: string;
   onValueChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
   options: readonly SelectOption[];
   width?: string;
+  className?: string;
   "aria-label"?: string;
   "data-adapttable-part"?: string;
+  /** Validation and busy state from the headless layer. */
+  "aria-invalid"?: true;
+  "aria-describedby"?: string;
+  "aria-busy"?: true;
+  "data-conflict"?: "";
 }>) {
-  const selected = value === "" ? EMPTY_VALUE : value;
   const items = Object.fromEntries(
     options.map((option) => [
       option.value === "" ? EMPTY_VALUE : option.value,
       option.label,
     ])
   );
+  const selected = selectedValue(value, EMPTY_VALUE in items);
   return (
     <Select.Root
       value={selected}
@@ -149,11 +207,13 @@ export function NativeSelect({
       <Select.Trigger
         aria-label={ariaLabel}
         data-adapttable-part={part}
-        className="adapttable-btn"
+        className={className ?? "adapttable-btn"}
         data-size={size}
         data-variant="outline"
         data-slot="select-trigger"
+        onKeyDown={onKeyDown}
         style={width ? { width } : undefined}
+        {...rest}
       >
         <Select.Value data-slot="select-value" placeholder={placeholder} />
       </Select.Trigger>
@@ -193,7 +253,7 @@ export function FormField({
   children,
 }: Readonly<{ label: ReactNode; children: ReactNode }>) {
   return (
-    <Flex direction="column" gap="1">
+    <Flex direction="column" gap="4">
       <Text as="span" size="2">
         {label}
       </Text>

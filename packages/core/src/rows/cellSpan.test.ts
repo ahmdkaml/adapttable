@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { ColumnDef } from "../types";
 import {
+  bodyCellsHaveRowSpan,
   buildBodyCells,
   cellsForRow,
+  cellSpanMark,
   coveredAddressSet,
   resolveCellSpan,
   rowSpanSignature,
@@ -41,6 +43,29 @@ describe("spanningArmed", () => {
   });
 });
 
+describe("bodyCellsHaveRowSpan", () => {
+  it("is false until an origin is taller than one row", () => {
+    expect(
+      bodyCellsHaveRowSpan(
+        buildBodyCells({ rows: ROWS, columns: COLUMNS, getRowId: id })
+      )
+    ).toBe(false);
+    expect(
+      bodyCellsHaveRowSpan(
+        buildBodyCells({
+          rows: ROWS,
+          columns: COLUMNS,
+          getRowId: id,
+          getCellSpan: ({ column, row }) =>
+            column.key === "team" && row.id === "a"
+              ? { rowSpan: 2 }
+              : undefined,
+        })
+      )
+    ).toBe(true);
+  });
+});
+
 describe("resolveCellSpan", () => {
   it("clamps to what is left of the grid and treats junk as 1", () => {
     const args = {
@@ -48,6 +73,8 @@ describe("resolveCellSpan", () => {
       column: COLUMNS[0]!,
       rowIndex: 0,
       columnIndex: 0,
+      sectionRows: ROWS,
+      sectionRowIndex: 0,
     };
     expect(
       resolveCellSpan(args, () => ({ colSpan: 9, rowSpan: 9 }), 3, 2)
@@ -71,7 +98,14 @@ describe("resolveCellSpan", () => {
     };
     expect(
       resolveCellSpan(
-        { row: ROWS[0]!, column, rowIndex: 0, columnIndex: 0 },
+        {
+          row: ROWS[0]!,
+          column,
+          rowIndex: 0,
+          columnIndex: 0,
+          sectionRows: ROWS,
+          sectionRowIndex: 0,
+        },
         undefined,
         3,
         3
@@ -217,6 +251,64 @@ describe("buildBodyCells", () => {
     expect(continued[0]?.colSpan).toBe(1);
   });
 
+  it("restarts a consecutive team span when the origin is in another section", () => {
+    const people: Person[] = [
+      { id: "1", name: "Chioma", team: "Core", city: "Lagos" },
+      { id: "2", name: "Fatima", team: "Core", city: "Accra" },
+      { id: "3", name: "Elena", team: "Core", city: "Madrid" },
+      { id: "4", name: "Sefa", team: "Data", city: "Istanbul" },
+      { id: "5", name: "Omar", team: "Data", city: "Lima" },
+    ];
+    const teamSpan = ({
+      column,
+      sectionRows,
+      sectionRowIndex,
+    }: {
+      column: { key: string };
+      sectionRows: readonly Person[];
+      sectionRowIndex: number;
+    }) => {
+      if (column.key !== "team") return undefined;
+      const current = sectionRows[sectionRowIndex];
+      if (!current) return undefined;
+      if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+        return undefined;
+      }
+      let span = 1;
+      while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+        span += 1;
+      }
+      return span > 1 ? { rowSpan: span } : undefined;
+    };
+    const pinned = buildBodyCells({
+      rows: [people[0]!],
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: teamSpan,
+    });
+    expect(
+      cellsForRow(pinned, "1").find((cell) => cell.column.key === "team")
+        ?.rowSpan
+    ).toBe(1);
+    const scroll = buildBodyCells({
+      rows: people.slice(1),
+      columns: COLUMNS,
+      getRowId: id,
+      getCellSpan: teamSpan,
+    });
+    expect(
+      cellsForRow(scroll, "2").find((cell) => cell.column.key === "team")
+        ?.rowSpan
+    ).toBe(2);
+    expect(
+      cellsForRow(scroll, "3").map((cell) => cell.column.key)
+    ).not.toContain("team");
+    expect(
+      cellsForRow(scroll, "4").find((cell) => cell.column.key === "team")
+        ?.rowSpan
+    ).toBe(2);
+  });
+
   it("maps every row to no cells when the table has no columns", () => {
     const map = buildBodyCells({
       rows: ROWS,
@@ -258,5 +350,14 @@ describe("rowSpanSignature", () => {
         column.key === "name" ? { colSpan: 2 } : undefined,
     });
     expect(rowSpanSignature(cellsForRow(map, "a"))).toBe("name:2x1,city:1x1");
+  });
+});
+
+describe("cellSpanMark", () => {
+  it("names a span and stays silent on a 1×1 cell", () => {
+    expect(cellSpanMark(1, 1)).toBeUndefined();
+    expect(cellSpanMark(2, 1)).toBe("2x1");
+    expect(cellSpanMark(1, 3)).toBe("1x3");
+    expect(cellSpanMark(2, 2)).toBe("2x2");
   });
 });

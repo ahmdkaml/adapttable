@@ -6,6 +6,7 @@ export interface PaginationFooterProps {
   page: number;
   totalPages: number;
   limit: number;
+  defaultLimit?: number;
   total: number;
   fromIndex: number;
   toIndex: number;
@@ -21,6 +22,7 @@ export function PaginationFooter({
   page,
   totalPages,
   limit,
+  defaultLimit = limit,
   total,
   fromIndex,
   toIndex,
@@ -31,7 +33,7 @@ export function PaginationFooter({
 }: Readonly<PaginationFooterProps>) {
   const safeTotalPages = Math.max(totalPages, 1);
   const safePage = Math.min(Math.max(page, 1), safeTotalPages);
-  const options = pageSizeOptions(limit).map((n) => ({
+  const options = pageSizeOptions([limit, defaultLimit]).map((n) => ({
     value: String(n),
     label: String(n),
   }));

@@ -400,6 +400,9 @@ describe("MUI coverage gaps", () => {
     expect(popper).not.toBeNull();
     expect(popper!.getAttribute("data-popper-placement")).toBe("bottom-start");
     expect(document.querySelector(".MuiBackdrop-root")).toBeNull();
+    expect(
+      screen.getByText("filter body").closest("[dir='rtl']")
+    ).not.toBeNull();
   });
 
   it("virtualizes mobile cards with a trailing bottom-pad spacer", () => {

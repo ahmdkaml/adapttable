@@ -1,6 +1,6 @@
 # @adapttable/i18n
 
-[![AdaptTable i18n — switch to Arabic and the whole table mirrors RTL](https://orwa-mahmoud.github.io/adapttable/media/features/rtl.gif)](https://orwa-mahmoud.github.io/adapttable/demo/rtl/)
+[![AdaptTable i18n — switch to Arabic and the whole table mirrors RTL](https://orwa-mahmoud.github.io/adapttable/media/features/rtl.gif)](https://orwa-mahmoud.github.io/adapttable/demo/mantine/rtl/)
 
 **[📖 Documentation](https://orwa-mahmoud.github.io/adapttable/)** · **[🚀 Live demo](https://orwa-mahmoud.github.io/adapttable/demo/)** · **[Get started](https://orwa-mahmoud.github.io/adapttable/getting-started/)**
 

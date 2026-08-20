@@ -1,10 +1,14 @@
-import { createMemoryAdapter, useFrontendData } from "@adapttable/core";
+import {
+  createMemoryAdapter,
+  flattenColumnTree,
+  useFrontendData,
+} from "@adapttable/core";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ConfigProvider } from "antd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DataTable } from "./DataTable";
-import type { ColumnDef } from "./index";
+import type { ColumnDef, ColumnInput } from "./index";
 
 interface Row {
   id: string;
@@ -25,14 +29,14 @@ const baseColumns: ColumnDef<Row>[] = [
 let adapter: ReturnType<typeof createMemoryAdapter>;
 
 function Harness(props: {
-  columns?: ColumnDef<Row>[];
+  columns?: ColumnInput<Row>[];
   override?: Partial<Omit<Parameters<typeof DataTable<Row>>[0], "mode">>;
 }) {
   const columns = props.columns ?? baseColumns;
   const source = useFrontendData<Row>({
     data: ROWS,
     urlAdapter: adapter,
-    columns,
+    columns: flattenColumnTree(columns).leaves,
     paginationMode: "paged",
   });
   return (
@@ -246,7 +250,7 @@ describe("header groups (antd native grouped columns)", () => {
     );
   });
 
-  it("collapses a group to its summary column when armed", () => {
+  it("collapses a group to an arrow stub when armed", () => {
     const { container } = renderHarness({
       columns: grouped,
       override: { collapsibleColumnGroups: true },
@@ -260,9 +264,32 @@ describe("header groups (antd native grouped columns)", () => {
       container.querySelector('[data-adapttable-part="column-group-toggle"]')
     ).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("columnheader", { name: "City" })).toBeNull();
-    expect(
-      screen.getByRole("columnheader", { name: "Name" })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Name" })).toBeNull();
+    expect(container.querySelectorAll("thead tr")).toHaveLength(1);
+  });
+
+  it("drops the child header row for collapsedRender", () => {
+    const tree: ColumnInput<Row>[] = [
+      { key: "age", header: "Age", accessor: (r) => r.age },
+      {
+        header: "Person",
+        collapsedRender: (row) => `${row.name} · ${row.city}`,
+        children: [
+          { key: "name", header: "Name", accessor: (r) => r.name },
+          { key: "city", header: "City", accessor: (r) => r.city },
+        ],
+      },
+    ];
+    const { container } = renderHarness({
+      columns: tree,
+      override: { collapsibleColumnGroups: true },
+    });
+    fireEvent.click(
+      container.querySelector('[data-adapttable-part="column-group-toggle"]')!
+    );
+    expect(screen.queryByRole("columnheader", { name: "Name" })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: "City" })).toBeNull();
+    expect(container.querySelectorAll("thead tr")).toHaveLength(1);
   });
 
   it("renders a single header row when no column declares a group", () => {

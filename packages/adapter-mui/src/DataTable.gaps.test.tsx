@@ -156,7 +156,7 @@ describe("MUI gaps", () => {
       ],
     });
     const button = screen.getAllByRole("button", { name: "Delete" })[0]!;
-    expect(button.className).toContain("MuiIconButton-colorError");
+    expect(button.className).toContain("MuiButton-colorError");
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalledWith(ROWS[0]);
   });

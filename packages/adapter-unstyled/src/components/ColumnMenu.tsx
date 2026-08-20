@@ -3,6 +3,7 @@ import {
   columnMenuActions,
   columnMenuRows,
   columnReorderKeyProps,
+  type Direction,
   filterColumnMenuRows,
   hideAllColumns,
   REORDER_COLUMN_KEY,
@@ -23,6 +24,7 @@ import {
   PinIcon,
 } from "@adapttable/core/adapter";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 import { cx } from "../cx";
 import type { DataTableClassNames } from "../types";
@@ -349,6 +351,12 @@ export interface ColumnMenuProps<TRow> extends ColumnMenuChromeProps<TRow> {
   onFilterColumn?: (key: string) => void;
   sortBy?: string;
   sortDir?: "asc" | "desc";
+  /**
+   * Text direction. The panel portals to `document.body`, so it cannot
+   * inherit `dir` from the table — without this, Arabic keeps LTR row
+   * chrome (grip, eye, pin).
+   */
+  dir?: Direction;
 }
 
 /**
@@ -370,9 +378,10 @@ export function ColumnMenu<TRow>({
   onFilterColumn,
   sortBy,
   sortDir,
+  dir,
 }: Readonly<ColumnMenuProps<TRow>>) {
   const drag = useColumnDragState();
-  const { open, setOpen, rootRef, triggerRef } = useMenuPopover();
+  const { open, setOpen, rootRef, triggerRef, panelRef } = useMenuPopover();
   const [query, setQuery] = useState("");
   const rows = filterColumnMenuRows(columnMenuRows(allColumns, layout), query);
 
@@ -396,115 +405,119 @@ export function ColumnMenu<TRow>({
       >
         {labels.columns}
       </button>
-      {open && (
-        <fieldset
-          aria-label={labels.columns}
-          data-adapttable-part="column-menu-panel"
-          className={classNames.columnMenuPanel}
-          style={MENU_PANEL_STYLE}
-        >
-          <div
-            data-adapttable-part="column-menu-header"
-            className={classNames.columnMenuHeader}
+      {open &&
+        createPortal(
+          <fieldset
+            ref={panelRef}
+            aria-label={labels.columns}
+            dir={dir}
+            data-adapttable-part="column-menu-panel"
+            className={classNames.columnMenuPanel}
+            style={MENU_PANEL_STYLE}
           >
-            <span
-              data-adapttable-part="column-menu-title"
-              className={classNames.columnMenuTitle}
+            <div
+              data-adapttable-part="column-menu-header"
+              className={classNames.columnMenuHeader}
             >
-              {labels.columns}
-            </span>
-          </div>
-          <input
-            type="search"
-            data-adapttable-part="column-menu-search"
-            className={classNames.columnMenuSearch}
-            placeholder={labels.searchColumns}
-            aria-label={labels.searchColumns}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <div
-            data-adapttable-part="column-menu-bulk"
-            className={classNames.columnMenuBulk}
-          >
+              <span
+                data-adapttable-part="column-menu-title"
+                className={classNames.columnMenuTitle}
+              >
+                {labels.columns}
+              </span>
+            </div>
+            <input
+              type="search"
+              data-adapttable-part="column-menu-search"
+              className={classNames.columnMenuSearch}
+              placeholder={labels.searchColumns}
+              aria-label={labels.searchColumns}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <div
+              data-adapttable-part="column-menu-bulk"
+              className={classNames.columnMenuBulk}
+            >
+              <button
+                type="button"
+                data-adapttable-part="column-menu-bulk-button"
+                className={classNames.columnMenuBulkButton}
+                onClick={() => showAllColumns(rows, layout)}
+              >
+                {labels.showAllColumns}
+              </button>
+              <button
+                type="button"
+                data-adapttable-part="column-menu-bulk-button"
+                className={classNames.columnMenuBulkButton}
+                onClick={() => hideAllColumns(rows, layout)}
+              >
+                {labels.hideAllColumns}
+              </button>
+              <button
+                type="button"
+                data-adapttable-part="column-menu-bulk-button"
+                className={classNames.columnMenuBulkButton}
+                onClick={() => unpinAllColumns(rows, layout)}
+              >
+                {labels.unpinAllColumns}
+              </button>
+            </div>
+            {rows.map((row) => (
+              <ColumnMenuRowItem
+                key={row.key}
+                row={row}
+                layout={layout}
+                labels={labels}
+                classNames={classNames}
+                drag={drag}
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSortColumn={onSortColumn}
+                onAutoSizeColumn={onAutoSizeColumn}
+                onFilterColumn={onFilterColumn}
+              />
+            ))}
+            {(hasRowReorder === true || hasRowActions === true) && (
+              <hr
+                data-adapttable-part="column-menu-separator"
+                className={classNames.columnMenuSeparator}
+              />
+            )}
+            {hasRowReorder && (
+              <ReorderMenuRowItem
+                layout={layout}
+                labels={labels}
+                classNames={classNames}
+              />
+            )}
+            {hasRowActions && (
+              <ActionsMenuRowItem
+                layout={layout}
+                labels={labels}
+                classNames={classNames}
+              />
+            )}
             <button
               type="button"
-              data-adapttable-part="column-menu-bulk-button"
-              className={classNames.columnMenuBulkButton}
-              onClick={() => showAllColumns(rows, layout)}
+              data-adapttable-part="column-menu-auto-size"
+              className={cx(classNames.columnMenuAutoSize)}
+              onClick={onAutoSize}
             >
-              {labels.showAllColumns}
+              {labels.autoSizeColumns}
             </button>
             <button
               type="button"
-              data-adapttable-part="column-menu-bulk-button"
-              className={classNames.columnMenuBulkButton}
-              onClick={() => hideAllColumns(rows, layout)}
+              data-adapttable-part="column-menu-reset"
+              className={cx(classNames.columnMenuReset)}
+              onClick={() => layout.reset()}
             >
-              {labels.hideAllColumns}
+              {labels.resetColumns}
             </button>
-            <button
-              type="button"
-              data-adapttable-part="column-menu-bulk-button"
-              className={classNames.columnMenuBulkButton}
-              onClick={() => unpinAllColumns(rows, layout)}
-            >
-              {labels.unpinAllColumns}
-            </button>
-          </div>
-          {rows.map((row) => (
-            <ColumnMenuRowItem
-              key={row.key}
-              row={row}
-              layout={layout}
-              labels={labels}
-              classNames={classNames}
-              drag={drag}
-              sortBy={sortBy}
-              sortDir={sortDir}
-              onSortColumn={onSortColumn}
-              onAutoSizeColumn={onAutoSizeColumn}
-              onFilterColumn={onFilterColumn}
-            />
-          ))}
-          {(hasRowReorder === true || hasRowActions === true) && (
-            <hr
-              data-adapttable-part="column-menu-separator"
-              className={classNames.columnMenuSeparator}
-            />
-          )}
-          {hasRowReorder && (
-            <ReorderMenuRowItem
-              layout={layout}
-              labels={labels}
-              classNames={classNames}
-            />
-          )}
-          {hasRowActions && (
-            <ActionsMenuRowItem
-              layout={layout}
-              labels={labels}
-              classNames={classNames}
-            />
-          )}
-          <button
-            type="button"
-            data-adapttable-part="column-menu-auto-size"
-            className={cx(classNames.columnMenuAutoSize)}
-            onClick={onAutoSize}
-          >
-            {labels.autoSizeColumns}
-          </button>
-          <button
-            type="button"
-            data-adapttable-part="column-menu-reset"
-            className={cx(classNames.columnMenuReset)}
-            onClick={() => layout.reset()}
-          >
-            {labels.resetColumns}
-          </button>
-        </fieldset>
-      )}
+          </fieldset>,
+          document.body
+        )}
     </div>
   );
 }

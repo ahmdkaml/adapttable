@@ -54,7 +54,7 @@ describe("row pinning (unstyled)", () => {
     });
   });
 
-  it("renders a controlled top pin outside the scroll tbody", () => {
+  it("renders a controlled top pin in the body", () => {
     render(
       <DataTable
         data={ROWS}
@@ -68,7 +68,8 @@ describe("row pinning (unstyled)", () => {
     expect(part("pinned-top")?.textContent).toContain("Ship");
     expect(part("pinned-bottom")?.textContent).toContain("Docs");
     expect(part("tbody")?.textContent).toContain("Test");
-    expect(part("tbody")?.textContent).not.toContain("Ship");
+    expect(part("pinned-top")).toHaveAttribute("data-row-pin", "top");
+    expect(part("pinned-bottom")).toHaveAttribute("data-row-pin", "bottom");
   });
 
   it("offers pin actions on cards with no sticky chrome", () => {

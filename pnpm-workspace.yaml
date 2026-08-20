@@ -19,6 +19,17 @@ peerDependencyRules:
 # only @adapttable/* deps plus react-compiler-runtime and
 # @tanstack/react-virtual — so these are build/dev tooling only.
 overrides:
+  # Starters declare ^2.0.0 so StackBlitz installs from npm. The monorepo
+  # must still typecheck them against workspace packages.
+  "@adapttable/antd": "workspace:*"
+  "@adapttable/base-ui": "workspace:*"
+  "@adapttable/chakra": "workspace:*"
+  "@adapttable/core": "workspace:*"
+  "@adapttable/mantine": "workspace:*"
+  "@adapttable/mui": "workspace:*"
+  "@adapttable/radix": "workspace:*"
+  "@adapttable/shadcn": "workspace:*"
+  "@adapttable/unstyled": "workspace:*"
   "eslint-plugin-sonarjs>minimatch": "^10.2.3"
   # CRLF injection, cache-control disclosure, cookie injection, response
   # desync, private-cache crash

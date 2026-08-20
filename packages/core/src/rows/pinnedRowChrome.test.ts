@@ -7,9 +7,32 @@ import {
   PINNED_BOTTOM_PART,
   PINNED_TOP_PART,
   pinnedRowCellStyle,
+  pinnedRowPart,
+  pinnedRowSticky,
   pinnedRowStickyStyle,
   useOffsetHeight,
 } from "./pinnedRowChrome";
+
+describe("pinnedRowPart", () => {
+  it("names the pin side and stays undefined when the row is free", () => {
+    expect(pinnedRowPart("top")).toBe(PINNED_TOP_PART);
+    expect(pinnedRowPart("bottom")).toBe(PINNED_BOTTOM_PART);
+    expect(pinnedRowPart(undefined)).toBeUndefined();
+  });
+});
+
+describe("pinnedRowSticky", () => {
+  it("is undefined unless the row is pinned and sticky", () => {
+    expect(pinnedRowSticky(undefined, true, 48)).toBeUndefined();
+    expect(pinnedRowSticky("top", false, 48)).toBeUndefined();
+    expect(pinnedRowSticky("top", true, 48)).toEqual(
+      pinnedRowStickyStyle("top", 48)
+    );
+    expect(pinnedRowSticky("bottom", true, 48)).toEqual(
+      pinnedRowStickyStyle("bottom", 0)
+    );
+  });
+});
 
 describe("pinnedRowStickyStyle", () => {
   it("sticks top rows under the header and bottom rows to the floor", () => {

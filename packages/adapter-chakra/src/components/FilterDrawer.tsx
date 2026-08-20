@@ -1,7 +1,9 @@
 /** The filters drawer — the backdrop-ed alternative to the popover. */
 import { type Direction, type TableLabels } from "@adapttable/core";
-import { Button, CloseButton, Drawer, Portal, Stack } from "@chakra-ui/react";
+import { Button, CloseButton, Drawer, Stack } from "@chakra-ui/react";
 import { type ReactNode } from "react";
+
+import { KitPortal } from "./kitPortal";
 
 /** Filters drawer. */
 export function FilterDrawer({
@@ -32,15 +34,20 @@ export function FilterDrawer({
       placement={dir === "rtl" ? "start" : "end"}
       size="sm"
     >
-      <Portal>
+      <KitPortal>
         <Drawer.Backdrop />
         <Drawer.Positioner>
-          <Drawer.Content>
+          <Drawer.Content
+            dir={dir}
+            h="100dvh"
+            display="flex"
+            flexDirection="column"
+          >
             <Drawer.CloseTrigger asChild>
               <CloseButton aria-label={labels.cancel} />
             </Drawer.CloseTrigger>
             <Drawer.Header>{labels.filters}</Drawer.Header>
-            <Drawer.Body>
+            <Drawer.Body flex="1" overflowY="auto">
               <Stack gap={4}>{filters}</Stack>
             </Drawer.Body>
             <Drawer.Footer justifyContent="space-between">
@@ -57,7 +64,7 @@ export function FilterDrawer({
             </Drawer.Footer>
           </Drawer.Content>
         </Drawer.Positioner>
-      </Portal>
+      </KitPortal>
     </Drawer.Root>
   );
 }

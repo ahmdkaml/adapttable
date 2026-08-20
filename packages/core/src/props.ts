@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
 import type { ConfirmHandler } from "./actions/confirm";
+import type { CommandPaletteOptions } from "./actions/useCommandPalette";
+import type { ContextMenuOptions } from "./actions/useTableContextMenu";
+import type { ColumnInput } from "./columns/columnTree";
 import type { ColumnLayoutState } from "./columns/useColumnLayout";
 import type { BatchRowEdit } from "./editing/batchEditing";
 import type {
@@ -19,15 +22,17 @@ import type {
 import type { CellEdit } from "./focus/cellEdits";
 import type { CellRange } from "./focus/cellRange";
 import type { GroupNode, GroupSort } from "./grouping/groupRows";
-import type { GetCellSpan } from "./rows/cellSpan";
+import type { SidePanelEntry } from "./layout/SidePanelChrome";
+import type { CellSpanAppearance, GetCellSpan } from "./rows/cellSpan";
 import type { ExtraRow } from "./rows/extraRows";
+import type { MobileCardRenderer } from "./rows/mobileCard";
+import type { RowActionsLayout, RowActionsRenderer } from "./rows/rowActions";
 import type { RowPinState } from "./rows/rowPinning";
 import type { RowHeight, RowStyle } from "./rows/rowStyle";
 import type { TableSource } from "./source/TableSource";
 import type { NestedTableFor } from "./tree/nestedTable";
 import type {
   BulkAction,
-  ColumnDef,
   Direction,
   ExtraFilters,
   PaginationMode,
@@ -36,6 +41,44 @@ import type {
   TableLabels,
   TableQueryParams,
 } from "./types";
+
+/**
+ * Where a host's own toolbar controls go.
+ *
+ * The toolbar reads Search · custom · Filters · Saved views · Columns ·
+ * Undo/Redo · Export · Add · Rows per page, and that order is the same in
+ * every kit. These name the two places outside it, so a control can be
+ * put before everything or after everything without an adapter having to
+ * know what the control is.
+ */
+export interface ToolbarSlots {
+  /** Ahead of the search input. */
+  start?: ReactNode;
+  /** After every built-in control, before the rows-per-page select. */
+  end?: ReactNode;
+}
+
+/**
+ * A side panel docked beside the table.
+ *
+ * Controlled, because the control that opens it is yours: a table settings
+ * button in `toolbarSlots`, an item in your own app bar, a route. The
+ * table never invents a trigger for it, and `open` is the panel's key or
+ * `null` for closed.
+ */
+export interface SidePanelOptions {
+  /** The panels, in tab order. */
+  panels: readonly SidePanelEntry[];
+  /** Which panel is showing, or `null` when the panel is closed. */
+  open: string | null;
+  /** Called with the panel to show, or `null` when it should close. */
+  onOpenChange: (key: string | null) => void;
+  /**
+   * Which edge to dock to. `"end"` (default) is the right in a
+   * left-to-right table and the left in a right-to-left one.
+   */
+  side?: "start" | "end";
+}
 
 /**
  * The UI-agnostic prop surface shared by every AdaptTable adapter's
@@ -47,14 +90,28 @@ import type {
 export interface BaseDataTableProps<TRow> {
   /** Data + state contract from `useFrontendData` / `useQuerySource`. */
   source: TableSource<TRow>;
-  /** Column definitions. */
-  columns: ColumnDef<TRow>[];
+  /** Column definitions. A parent with `children` is a column group. */
+  columns: ColumnInput<TRow>[];
   /** Stable React key extractor for a row. */
   rowKey: (row: TRow) => string;
 
   /* ── Display ─────────────────────────────────────────────────────── */
   /** Trailing per-row actions. */
   rowActions?: RowAction<TRow>[];
+  /**
+   * How the trailing actions column renders. Omit or `"buttons"` for the
+   * horizontal strip. `"menu"` collapses visible actions into a 3-dot menu
+   * using each kit's own Menu. {@link BaseDataTableProps.renderRowActions}
+   * wins over this.
+   */
+  rowActionsLayout?: RowActionsLayout;
+  /**
+   * Replace the trailing actions cell (desktop and mobile cards). Receives
+   * the resolved action list (host + built-in duplicate / delete / pin).
+   * When set, `rowActionsLayout` is ignored. The column still only appears
+   * when there are row actions (or row-mode editing).
+   */
+  renderRowActions?: RowActionsRenderer<TRow>;
   /** Accessible label for the table. */
   tableLabel?: string;
   /** Placeholder for the search input. */
@@ -76,8 +133,31 @@ export interface BaseDataTableProps<TRow> {
    * maps it to its kit's table size.
    */
   density?: "comfortable" | "compact";
+  /**
+   * Replace a mobile card's body with your own layout.
+   *
+   * The card's shell stays: list-item semantics, the selection checkbox, the
+   * expand and tree toggles, reorder controls, row actions and the detail
+   * panel all render around what you return, so a custom card cannot drop the
+   * parts that make the list usable. The `card` argument hands you the fields
+   * the built-in would have laid out — column, label and rendered value,
+   * editors included — so this is a layout decision, not a re-implementation.
+   *
+   * Omit it and the built-in card renders, byte for byte.
+   */
+  renderCard?: MobileCardRenderer<TRow>;
   /** Force the mobile layout (otherwise resolved from the viewport). */
   forceMobile?: boolean;
+  /**
+   * The width, in pixels, at or below which the card layout takes over.
+   * Defaults to 768 — a phone in portrait.
+   *
+   * Raise it when the table lives in a sidebar or a split pane, where the
+   * viewport says "desktop" while the table has a phone's width to work
+   * with. Lower it when the table is the whole page and its columns are
+   * narrow enough to survive.
+   */
+  mobileBreakpoint?: number;
   /**
    * Initial state applied while the URL is silent about a key — e.g.
    * `defaults={{ limit: 10, sortBy: "name" }}`. The user's own changes
@@ -203,6 +283,12 @@ export interface BaseDataTableProps<TRow> {
    * mobile cards; multiple rows may be open, keyed by row id.
    */
   renderRowDetail?: (row: TRow) => ReactNode;
+  /**
+   * Row ids whose detail panel (or nested table) starts open. Uncontrolled
+   * initial state — later toggles own the set. Omit and every row starts
+   * closed.
+   */
+  defaultExpandedRowIds?: readonly string[];
   /**
    * A real table under a row instead of a blank panel. Name it after the row
    * and mount the kit's own `<DataTable>` with the defaults handed in:
@@ -374,7 +460,7 @@ export interface BaseDataTableProps<TRow> {
   /**
    * Per-cell row/column span. Return `{ colSpan, rowSpan }` for the origin;
    * covered cells are omitted from the row's cell list. Column-level
-   * {@link ColumnDef.colSpan} / {@link ColumnDef.rowSpan} are the same
+   * `colSpan` / `rowSpan` on the column def are the same
    * thing when every row of a column shares a rule. Omit both and every
    * kit still maps one cell per column.
    *
@@ -382,6 +468,12 @@ export interface BaseDataTableProps<TRow> {
    * derived from data, so nothing is written to the URL.
    */
   getCellSpan?: GetCellSpan<TRow>;
+  /**
+   * How a spanned cell is painted. Omit / `"merged"` is the spreadsheet look
+   * (centered content, one fill). `"plain"` keeps today's 1×1 chrome so a
+   * host can style a calendar-style bar on `data-cell-span`.
+   */
+  cellSpanAppearance?: CellSpanAppearance;
   /**
    * Host-injected separator and full-width rows, spliced into the body
    * by `beforeRowId`. Omit the list and nothing is inserted. Extras are
@@ -553,9 +645,9 @@ export interface BaseDataTableProps<TRow> {
   /** Initial column layout for the uncontrolled mode. */
   defaultColumnLayout?: Partial<ColumnLayoutState>;
   /**
-   * Column-group headers gain a collapse toggle. A collapsed group keeps
-   * its first leaf as the summary column. State lives on
-   * `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`).
+   * Column-group headers gain a collapse toggle. Each group decides what
+   * remains: an arrow stub, `collapsedKey`, or `collapsedRender`. State
+   * lives on `columnLayout.collapsedGroups` and the URL (`colGroupCollapse`).
    * Omit and group headers stay static.
    */
   collapsibleColumnGroups?: boolean;
@@ -598,7 +690,13 @@ export interface BaseDataTableProps<TRow> {
   estimateCardSize?: number;
   /** Extra rows/cards rendered before and after the virtual window. */
   virtualOverscan?: number;
-  /** Scroll margin for window virtualization, usually sticky chrome height. */
+  /**
+   * Override for window-mode virtualization's scroll offset.
+   *
+   * When omitted, the list's document offset is measured so a table below
+   * page chrome does not open with a blank gap. Pass a value only when you
+   * already know that offset (tests, or a table whose position is fixed).
+   */
   virtualScrollMargin?: number;
 
   /* ── Filters ─────────────────────────────────────────────────────── */
@@ -644,13 +742,25 @@ export interface BaseDataTableProps<TRow> {
    */
   onClearFilters?: () => void;
   /**
-   * Alias for `filtersMode="header"`: a compact per-column filter row
-   * under the header, bound to the same defs and extra bag as the panel.
-   * Desktop only. Mutually exclusive with the toolbar popover/drawer —
-   * passing this hides the Filters button. Omit the prop and nothing
-   * extra renders.
+   * Alias for `filtersMode="header"`: a per-column filter icon on the
+   * header, bound to the same defs and extra bag as the panel. Desktop
+   * only. Hides the toolbar Filters button unless `source.setFilterTree`
+   * is set (the AND/OR tree has no column of its own). Omit the prop and
+   * nothing extra renders.
    */
   headerFilters?: boolean;
+  /**
+   * Close a header-filter popover after a finished single-control write
+   * (a select/boolean value, or a valueless operator such as "Is empty").
+   * Off by default — picking an operator on a field that still has a value
+   * input must not dismiss the overlay. Outside click and Escape always close.
+   */
+  closeHeaderFilterOnSelect?: boolean;
+  /**
+   * Mount the per-field Filters form. Default on. Pass `false` to keep only
+   * the AND/OR tree in that chrome — the field list is gone, not hidden.
+   */
+  filterFields?: boolean;
 
   /* ── Bulk actions ────────────────────────────────────────────────── */
   /** Bulk actions — enabling these turns on row selection. */
@@ -694,21 +804,184 @@ export interface BaseDataTableProps<TRow> {
    * are a list, not a grid, and keep their list semantics.
    */
   cellNavigation?: boolean;
+  /**
+   * Offer a checkbox in every column header that selects that column.
+   * Defaults to false, and needs {@link cellNavigation} to do anything.
+   *
+   * Ctrl/Cmd+click on a header already selects a column, and that gesture is
+   * unchanged. It is also unreachable on a touch device — there is no Ctrl key
+   * to hold — and undiscoverable to anyone who has not been told about it. This
+   * is the same selection behind a control a finger can hit and a screen reader
+   * can name. On a hovering pointer it holds its space and fades in on hover or
+   * focus, so a wide header row is not a row of checkboxes; where there is no
+   * hover it is always visible.
+   */
+  columnSelectionCheckbox?: boolean;
   /** Inline toolbar slot for custom controls (view toggles, etc.). */
   toolbar?: ReactNode;
+  /**
+   * Named regions of the toolbar, for controls that have to sit somewhere
+   * specific rather than in the middle.
+   *
+   * `toolbar` is the middle region and stays exactly what it was: content
+   * between the search input and the built-in buttons. These two are the
+   * ends, which is where an app's own view switcher or a "back" control
+   * belongs — ahead of everything, or after it.
+   *
+   * ```tsx
+   * <DataTable
+   *   toolbarSlots={{ start: <BackButton />, end: <HelpLink /> }}
+   *   …
+   * />
+   * ```
+   */
+  toolbarSlots?: ToolbarSlots;
+  /**
+   * Let the user choose the row density from the toolbar. Defaults to off.
+   *
+   * The `density` prop is what the table renders; this is the control that
+   * changes it. Pair it with `useDensityUrlState` and the choice survives a
+   * reload and travels in a shared link.
+   */
+  densityChooser?: boolean;
+  /** Called when the user picks a density. */
+  onDensityChange?: (next: "comfortable" | "compact") => void;
+  /**
+   * A fullscreen toggle in the toolbar. Defaults to off.
+   *
+   * Fullscreen hides everything outside the table, which is what makes it
+   * useful and also what breaks overlays: a menu portalled to
+   * `document.body` is inside the part being hidden. The table's own
+   * overlays are re-pointed at the fullscreen element while it is on.
+   *
+   * The button hides itself where the browser will not allow fullscreen at
+   * all — an embedded webview, a sandboxed frame — because a control that
+   * cannot work is worse than no control.
+   */
+  fullscreen?: boolean;
+  /**
+   * Open the print dialog on the current view.
+   *
+   * What gets printed is the host's: `printTable` opens a browser dialog and
+   * `downloadExportFile` cannot, so the table asks and the host decides.
+   * Wire this and it becomes a command in the palette and an entry anywhere
+   * else commands are listed. Add {@link printButton} for a toolbar control
+   * as well — opt-in chrome either way, never a permanent button.
+   *
+   * ```tsx
+   * import { printTable } from "@adapttable/core/pdf";
+   *
+   * <DataTable onPrint={() => printTable({ rows, columns })} … />
+   * ```
+   */
+  onPrint?: () => void;
+  /**
+   * A command palette, opened with Cmd/Ctrl+K. Defaults to off.
+   *
+   * It lists the table's own actions — print, export, clear filters, each
+   * appearing only when wired — and anything you add. Its entries are the
+   * same objects the context menus take, so an action is written once and
+   * offered in both places rather than drifting between them.
+   *
+   * ```tsx
+   * <DataTable
+   *   commandPalette={{
+   *     commands: [{ key: "audit", label: "Open audit log", onSelect: open }],
+   *     shortcuts: [{ chord: "ctrl+shift+p", command: "command-palette" }],
+   *   }}
+   *   …
+   * />
+   * ```
+   */
+  commandPalette?: boolean | CommandPaletteOptions;
+  /**
+   * Right-click menus for headers, rows and cells. Defaults to off.
+   *
+   * `true` takes the built-in entries — sort, filter, pin and hide on a
+   * header; copy and cut on a cell — each appearing only when the handler
+   * behind it is wired and the column allows it. Pass `{ items }` to append
+   * your own, which land behind a divider so a custom action is never
+   * mistaken for a built-in one.
+   *
+   * Every route in works: right-click, Shift+F10 and the menu key for the
+   * keyboard, and a long press for touch. Escape closes and puts focus back
+   * where it came from.
+   */
+  contextMenu?: boolean | ContextMenuOptions<TRow>;
+  /**
+   * Dock a settings panel beside the table.
+   *
+   * A popover is right for a control you touch once. It is wrong for
+   * setting a table up — choosing columns, building a filter — because
+   * that is iterative, and a popover closes when you look away with the
+   * rows behind it. Omit this and nothing renders and nothing is bundled.
+   *
+   * ```tsx
+   * const [panel, setPanel] = useState<string | null>(null);
+   *
+   * <DataTable
+   *   toolbarSlots={{
+   *     end: <button onClick={() => setPanel("filters")}>Settings</button>,
+   *   }}
+   *   sidePanel={{
+   *     panels: [{ key: "filters", label: "Filters", content: <MyFilters /> }],
+   *     open: panel,
+   *     onOpenChange: setPanel,
+   *   }}
+   *   …
+   * />
+   * ```
+   */
+  sidePanel?: SidePanelOptions;
+  /**
+   * Show a status bar under the table. Defaults to false.
+   *
+   * It reads how many rows are on screen, how many are selected, and what
+   * a multi-cell selection adds up to — the line a spreadsheet user
+   * glances at without thinking. The sums appear only with
+   * `selectionStats` armed; the counts are always there.
+   */
+  statusBar?: boolean;
+  /**
+   * Show Undo and Redo buttons in the toolbar. Defaults to false.
+   *
+   * The keyboard shortcuts and `table.editHistory` are the always-on path
+   * — this is the visible one, for an app whose users will not find
+   * Ctrl+Z. The buttons render only when `editHistory` is armed, and
+   * disable rather than disappear when there is nothing to undo or redo,
+   * so the toolbar does not change width as the user works.
+   */
+  undoRedoButtons?: boolean;
+  /**
+   * Show a Print button in the toolbar. Defaults to false.
+   *
+   * The palette command is the always-on path once {@link onPrint} is wired
+   * — this is the visible one, for an app whose users will not reach for
+   * Cmd/Ctrl+K. It renders only when both are set: a button that opens
+   * nothing would be worse than no button, so the option alone draws
+   * nothing and the handler alone stays a command.
+   */
+  printButton?: boolean;
   /** Confirmation handler for actions; defaults to `window.confirm`. */
   confirm?: ConfirmHandler;
   /** Number of skeleton rows while loading. Defaults to the page size. */
   skeletonRows?: number;
   /**
    * Top inset in px for the sticky header (`stickyHeader`) — e.g. the
-   * height of an app bar it must clear. Identical meaning in every
-   * adapter; Mantine's optional sticky toolbar (`stickyToolbar`) also
-   * parks at this inset. Defaults to 0.
+   * height of an app bar it must clear. When the toolbar pins with the
+   * header it parks at this inset too. Defaults to 0.
    */
   stickyTop?: number;
   /** Keep the desktop table header sticky while scrolling. Defaults to false (opt-in). */
   stickyHeader?: boolean;
+  /**
+   * Keep the toolbar (search, page size) sticky with the header.
+   * Defaults to `stickyHeader` on page-scroll tables; pass `false` to
+   * let the toolbar scroll away. Has no effect when the table already
+   * scrolls in a box (`maxHeight`, or antd's native virtual scroller) —
+   * the toolbar already sits outside that scroller.
+   */
+  stickyToolbar?: boolean;
   /** Scroll back to the table when search/filter/page changes. Defaults to true. */
   scrollToTopOnChange?: boolean;
   /** Extra gap below sticky chrome when scrolling back. Defaults to 8. */

@@ -27,7 +27,24 @@ import { DataTable } from "@adapttable/mantine";
 ```
 
 `beforeRowId` is a data-row id. Omit it to append after the last data row.
-Several extras that share a target keep the host's order.
+Several extras that share a target keep the host's order. A named extra
+stays in front of that person through drag-reorder and pin — it is its
+own full-width row, with its own height, not folded into the person
+below. When a Team (or any) row span would paint through that extra, the
+extra sits on top of the spanned column so the note stays whole. The
+extra uses that person's `rowStyle` fill (light and dark are whatever
+you passed) — AdaptTable does not pick a colour of its own.
+
+```tsx
+extraRows={[
+  {
+    key: "note",
+    kind: "fullWidth",
+    beforeRowId: ada.id,
+    render: () => `Attached to ${ada.name} — drag or pin them and this extra comes along.`,
+  },
+]}
+```
 
 The slots join the grouping entry list when grouping is on, so they window
 with the groups. On a flat or tree table they splice into the rendered

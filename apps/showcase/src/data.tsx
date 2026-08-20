@@ -1,6 +1,7 @@
 import type {
   BulkAction,
   ColumnDef,
+  ColumnInput,
   ColumnLayoutState,
   ConfirmHandler,
   ConfirmRequest,
@@ -15,9 +16,11 @@ import {
   buildFilterRuntime,
   computed,
   defaultFilterRegistry,
+  formatMultiDraft,
   resolveFilterDefs,
   resolveFilterRegistry,
 } from "@adapttable/core";
+import { sparklineColumn } from "@adapttable/core/sparkline";
 import type { CSSProperties, ReactNode } from "react";
 
 import { EditIcon, TrashIcon } from "./icons";
@@ -41,6 +44,11 @@ export interface Person {
   nameAr: string;
   roleAr: string;
   teamAr: string;
+  /**
+   * Tree-page org chart. `null` is a root. Omit to derive “first on the
+   * team leads it” from {@link PEOPLE} — the live demo’s shape.
+   */
+  managerId?: string | null;
   /** Editable overrides — the demo derives these from `id` until a cell
    * edit materializes a real value on the row. */
   status?: DemoStatus;
@@ -50,9 +58,26 @@ export interface Person {
   start?: string;
   /** Demo-only websocket revision used to exercise live-edit conflicts. */
   revision?: number;
+  /** Editable override for the boolean editor. */
+  remote?: boolean;
+  /** Editable override for the multi-select editor. */
+  skills?: string[];
 }
 
 export const PEOPLE = people as Person[];
+
+/**
+ * Nested-tables starts with the first row on screen open. The dedicated
+ * page does not use {@link PEOPLE} (Ada is `"1"`); landing ids start at
+ * `"101"`. Key off the source so Feature Lab and that page both match.
+ */
+export function nestedOpenIds(
+  nested: boolean | undefined,
+  rows: readonly { id: string }[]
+): readonly string[] | undefined {
+  const first = rows[0]?.id;
+  return nested && first ? [first] : undefined;
+}
 
 /**
  * The org chart already inside the seed: the first person on each team leads
@@ -114,6 +139,9 @@ export const DEMO_ORDER_COLUMNS: ColumnDef<DemoOrder>[] = [
 
 /** The id of a person's manager, or `undefined` for a team lead. */
 export function reportsTo(person: Person): string | undefined {
+  if (person.managerId !== undefined) {
+    return person.managerId ?? undefined;
+  }
   const lead = TEAM_LEAD.get(person.team);
   return lead === person.id ? undefined : lead;
 }
@@ -125,6 +153,9 @@ interface Strings {
   name: string;
   person: string;
   email: string;
+  trend: string;
+  remote: string;
+  skills: string;
   role: string;
   team: string;
   status: string;
@@ -140,10 +171,14 @@ interface Strings {
   coreFilter: string;
   edit: string;
   remove: string;
-  /** Spanning header over the two assignment columns. */
+  /** Spanning header over Name + Role (arrow stub). */
+  groupContact: string;
+  /** Spanning header over Team + Status. */
   groupAssignment: string;
-  /** Spanning header over the two delivery columns. */
+  /** Spanning header over Timeline + Budget. */
   groupDelivery: string;
+  /** Collapsed Delivery cell: money and the timeline length in days. */
+  deliveryBrief: (money: string, days: number) => string;
   confirmMessage: (name: string) => string;
   confirmTitle: string;
   /** Rejection message for the editing demo's validated name column. */
@@ -157,6 +192,9 @@ const STRINGS: Record<Locale, Strings> = {
     name: "Name",
     person: "Person",
     email: "Email",
+    trend: "Trend",
+    remote: "Remote",
+    skills: "Skills",
     role: "Role",
     team: "Team",
     status: "Status",
@@ -172,8 +210,10 @@ const STRINGS: Record<Locale, Strings> = {
     coreFilter: "Core team",
     edit: "Edit",
     remove: "Delete",
+    groupContact: "Contact",
     groupAssignment: "Assignment",
     groupDelivery: "Delivery",
+    deliveryBrief: (money, days) => `${money} for ${days} days`,
     confirmTitle: "Delete person?",
     confirmMessage: (name) => `Permanently delete "${name}"?`,
   },
@@ -183,6 +223,9 @@ const STRINGS: Record<Locale, Strings> = {
     name: "الاسم",
     person: "الشخص",
     email: "البريد الإلكتروني",
+    trend: "الاتجاه",
+    remote: "عن بُعد",
+    skills: "المهارات",
     role: "الدور",
     team: "الفريق",
     status: "الحالة",
@@ -198,8 +241,10 @@ const STRINGS: Record<Locale, Strings> = {
     coreFilter: "الفريق الأساسي",
     edit: "تعديل",
     remove: "حذف",
+    groupContact: "التواصل",
     groupAssignment: "التعيين",
     groupDelivery: "التسليم",
+    deliveryBrief: (money, days) => `${money} لمدة ${days} يومًا`,
     confirmTitle: "حذف الشخص؟",
     confirmMessage: (name) => `هل تريد حذف "${name}" نهائيًا؟`,
   },
@@ -266,16 +311,32 @@ export const demoConfirm: ConfirmHandler = (request: ConfirmRequest) => {
  * the menu has no table `urlKey` to inherit its namespace from. The storage
  * key is scoped the same way, so each demo keeps its own views — and every
  * adapter on a page shares one key, so a view saved under Mantine is there
- * when you switch to MUI.
+ * when you switch to MUI. Only the live demo writes views to the address
+ * bar (`urlSync`); Feature Lab and kit pages do not.
  */
 export function demoSavedViews(urlKey?: string): UseSavedViewsOptions {
-  return { storageKey: `adapttable-demo-views-${urlKey ?? "live"}`, urlKey };
+  return {
+    storageKey: `adapttable-demo-views-${urlKey ?? "live"}`,
+    urlKey,
+    urlSync: demoUrlSync(urlKey),
+  };
 }
 
 /**
- * Stable columns (keys + accessors) for the data hooks — locale-independent,
- * so sorting/keys never change with the language. The display columns
- * ({@link makeColumns}) add localized headers on top.
+ * Table query/layout hits the address bar only on the live demo
+ * (`urlKey="live"`, the `/` page). Feature Lab and adapter feature
+ * pages stay off so interacting does not rewrite the URL.
+ */
+export function demoUrlSync(urlKey?: string): boolean {
+  return urlKey === "live";
+}
+
+/**
+ * Stable columns (keys + accessors) for the data hooks — keys and sort values
+ * never change with the language. The headers are the English captions, so a
+ * page that mounts this set directly (`/saved-views/`) has a table whose
+ * columns say what they hold; the display columns ({@link makeColumns}) put
+ * the localized captions and the rich cells on top.
  */
 export const BASE_COLUMNS: ColumnDef<Person>[] = [
   {
@@ -283,28 +344,28 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
     accessor: (r) => r.name,
     sortValue: (r) => r.name,
     sortable: true,
-    header: "",
+    header: STRINGS.en.person,
   },
   {
     key: "status",
     accessor: (r) => personStatus(r),
     sortValue: (r) => personStatus(r),
     sortable: true,
-    header: "",
+    header: STRINGS.en.status,
   },
   {
     key: "timeline",
     accessor: (r) => formatDate(startDate(r)),
     sortValue: (r) => startDate(r).getTime(),
     sortable: true,
-    header: "",
+    header: STRINGS.en.timeline,
   },
   {
     key: "budget",
     accessor: (r) => formatMoney(budget(r)),
     sortValue: (r) => budget(r),
     sortable: true,
-    header: "",
+    header: STRINGS.en.budget,
   },
   // Utilization is derived, not stored — so it is declared once with
   // `computed` rather than written into `accessor` and repeated in
@@ -312,7 +373,7 @@ export const BASE_COLUMNS: ColumnDef<Person>[] = [
   // number behind it.
   computed<Person, number>({
     key: "load",
-    header: "",
+    header: STRINGS.en.load,
     deps: (r) => [r.utilization, r.id],
     value: (r) => utilization(r),
     format: (value) => formatPercent(value),
@@ -402,6 +463,52 @@ export const LIVE_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
 };
 
 /**
+ * Span demo: Team is the merge column — one label down consecutive
+ * teammates who share it. Email stays hidden (same as Baseline) so the
+ * table does not grow a 250px column just to cover it. Load hides so
+ * showing Team does not add a column: same count, no sideways scroll.
+ */
+export const SPAN_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
+  hidden: ["email", "load"],
+};
+
+/** Cluster teammates so a Team row-span has a consecutive run to cover. */
+export function orderPeopleByTeam(rows: readonly Person[]): Person[] {
+  return [...rows].sort((a, b) => {
+    const byTeam = a.team.localeCompare(b.team);
+    if (byTeam !== 0) return byTeam;
+    return Number(a.id) - Number(b.id);
+  });
+}
+
+/**
+ * How many following rows share this row's team. 1 when this row is not
+ * the start of the run in this list — the origin already covers them.
+ * Pass visual body order (`sectionRows`), so pinning a teammate keeps
+ * one merge instead of splitting Core into two cells.
+ */
+export function consecutiveTeamSpan(
+  rows: readonly Person[],
+  index: number
+): number {
+  const current = rows[index];
+  if (!current) return 1;
+  if (rows[index - 1]?.team === current.team) return 1;
+  let span = 1;
+  while (rows[index + span]?.team === current.team) span += 1;
+  return span;
+}
+
+/**
+ * Column-groups demo: Team stays visible so Assignment is Team + Status.
+ * Groups start open. Actions stays pinned at the end.
+ */
+export const GROUPS_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
+  hidden: [],
+  pinned: { actions: "end" },
+};
+
+/**
  * The editing page's default layout: every editable field stays visible.
  * Timeline is the only display-only column, so hiding it keeps the table
  * compact without making the page borrow the Columns menu from its showcase.
@@ -410,25 +517,182 @@ export const EDITING_DEFAULT_LAYOUT: Partial<ColumnLayoutState> = {
   hidden: ["timeline"],
 };
 
+function takeColumnKeys(
+  byKey: Map<string, ColumnDef<Person>>,
+  keys: readonly string[]
+): ColumnDef<Person>[] {
+  const taken: ColumnDef<Person>[] = [];
+  for (const key of keys) {
+    const column = byKey.get(key);
+    if (!column) continue;
+    byKey.delete(key);
+    taken.push(column);
+  }
+  return taken;
+}
+
+/**
+ * Compact leaves for the column-groups table: Name + Role, then the four
+ * grouped children. Person, Email and Load stay off this page so the three
+ * groups plus Actions fit without sideways scroll. Sparkline / editors /
+ * formulas from the Feature Lab still pass through.
+ */
+function columnGroupsDemoLeaves(
+  leaves: ColumnDef<Person>[],
+  locale: Locale,
+  s: Strings
+): ColumnDef<Person>[] {
+  const byKey = new Map(leaves.map((column) => [column.key, column]));
+  const name: ColumnDef<Person> = {
+    key: "name",
+    header: s.name,
+    i18n: { ar: "nameAr" },
+    sortable: true,
+    sortValue: (row) => personName(row, locale),
+    width: 140,
+    mobileLabel: s.name,
+  };
+  const role: ColumnDef<Person> = {
+    key: "role",
+    header: s.role,
+    i18n: { ar: "roleAr" },
+    width: 110,
+    mobileLabel: s.role,
+  };
+  const core = takeColumnKeys(byKey, ["team", "status", "timeline", "budget"]);
+  byKey.delete("person");
+  byKey.delete("email");
+  byKey.delete("load");
+  return [name, role, ...core, ...byKey.values()];
+}
+
+/**
+ * Tree groups for the column-groups demo. Actions stays ungrouped at the
+ * end (full header height). Three parents, two children each, one collapse
+ * result apiece: Contact is the arrow stub, Assignment keeps Team,
+ * Delivery draws a money-for-days brief.
+ */
+function nestDemoColumnGroups(
+  leaves: ColumnDef<Person>[],
+  locale: Locale,
+  s: Strings
+): ColumnInput<Person>[] {
+  const byKey = new Map(leaves.map((column) => [column.key, column]));
+  const out: ColumnInput<Person>[] = [];
+  for (const leaf of leaves) {
+    if (!byKey.has(leaf.key)) continue;
+    if (leaf.key === "name" || leaf.key === "role") {
+      out.push({
+        header: s.groupContact,
+        children: takeColumnKeys(byKey, ["name", "role"]),
+      });
+      continue;
+    }
+    if (leaf.key === "team" || leaf.key === "status") {
+      out.push({
+        header: s.groupAssignment,
+        collapsedKey: "team",
+        children: takeColumnKeys(byKey, ["team", "status"]),
+      });
+      continue;
+    }
+    if (leaf.key === "timeline" || leaf.key === "budget") {
+      out.push({
+        header: s.groupDelivery,
+        align: "start",
+        collapsedRender: (row) =>
+          s.deliveryBrief(formatMoney(budget(row), locale), timelineDays(row)),
+        children: takeColumnKeys(byKey, ["timeline", "budget"]),
+      });
+      continue;
+    }
+    byKey.delete(leaf.key);
+    out.push(leaf);
+  }
+  return out;
+}
+
 export function makeColumns(
   locale: Locale,
   cells: DemoCells,
-  options?: { groups?: boolean }
-): ColumnDef<Person>[] {
+  options?: {
+    groups?: boolean;
+    sparkline?: boolean;
+    editors?: boolean;
+    /**
+     * Columns built from user-typed formulas, appended after the declared set.
+     * The page owns them — it is where the formula text is typed and where the
+     * parse errors are shown — so they arrive built rather than as specs.
+     */
+    formulas?: readonly ColumnDef<Person>[];
+    /**
+     * Mark demo columns editable. Off unless the page also passes
+     * `onCellEdit` — the live demo must not warn in the console.
+     */
+    editable?: boolean;
+  }
+): ColumnInput<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
   const grouped = options?.groups === true;
+  const canEdit = options?.editable === true;
+  // The boolean and multi-select editors, which no other column uses — off
+  // unless a page asks, so the frozen live demo is untouched.
+  const editors: ColumnDef<Person>[] = options?.editors
+    ? [
+        {
+          key: "remote",
+          header: s.remote,
+          accessor: (row) => (isRemote(row) ? "✓" : "—"),
+          sortValue: (row) => (isRemote(row) ? 1 : 0),
+          sortable: true,
+          editable: canEdit,
+          editor: "boolean",
+          editValue: (row) => String(isRemote(row)),
+          width: 110,
+          mobileLabel: s.remote,
+        },
+        {
+          key: "skills",
+          header: s.skills,
+          accessor: (row) => personSkills(row).join(", ") || "—",
+          editable: canEdit,
+          editor: {
+            type: "multi-select",
+            options: SKILLS.map((value) => ({ value, label: value })),
+          },
+          editValue: (row) => formatMultiDraft(personSkills(row)),
+          width: 180,
+          mobileLabel: s.skills,
+        },
+      ]
+    : [];
+  // Off unless a page asks for it: the live demo is frozen, and the trend
+  // column belongs to the Feature Lab's sparkline toggle.
+  const trend: ColumnDef<Person>[] = options?.sparkline
+    ? [
+        sparklineColumn({
+          key: "trend",
+          header: s.trend,
+          values: loadHistory,
+          kind: "area",
+          width: 88,
+          height: 28,
+          column: { width: 96, mobileLabel: s.trend },
+        }),
+      ]
+    : [];
   // Fixed pixel widths (not %) so revealing the hidden team column
   // pushes the total past the container and the table scrolls horizontally —
   // the only way a pinned column can be seen to stick.
-  return [
+  const leaves: ColumnDef<Person>[] = [
     {
       key: "person",
       header: s.person,
       headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
-      editable: true,
+      editable: canEdit,
       editor: "text",
       editValue: (r) => r.name,
       // A rule the reader can trip on purpose: clear the name and commit.
@@ -452,13 +716,14 @@ export function makeColumns(
       // already explain themselves, so repeating "Person" adds visual noise.
       mobileLabel: "",
     },
+    ...trend,
+    ...editors,
     {
       key: "email",
       header: s.email,
       headerTooltip: s.email,
-      // Opt-in cell editing demo — only activates when the host passes
-      // `onCellEdit` (Frontend path in DemoBody). Column flag alone is inert.
-      editable: true,
+      // Opt-in cell editing — only when this page also passes `onCellEdit`.
+      editable: canEdit,
       editor: "text",
       accessor: (r) => (
         <span style={{ opacity: 0.7, fontSize: "0.9em" }}>{r.email}</span>
@@ -472,7 +737,7 @@ export function makeColumns(
       key: "team",
       header: s.team,
       i18n: { ar: "teamAr" },
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: TEAMS.map((v) => ({ value: v, label: v })),
@@ -492,7 +757,7 @@ export function makeColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: STATUSES.map((v) => ({
@@ -507,7 +772,6 @@ export function makeColumns(
     {
       key: "timeline",
       header: s.timeline,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -515,7 +779,7 @@ export function makeColumns(
       sortable: true,
       // The cell shows a localized range; the editor edits the start date it
       // sorts by, in the browser's own date control.
-      editable: true,
+      editable: canEdit,
       editor: "date",
       editValue: (r) => localDay(startDate(r)),
       width: 185,
@@ -534,7 +798,6 @@ export function makeColumns(
     {
       key: "budget",
       header: s.budget,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -545,7 +808,7 @@ export function makeColumns(
       // carries the number underneath.
       exportValue: (r) => budget(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(budget(r)),
       width: 130,
@@ -556,7 +819,7 @@ export function makeColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(utilization(r)),
       width: 175,
@@ -568,7 +831,13 @@ export function makeColumns(
       ),
       mobileLabel: s.load,
     },
+    // Last, so a column somebody just typed appears at the end of the table
+    // rather than in the middle of the set they already know.
+    ...(options?.formulas ?? []),
   ];
+  return grouped
+    ? nestDemoColumnGroups(columnGroupsDemoLeaves(leaves, locale, s), locale, s)
+    : leaves;
 }
 
 /**
@@ -580,19 +849,19 @@ export function makeColumns(
 export function makeWideColumns(
   locale: Locale,
   cells: DemoCells,
-  options: Readonly<{ groups?: boolean }> = {}
-): ColumnDef<Person>[] {
+  options?: { editable?: boolean }
+): ColumnInput<Person>[] {
   const s = STRINGS[locale];
   const { Avatar, Status, Load } = cells;
-  const grouped = options.groups === true;
-  return [
+  const canEdit = options?.editable === true;
+  const leaves: ColumnDef<Person>[] = [
     {
       key: "person",
       header: s.person,
       headerTooltip: s.person,
       sortable: true,
       sortValue: (r) => r.name,
-      editable: true,
+      editable: canEdit,
       editor: "text",
       editValue: (r) => r.name,
       width: 240,
@@ -613,19 +882,17 @@ export function makeWideColumns(
     {
       key: "role",
       header: s.role,
-      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "roleAr" },
-      editable: true,
+      editable: canEdit,
       editor: "text",
       width: 150,
     },
     {
       key: "team",
       header: s.team,
-      ...(grouped ? { group: s.groupAssignment } : {}),
       i18n: { ar: "teamAr" },
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: TEAMS.map((v) => ({ value: v, label: v })),
@@ -644,7 +911,7 @@ export function makeWideColumns(
       ),
       sortValue: (r) => personStatus(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: {
         type: "select",
         options: STATUSES.map((v) => ({
@@ -659,7 +926,7 @@ export function makeWideColumns(
       key: "email",
       header: s.email,
       headerTooltip: s.email,
-      editable: true,
+      editable: canEdit,
       editor: "text",
       accessor: (r) => r.email,
       width: 240,
@@ -667,7 +934,6 @@ export function makeWideColumns(
     {
       key: "timeline",
       header: s.timeline,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       sortValue: (r) => startDate(r).getTime(),
       // A localized "Mar 8, 2026 → Apr 22, 2026" is unusable in a spreadsheet;
       // the file gets the sortable ISO start date.
@@ -688,7 +954,6 @@ export function makeWideColumns(
     {
       key: "budget",
       header: s.budget,
-      ...(grouped ? { group: s.groupDelivery } : {}),
       accessor: (r) => (
         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
           {formatMoney(budget(r), locale)}
@@ -699,7 +964,7 @@ export function makeWideColumns(
       // carries the number underneath.
       exportValue: (r) => budget(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(budget(r)),
       width: 150,
@@ -709,7 +974,7 @@ export function makeWideColumns(
       header: s.load,
       sortValue: (r) => utilization(r),
       sortable: true,
-      editable: true,
+      editable: canEdit,
       editor: "number",
       editValue: (r) => String(utilization(r)),
       width: 190,
@@ -721,6 +986,7 @@ export function makeWideColumns(
       ),
     },
   ];
+  return leaves;
 }
 
 export function makeActions(locale: Locale): RowAction<Person>[] {
@@ -788,6 +1054,30 @@ export function utilization(row: Person): number {
   return row.utilization ?? 45 + ((Number(row.id) * 11) % 55);
 }
 
+/** Derived until a cell edit materializes one — the boolean editor's column. */
+export function isRemote(row: Person): boolean {
+  return row.remote ?? Number(row.id) % 3 === 0;
+}
+
+/** The values the multi-select editor offers, and what each row starts with. */
+export const SKILLS = ["react", "typescript", "design", "infra"] as const;
+
+export function personSkills(row: Person): string[] {
+  if (row.skills) return row.skills;
+  const seed = Number(row.id) || 1;
+  return SKILLS.filter((_, index) => (seed >> index) % 2 === 1);
+}
+
+/** Eight weeks of load, derived so the sparkline needs no second seed. */
+export function loadHistory(row: Person): number[] {
+  const base = utilization(row);
+  const seed = Number(row.id) || 1;
+  return Array.from({ length: 8 }, (_, week) => {
+    const wobble = ((seed * (week + 3)) % 17) - 8;
+    return Math.max(0, Math.min(100, base + wobble));
+  });
+}
+
 export function startDate(row: Person): Date {
   if (row.start !== undefined) {
     const [year, month, day] = row.start.split("-").map(Number);
@@ -800,11 +1090,209 @@ export function startDate(row: Person): Date {
 
 export function dueDate(row: Person): Date {
   const date = startDate(row);
-  return new Date(date.getTime() + 1000 * 60 * 60 * 24 * 45);
+  return new Date(date.getTime() + 1000 * 60 * 60 * 24 * 35);
+}
+
+/** Inclusive timeline length in whole days (due minus start). */
+export function timelineDays(row: Person): number {
+  const ms = dueDate(row).getTime() - startDate(row).getTime();
+  return Math.max(1, Math.round(ms / 86_400_000));
 }
 
 export function personStatus(row: Person): DemoStatus {
   return row.status ?? STATUSES[Number(row.id) % STATUSES.length];
+}
+
+/** The fields this dataset offers a pivot, in the order the panel lists them. */
+export const PIVOT_FIELDS = [
+  { key: "team", label: "Team" },
+  { key: "role", label: "Role" },
+  { key: "status", label: "Status" },
+  { key: "budget", label: "Budget" },
+  { key: "utilization", label: "Utilization" },
+];
+
+/**
+ * The rows a pivot reads.
+ *
+ * A pivot resolves a dimension or a measure from a FIELD, not from a column's
+ * accessor, so the values this demo derives from the id have to be on the row
+ * before it can group or sum them. Materialized once, and shared by the /pivot/
+ * page and the Feature Lab's docked pivot builder, so both pivot the identical
+ * thirty rows.
+ */
+export const PIVOT_PEOPLE: readonly Person[] = PEOPLE.map((person) => ({
+  ...person,
+  status: person.status ?? personStatus(person),
+  budget: person.budget ?? budget(person),
+  utilization: person.utilization ?? utilization(person),
+}));
+
+/* ── The large directory (Feature Lab, "Large data") ────────────────── */
+
+/** How many rows the Feature Lab's large-data mode holds. */
+export const LARGE_ROW_COUNT = 40_000;
+
+/**
+ * The areas the large directory's squads belong to.
+ *
+ * Twelve areas × ten squads is {@link LARGE_TEAM_COUNT} distinct values in
+ * the `team` column — well past the forty-value line where the checklist
+ * filter stops rendering every option and starts windowing them. That
+ * threshold is the reason this dataset exists: five teams can never show it.
+ */
+const LARGE_AREAS = [
+  "Core",
+  "Platform",
+  "Data",
+  "Web",
+  "Mobile",
+  "Infra",
+  "Payments",
+  "Identity",
+  "Search",
+  "Growth",
+  "Billing",
+  "Support",
+] as const;
+
+const LARGE_AREAS_AR = [
+  "الأساس",
+  "المنصة",
+  "البيانات",
+  "الويب",
+  "الجوال",
+  "البنية",
+  "المدفوعات",
+  "الهوية",
+  "البحث",
+  "النمو",
+  "الفواتير",
+  "الدعم",
+] as const;
+
+/** Squads per area. */
+const LARGE_SQUADS = 10;
+
+/** Distinct values the large directory's `team` column carries. */
+export const LARGE_TEAM_COUNT = LARGE_AREAS.length * LARGE_SQUADS;
+
+const LARGE_FIRST = [
+  "Amara",
+  "Diego",
+  "Priya",
+  "Sefa",
+  "Lena",
+  "Marcus",
+  "Yuki",
+  "Fatima",
+  "Tomas",
+  "Chioma",
+  "Henrik",
+  "Sofia",
+  "Omar",
+  "Grace",
+  "Noah",
+  "Aisha",
+] as const;
+
+const LARGE_FIRST_AR = [
+  "أمارا",
+  "دييغو",
+  "بريا",
+  "سيفا",
+  "لينا",
+  "ماركوس",
+  "يوكي",
+  "فاطمة",
+  "توماس",
+  "تشيوما",
+  "هنريك",
+  "صوفيا",
+  "عمر",
+  "غريس",
+  "نوح",
+  "عائشة",
+] as const;
+
+const LARGE_LAST = [
+  "Okafor",
+  "Marchetti",
+  "Nair",
+  "Demir",
+  "Hoffmann",
+  "Bell",
+  "Tanaka",
+  "Al-Sayed",
+  "Novak",
+  "Eze",
+  "Larsson",
+  "Reyes",
+  "Haddad",
+  "Liu",
+  "Schmidt",
+  "Chen",
+] as const;
+
+const LARGE_ROLES = [
+  "Engineer",
+  "Designer",
+  "Researcher",
+  "Manager",
+  "Analyst",
+  "Architect",
+  "Writer",
+  "Producer",
+] as const;
+
+const LARGE_ROLES_AR = [
+  "مهندس",
+  "مصمم",
+  "باحث",
+  "مدير",
+  "محلل",
+  "معماري",
+  "كاتب",
+  "منتج",
+] as const;
+
+/**
+ * Build a directory of `count` people.
+ *
+ * Ids are the sequence `1…count` as strings, which is what every derived
+ * accessor in this file reads — `budget`, `utilization`, `personStatus`,
+ * `startDate`, `loadHistory` and the sparkline all key off `Number(row.id)`.
+ * So a generated row answers every column the small seed answers, and the
+ * two datasets differ in size and in team spread, nothing else.
+ *
+ * Nothing calls this at module scope: forty thousand rows built on import
+ * would be paid for by every page that reads this file. The Feature Lab
+ * builds them when the reader asks for them.
+ */
+export function makeLargeDirectory(count = LARGE_ROW_COUNT): Person[] {
+  return Array.from({ length: count }, (_, index) => largePerson(index));
+}
+
+/** One row of the large directory, addressed by its position. */
+function largePerson(index: number): Person {
+  const area = index % LARGE_AREAS.length;
+  const squad = Math.floor(index / LARGE_AREAS.length) % LARGE_SQUADS;
+  const first = index % LARGE_FIRST.length;
+  const last = (index * 7) % LARGE_LAST.length;
+  const role = (index * 5) % LARGE_ROLES.length;
+  const team = `${LARGE_AREAS[area]} ${String(squad + 1).padStart(2, "0")}`;
+  const teamAr = `${LARGE_AREAS_AR[area]} ${String(squad + 1).padStart(2, "0")}`;
+  return {
+    id: String(index + 1),
+    name: `${LARGE_FIRST[first]} ${LARGE_LAST[last]}`,
+    // The id keeps the address unique where a name repeats.
+    email: `${LARGE_FIRST[first].toLowerCase()}.${index + 1}@example.com`,
+    role: LARGE_ROLES[role],
+    team,
+    nameAr: `${LARGE_FIRST_AR[first]} ${LARGE_LAST[last]}`,
+    roleAr: LARGE_ROLES_AR[role],
+    teamAr,
+  };
 }
 
 export function formatDate(date: Date, locale: Locale = "en"): string {
@@ -883,6 +1371,7 @@ export function demoFilterDefs(locale: Locale): FilterDef<Person>[] {
     },
     {
       key: "allocations",
+      column: "load",
       type: "numberRange",
       label: s.allocationFilter,
       getValue: allocationCount,

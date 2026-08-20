@@ -49,7 +49,9 @@ export function People() {
   screen-reader-friendly fallback.
 - Page and page size live in the URL (`?page=`, `?limit=`), so reloads and
   shared links restore the exact view. `defaults={{ limit }}` applies only
-  while the URL is silent about a key.
+  while the URL is silent about a key. The rows-per-page list is 10 / 25 /
+  50 / 100, plus that default when it isn't already in the list — so a
+  table that starts at 500 still offers 500 after you pick 10.
 - On the server tier, pagination state arrives in the consolidated
   `TableQuery` (`{ page, limit, … }`) passed to `onQueryChange` — forward both
   to your API and return `rows` + `total`; `total` drives the pager.

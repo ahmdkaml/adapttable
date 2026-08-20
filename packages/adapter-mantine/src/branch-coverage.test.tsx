@@ -207,7 +207,7 @@ describe("MobileCards hidden + disabled actions", () => {
 });
 
 describe("FilterDrawer RTL", () => {
-  it("places the drawer on the left in RTL mode", () => {
+  it("pins the drawer to the physical left and flips only the chrome", () => {
     render(
       <MantineProvider>
         <FilterDrawer
@@ -221,8 +221,30 @@ describe("FilterDrawer RTL", () => {
         />
       </MantineProvider>
     );
-    // RTL renders the drawer body (left-positioned); its content is present.
     expect(screen.getByText("filter body")).toBeInTheDocument();
+    const root = document.querySelector<HTMLElement>(".mantine-Drawer-root");
+    const content = document.querySelector<HTMLElement>(
+      ".mantine-Drawer-content"
+    );
+    expect(root).not.toBeNull();
+    expect(content).not.toBeNull();
+    // Mantine 9 pins via flex: left omits --drawer-justify (flex-start).
+    // dir on the shell would flip that start edge to the physical right.
+    expect(root!.style.getPropertyValue("--drawer-justify")).not.toBe(
+      "flex-end"
+    );
+    expect(content!.getAttribute("dir")).not.toBe("rtl");
+    expect(root!.getAttribute("dir")).toBe("ltr");
+    const header = document.querySelector<HTMLElement>(
+      ".mantine-Drawer-header"
+    );
+    const body = document.querySelector<HTMLElement>(".mantine-Drawer-body");
+    expect(header).not.toBeNull();
+    expect(body).not.toBeNull();
+    expect(header!.style.direction).toBe("rtl");
+    expect(body!.style.direction).toBe("rtl");
+    expect(body!.style.flex).toMatch(/^1/);
+    expect(body!.style.display).toBe("flex");
   });
 });
 

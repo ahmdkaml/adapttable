@@ -35,6 +35,76 @@ describe("cell spanning (antd)", () => {
     ).toHaveLength(2);
   });
 
+  it("does not sticky-pin a row when a team span would overlay the next people", () => {
+    const rows: Task[] = [
+      { id: "1", title: "Chioma", team: "Core" },
+      { id: "2", title: "Fatima", team: "Core" },
+      { id: "3", title: "Elena", team: "Core" },
+      { id: "4", title: "Sefa", team: "Data" },
+      { id: "5", title: "Omar", team: "Data" },
+    ];
+    const { container } = render(
+      <DataTable
+        data={rows}
+        columns={COLS}
+        rowKey={(r) => r.id}
+        urlSync={false}
+        pinnedRowIds={{ top: ["1"], bottom: [] }}
+        onPinnedRowIdsChange={() => undefined}
+        getCellSpan={({ column, sectionRows, sectionRowIndex }) => {
+          if (column.key !== "team") return undefined;
+          const current = sectionRows[sectionRowIndex];
+          if (!current) return undefined;
+          if (sectionRows[sectionRowIndex - 1]?.team === current.team) {
+            return undefined;
+          }
+          let span = 1;
+          while (sectionRows[sectionRowIndex + span]?.team === current.team) {
+            span += 1;
+          }
+          return span > 1 ? { rowSpan: span } : undefined;
+        }}
+      />
+    );
+    const pinned = container.querySelector(
+      '[data-adapttable-part="pinned-top"]'
+    );
+    expect(pinned?.textContent).toContain("Chioma");
+    expect(pinned?.textContent).not.toContain("Fatima");
+    expect(pinned).toHaveAttribute("data-row-pin", "top");
+    expect(pinned).not.toHaveStyle({ position: "sticky" });
+    const pinnedTeam = pinned?.querySelector('[data-column-key="team"]');
+    expect(pinnedTeam?.getAttribute("rowspan")).toBe("3");
+    const fatima = [...container.querySelectorAll("tbody tr")].find((tr) =>
+      tr.textContent?.includes("Fatima")
+    );
+    expect(fatima?.querySelector('[data-column-key="team"]')).toBeNull();
+    const sefa = [...container.querySelectorAll("tbody tr")].find((tr) =>
+      tr.textContent?.includes("Sefa")
+    );
+    expect(
+      sefa?.querySelector('[data-column-key="team"]')?.getAttribute("rowspan")
+    ).toBe("2");
+  });
+
+  it("keeps sticky pin chrome when no cell spans", () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLS}
+        rowKey={(r) => r.id}
+        urlSync={false}
+        pinnedRowIds={{ top: ["1"], bottom: [] }}
+        onPinnedRowIdsChange={() => undefined}
+      />
+    );
+    const pinned = container.querySelector(
+      '[data-adapttable-part="pinned-top"]'
+    );
+    expect(pinned?.textContent).toContain("Ship");
+    expect(pinned).toHaveStyle({ position: "sticky" });
+  });
+
   it("omits the covered cell and sets colSpan on the origin", () => {
     const { container } = render(
       <DataTable
@@ -51,6 +121,7 @@ describe("cell spanning (antd)", () => {
     const cells = first?.querySelectorAll("td[data-adapttable-part='cell']");
     expect(cells).toHaveLength(1);
     expect(cells?.[0]?.getAttribute("colspan")).toBe("2");
+    expect(cells?.[0]?.getAttribute("data-cell-span")).toBe("2x1");
     expect(first?.textContent).toContain("Ship");
     expect(first?.textContent).not.toContain("Core");
   });

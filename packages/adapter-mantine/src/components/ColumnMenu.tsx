@@ -361,6 +361,8 @@ export function ColumnMenu<TRow>({
       position="bottom-end"
       withinPortal
       returnFocus
+      zIndex={10050}
+      middlewares={{ flip: false, shift: { padding: 8, mainAxis: false } }}
     >
       <Popover.Target>
         <Button

@@ -11,8 +11,8 @@ export interface FilterPopoverProps {
   onClearFilters: () => void;
   labels: Required<TableLabels>;
   /**
-   * Accepted for a consistent adapter surface; the card centres under its
-   * trigger, so it needs no direction-specific placement.
+   * Text direction. The card portals to the body, so it would otherwise keep
+   * a left-to-right header and form. Also picks bottomLeft vs bottomRight.
    */
   dir?: Direction;
   /** The Filters trigger button — becomes the popover anchor. */
@@ -33,6 +33,7 @@ export function FilterPopover({
   activeFilterCount,
   onClearFilters,
   labels,
+  dir = "ltr",
   children,
 }: Readonly<FilterPopoverProps>) {
   const anchorRef = useRef<HTMLSpanElement>(null);
@@ -73,6 +74,7 @@ export function FilterPopover({
     // The card must never claim the whole screen: antd adds its own padding
     // around this content, so leave room for it plus a gutter on both sides.
     <div
+      dir={dir}
       style={{
         minWidth: 280,
         maxWidth: "min(380px, calc(100vw - 48px))",
@@ -101,13 +103,14 @@ export function FilterPopover({
     <Popover
       open={open}
       trigger={[]}
-      // `bottom` (not the bottomLeft/bottomRight corners): antd only grants a
-      // horizontal shift to the edge-centred placements, so a corner placement
-      // can only flip — which cannot rescue a card wider than the space beside
-      // the trigger, and left it ~80px off-screen on a phone. Centring under
-      // the trigger keeps antd's own shift-into-view behaviour, and needs no
-      // RTL variant because it is direction-agnostic.
-      placement="bottom"
+      // Same corner as Columns / Saved views: the centred `bottom` placement
+      // still flipped above the trigger even with adjustY off. Width is capped
+      // to the viewport so a start-edge card does not need that slide. Arrow
+      // off and a 4px offset match the other kits' gap under the button.
+      placement={dir === "rtl" ? "bottomRight" : "bottomLeft"}
+      arrow={false}
+      autoAdjustOverflow={{ adjustX: 1, adjustY: 0 }}
+      align={{ offset: [0, 4] }}
       content={content}
       styles={{ content: { padding: 12 } }}
     >

@@ -13,22 +13,20 @@
 // alongside the originals.
 import { readFileSync, writeFileSync } from "node:fs";
 
-const SITE = "https://orwa-mahmoud.github.io/adapttable";
+import {
+  indexableRoutes,
+  routeCountFaults,
+  SITE,
+} from "../../scripts/sitemap-routes.mjs";
+import { SHOWCASE_PAGES } from "../showcase/pages.mjs";
 
 /**
- * Demo pages, each its own Vite entry in `apps/showcase`. Keep in step with
- * the `input` map in apps/showcase/vite.config.ts — adding a page there
- * without adding it here leaves it undiscoverable from the sitemap.
+ * The demo routes, read from the manifest Vite builds the pages from
+ * (`apps/showcase/pages.mjs`) — so a page cannot ship without appearing here,
+ * and `indexable: false` entries such as the `/demo/export-pdf/` redirect stub
+ * stay out on the manifest's own say-so.
  */
-const DEMO_PAGES = [
-  "/demo/",
-  "/demo/columns/",
-  "/demo/editing/",
-  "/demo/grouping/",
-  "/demo/mobile/",
-  "/demo/rtl/",
-  "/demo/scale/",
-];
+const DEMO_ROUTES = indexableRoutes(SHOWCASE_PAGES);
 
 const dist = new URL("./dist/", import.meta.url);
 let xml = readFileSync(new URL("sitemap-0.xml", dist), "utf8");
@@ -44,7 +42,7 @@ xml = xml.replace(/<url>.*?<\/url>/g, (block) => {
 });
 
 // Append the Vite-built demo pages that Astro cannot know about.
-const extra = DEMO_PAGES.filter((p) => !seen.has(`${SITE}${p}`))
+const extra = DEMO_ROUTES.filter((p) => !seen.has(`${SITE}${p}`))
   .map((p) => {
     seen.add(`${SITE}${p}`);
     return `<url><loc>${SITE}${p}</loc></url>`;
@@ -52,9 +50,26 @@ const extra = DEMO_PAGES.filter((p) => !seen.has(`${SITE}${p}`))
   .join("");
 xml = xml.replace("</urlset>", `${extra}</urlset>`);
 
+// Count what is about to ship, before it ships: every indexable route exactly
+// one `<loc>`. Zero is the bug this file exists for; two would ask Google to
+// pick between identical URLs. A fault here fails the docs build, so a sitemap
+// that lost a route never reaches dist.
+const faults = routeCountFaults(xml, SHOWCASE_PAGES);
+if (faults.length > 0) {
+  const detail = faults
+    .map(({ route, count }) =>
+      count === 0 ? `  ${route} — missing` : `  ${route} — listed ${count}×`
+    )
+    .join("\n");
+  throw new Error(
+    `fix-sitemap: sitemap.xml must list every indexable demo route from ` +
+      `apps/showcase/pages.mjs exactly once:\n${detail}`
+  );
+}
+
 writeFileSync(new URL("sitemap-0.xml", dist), xml);
 writeFileSync(new URL("sitemap.xml", dist), xml);
 console.log(
   `sitemap.xml written (flat, slash-fixed, ${seen.size} unique urls, ` +
-    `${DEMO_PAGES.length} demo pages)`
+    `${DEMO_ROUTES.length} demo pages)`
 );

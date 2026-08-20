@@ -77,3 +77,40 @@ export const Globe = make([
   "M3 12h18",
   "M12 3c2.5 2.4 4 5.6 4 9s-1.5 6.6-4 9c-2.5-2.4-4-5.6-4-9s1.5-6.6 4-9z",
 ]);
+export const Warning = make(["M12 4l9 16H3l9-16z", "M12 10v4", "M12 17.2v.1"]);
+
+/* The eighteen feature marks. Each draws the shape of the thing rather than a
+   symbol for it: a pivot is a grid with a marked row and column, grouping is
+   rows folded under a header, a tree is a trunk with branches. */
+export const Filter = make(["M3 5h18l-7 8v6l-4 2v-8L3 5z"]);
+export const Pivot = make([
+  "M4 4h16v16H4z",
+  "M4 9h16",
+  "M9 4v16",
+  "M13 13h3",
+  "M13 17h3",
+]);
+export const Formula = make([
+  "M5 4h9",
+  "M9 4v16",
+  "M6 12h6",
+  "M15 9l5 7",
+  "M20 9l-5 7",
+]);
+export const Tree = make([
+  "M12 3v6",
+  "M12 9H7v4",
+  "M12 9h5v4",
+  "M5 13h4v4H5z",
+  "M15 13h4v4h-4z",
+]);
+/** A table sitting under a table — nested / master-detail. */
+export const Nested = make(["M4 4h16v7H4z", "M8 14h12v6H8z"]);
+export const Download = make(["M12 4v10", "M8 11l4 4 4-4", "M4 19h16"]);
+export const Rows = make(["M4 4h16v5H4z", "M7 13h13", "M7 17h13", "M4 13v4"]);
+export const Pencil = make([
+  "M4 20h4l10-10-4-4L4 16v4z",
+  "M14 6l4 4",
+  "M13 20h7",
+]);
+export const CheckSquare = make(["M4 4h16v16H4z", "M8 12l3 3 5-6"]);

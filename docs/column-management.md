@@ -2,7 +2,7 @@
 
 ▶ **Try it live:** [open a Mantine starter in StackBlitz](https://stackblitz.com/github/orwa-mahmoud/adapttable/tree/main/starters/mantine?file=src%2FApp.tsx) — this page's feature is already wired in `src/App.tsx` (`enableColumnMenu` + `resizableColumns`); edit it in the browser, no install. [Other UI kits →](./getting-started.md#try-it-in-stackblitz)
 
-▶ **See it working:** [pin, resize and reorder columns in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/columns/) — a real table you can drag, not a recording.
+▶ **See it working:** [pin, resize and reorder columns in the live demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/columns/) — a real table you can drag, not a recording.
 
 Let users show/hide, reorder, pin, and resize columns — one prop per capability, with the resulting layout persistable to the URL or localStorage. Every adapter shares the same engine from `@adapttable/core`.
 
@@ -93,15 +93,15 @@ export function People() {
 
 ## Options
 
-| Prop                      | Type                                | Default | Description                                                              |
-| ------------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------------ |
-| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).              |
-| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                              |
-| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                |
-| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                          |
-| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                |
-| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; state is `collapsedGroups`.        |
-| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning. |
+| Prop                      | Type                                | Default | Description                                                                                                     |
+| ------------------------- | ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `enableColumnMenu`        | `boolean`                           | `false` | Render the built-in Columns menu (show/hide, pin, reorder).                                                     |
+| `resizableColumns`        | `boolean`                           | `false` | Enable drag/keyboard column-resize handles.                                                                     |
+| `defaultColumnLayout`     | `Partial<ColumnLayoutState>`        | —       | Initial layout for the uncontrolled mode.                                                                       |
+| `columnLayout`            | `ColumnLayoutState`                 | —       | Controlled layout (hidden/order/pinned/widths).                                                                 |
+| `onColumnLayoutChange`    | `(next: ColumnLayoutState) => void` | —       | Change handler for the controlled layout.                                                                       |
+| `collapsibleColumnGroups` | `boolean`                           | `false` | Group headers gain a collapse toggle; each group decides what remains. See [column groups](./column-groups.md). |
+| `maxHeight`               | `number`                            | —       | Fixed-height scroll box (px); enables sideways scroll + visible pinning.                                        |
 
 ## Notes
 
@@ -164,7 +164,9 @@ and a name, and the only honest answer to "how wide is this column" is what the
 browser laid out. It measures the **rendered** rows — the page, or the window
 under virtualization — which is the set the reader is looking at, and it reads
 each cell's content width, so a column that is currently clipping its text is
-sized to fit it rather than to its clipped width.
+sized to fit it rather than to its clipped width. Running it again does not
+keep adding width: once a cell already fits, the box is not treated as new
+content.
 
 The result is an ordinary width in the column layout: it persists, serializes to
 the URL and to saved views, and a later drag overrides it exactly as it

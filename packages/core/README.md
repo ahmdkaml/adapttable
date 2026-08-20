@@ -29,8 +29,11 @@ control via prop-getters.
 - **SSR & server components** — renders with no DOM; the client boundary is
   already in the build, so it drops straight into the Next.js App Router.
   [Docs](https://orwa-mahmoud.github.io/adapttable/ssr-rsc/).
+- **A React-free half** (`@adapttable/core/query`) — the filter-tree and pivot
+  URL codecs on their own, so a route handler can decode a shared link in a
+  process with no React installed.
 - **Sorting** — comparator resolution, multi-key `sortValue`, accessible header state.
-- **Filtering** — filter model, operators, chips and counts; bring your own predicate.
+- **Filtering** — filter model, operators, chips and counts; bring your own predicate. Nested AND/OR filter tree.
 - **Selection + bulk actions** — ids, tri-state select-all, and the bulk-action contract.
 - **Row actions** with optional confirm, `isHidden` / `isDisabled` per row.
 - **Row expansion** — detail-panel state via `renderRowDetail`.
@@ -45,8 +48,10 @@ control via prop-getters.
 - **Keyboard cell navigation** (`cellNavigation`) — one tab stop, arrow keys,
   ARIA grid semantics and screen-reader announcements.
 - **Row grouping** — `groupBy` with per-group aggregates sharing the `summaryRow` mapper.
+- **Pivot tables** — rows, columns and measures with subtotals and collapsible
+  groups, from the optional `@adapttable/core/pivot` entry.
 - **Tree data** — `getChildren` / `getParentId`, hierarchical rows with their own expansion state.
-- **Column management** — show/hide, reorder, pin (sticky) and resize state.
+- **Column management** — show/hide, reorder, pin (sticky) and resize state, plus collapsible column groups.
 - **Sparkline columns** — `@adapttable/core/sparkline`; bar, line and area as inline SVG.
 - **PDF export and print layout** (`@adapttable/core/pdf`) — optional entry; `pdfWriter()` on `exportCsv`, `printTable` for the browser dialog.
 - **Formula engine** (`@adapttable/core/formula`) — spreadsheet formulas over rows and aggregates; circular refs report `#CYCLE!`.

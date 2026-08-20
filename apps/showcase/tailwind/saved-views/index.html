@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
+    <meta name="description" content="Name a table arrangement and switch between saved views in Tailwind — filters, sort, columns, density and pivot in one link. Rename, reorder and set a default from the Tailwind panel." />
+    <link rel="canonical" href="https://orwa-mahmoud.github.io/adapttable/demo/tailwind/saved-views/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AdaptTable" />
+    <meta property="og:title" content="Tailwind saved views — AdaptTable" />
+    <meta property="og:description" content="Name a table arrangement and switch between saved views in Tailwind — filters, sort, columns, density and pivot in one link. Rename, reorder and set a default from the Tailwind panel." />
+    <meta property="og:url" content="https://orwa-mahmoud.github.io/adapttable/demo/tailwind/saved-views/" />
+    <meta property="og:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Tailwind saved views — AdaptTable" />
+    <meta name="twitter:description" content="Name a table arrangement and switch between saved views in Tailwind — filters, sort, columns, density and pivot in one link. Rename, reorder and set a default from the Tailwind panel." />
+    <meta name="twitter:image" content="https://orwa-mahmoud.github.io/adapttable/og.png" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"AdaptTable","description":"Name a table arrangement and switch between saved views in Tailwind — filters, sort, columns, density and pivot in one link. Rename, reorder and set a default from the Tailwind panel.","url":"https://orwa-mahmoud.github.io/adapttable/demo/tailwind/saved-views/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","license":"https://opensource.org/license/mit","programmingLanguage":"TypeScript","codeRepository":"https://github.com/orwa-mahmoud/adapttable","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
+    <!-- Cloudflare Web Analytics — cookieless, no consent banner needed. -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "dd71ff9f3b7b4064969d3f81e8c6ee9b"}'
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <title>Tailwind saved views — AdaptTable</title>
+    <script>
+      try {
+        if (localStorage.getItem("adapttable-demo-theme") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch {}
+    </script>
+    <style>
+      /* The pre-mount fallback inside #root. React replaces it on mount, so
+         this paints only while the bundle is still downloading — or
+         permanently, when JavaScript is unavailable. Styled so that moment
+         reads as the page arriving rather than as broken markup. */
+      .at-fallback {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 4.5rem 1.5rem;
+        font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+        color: #52525b;
+        line-height: 1.65;
+      }
+      .at-fallback p {
+        text-wrap: pretty;
+      }
+      .at-fallback__kicker {
+        margin: 0 0 0.75rem;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+      .at-fallback h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #18181b;
+        margin: 0 0 1rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .at-fallback h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #18181b;
+        margin: 2rem 0 0.6rem;
+      }
+      .at-fallback pre {
+        overflow-x: auto;
+        padding: 1rem 1.1rem;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        background: #fafafa;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.8rem;
+        line-height: 1.7;
+        color: #3f3f46;
+      }
+      .at-fallback p code {
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: #f4f4f5;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 0.86em;
+        color: #27272a;
+      }
+      .at-fallback ul {
+        padding-inline-start: 1.2rem;
+        margin: 0;
+      }
+      .at-fallback li {
+        margin: 0.4rem 0;
+      }
+      .at-fallback a {
+        color: #4f46e5;
+      }
+      [data-theme="dark"] .at-fallback {
+        color: #a1a1aa;
+      }
+      [data-theme="dark"] .at-fallback :is(h1, h2) {
+        color: #fafafa;
+      }
+      [data-theme="dark"] .at-fallback pre {
+        border-color: #3f3f46;
+        background: #18181b;
+        color: #d4d4d8;
+      }
+      [data-theme="dark"] .at-fallback p code {
+        background: #27272a;
+        color: #e4e4e7;
+      }
+      [data-theme="dark"] .at-fallback a {
+        color: #a5b4fc;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Replaced by React on mount — the served markup carries the page's
+         own words so a crawler, and anyone whose bundle has not arrived, reads
+         a real page. Written by scripts/build-showcase-html.mjs. -->
+    <div id="root" data-matrix-page="tailwind/saved-views">
+      <main class="at-fallback">
+        <p class="at-fallback__kicker">AdaptTable for Tailwind</p>
+        <h1>Saved views in Tailwind</h1>
+        <p>A view is everything the table can put in a URL — search, sort, filters, grouping, the column layout, density and the pivot — saved under a name.</p>
+        <p>Readers pick one from the views menu; the panel beside the table renames, reorders, sets the default and deletes. A view someone else shared arrives read-only and says so on the row.</p>
+        <p>Both are native elements — buttons, inputs, a list — and every one of them takes your classes, so the panel matches the rest of your app because you styled it, not because a kit did.</p>
+        <p>Every row is native markup carrying the map's classes — a gray-bordered button per name, an indigo ring on the rename input, and the save action in bg-indigo-600.</p>
+        <h2>The code</h2>
+        <pre><code>import {
+  DataTable,
+  SavedViewsPanel,
+  useSavedViews,
+} from &quot;@adapttable/unstyled&quot;;
+
+export function People({ rows, columns }) {
+  const views = useSavedViews({
+    storageKey: &quot;people-views&quot;,
+    urlKey: &quot;v&quot;,
+  });
+  return (
+    &lt;&gt;
+      &lt;SavedViewsPanel
+        views={views.views}
+        onApply={views.apply}
+        onRename={views.rename}
+        onMove={views.move}
+        onSetDefault={views.setDefault}
+        onRemove={views.remove}
+      /&gt;
+      &lt;DataTable
+        data={rows}
+        columns={columns}
+        rowKey={(row) =&gt; row.id}
+        urlKey=&quot;v&quot;
+        savedViews={{ storageKey: &quot;people-views&quot; }}
+      /&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+        <h2>Install</h2>
+        <pre><code>pnpm add @adapttable/unstyled @adapttable/core</code></pre>
+        <p>
+          Reference: <a href="https://orwa-mahmoud.github.io/adapttable/saved-views/">saved-views</a>, <a href="https://orwa-mahmoud.github.io/adapttable/url-state/">url-state</a>. More of this kit:
+          <a href="../">AdaptTable for Tailwind</a>, or
+          <a href="/adapttable/demo/">the live demo</a>.
+        </p>
+      </main>
+    </div>
+    <script type="module" src="/src/entry-matrix.tsx"></script>
+  </body>
+</html>

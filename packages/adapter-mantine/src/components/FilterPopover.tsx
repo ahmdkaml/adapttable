@@ -74,8 +74,8 @@ export function FilterPopover({
         returnFocus
         position={dir === "rtl" ? "bottom-start" : "bottom-end"}
         middlewares={{
-          shift: { padding: 8 },
-          flip: true,
+          shift: { padding: 8, mainAxis: false },
+          flip: false,
           size: {
             padding: 8,
             apply: ({ availableHeight, elements }) => {
@@ -87,6 +87,7 @@ export function FilterPopover({
           },
         }}
         withinPortal
+        zIndex={10050}
         shadow="md"
         radius="md"
         width={380}
@@ -98,6 +99,9 @@ export function FilterPopover({
             fields are painted off-screen and cannot be reached — a scroll to
             reach them dismisses the popover instead. */}
         <Popover.Dropdown
+          // The card portals to `<body>`, so it loses the table's direction
+          // unless we hand it over — same reason ColumnMenu sets `dir` here.
+          dir={dir}
           mah="min(70vh, 560px)"
           maw="calc(100vw - 32px)"
           style={{ overflowY: "auto" }}
