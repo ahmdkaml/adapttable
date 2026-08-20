@@ -118,6 +118,22 @@ export default defineConfig({
       input: Object.fromEntries(
         SHOWCASE_PAGES.map(({ key, html }) => [key, page(html)])
       ),
+      // Vite 8/Rolldown: keep @mui and @emotion in their own chunk so
+      // createBreakpoints cannot run before sortBreakpointsValues is
+      // assigned. The previous cycle (`material-*.js` importing from
+      // PageShell) threw `_t is not a function` on every production MUI
+      // mount (`/?kit=mui`, Feature Lab → MUI).
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: "mui",
+              test: /[\\/]node_modules[\\/](@mui|@emotion)[\\/]/,
+              priority: 20,
+            },
+          ],
+        },
+      },
     },
   },
   resolve: {
@@ -141,6 +157,13 @@ export default defineConfig({
       "@adapttable/base-ui": pkg("adapter-base-ui"),
       "@adapttable/i18n": pkg("i18n"),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: [
+      "react",
+      "react-dom",
+      "@mui/material",
+      "@mui/system",
+      "@emotion/react",
+      "@emotion/styled",
+    ],
   },
 });

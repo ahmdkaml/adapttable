@@ -59,6 +59,48 @@ for (const path of SWITCHER_PAGES) {
       expect(look.radius).toBeGreaterThan(0);
       expect(look.borderWidth).toBeGreaterThan(0);
     });
+
+    test(`${path} · ${kit}: the columns menu is the kit, not native chrome`, async ({
+      page,
+    }) => {
+      if (path === "/") {
+        await page.goto(`/?kit=${kit}`);
+      } else {
+        await page.goto(path);
+        await page.getByTestId(`adapter-${kit}`).click();
+        await expect(page).not.toHaveURL(/[?&]kit=/);
+      }
+      await page
+        .locator("#demo")
+        .getByRole("button", { name: "Columns", exact: true })
+        .first()
+        .click();
+      const panel = page.locator('[data-adapttable-part="column-menu-panel"]');
+      await expect(panel).toBeVisible();
+      const look = await panel.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const bulk = element.querySelector(
+          '[data-adapttable-part="column-menu-bulk-button"]'
+        );
+        const icon = element.querySelector(
+          '[data-adapttable-part="column-menu-visibility"]'
+        );
+        const bulkStyle = bulk ? getComputedStyle(bulk) : null;
+        const iconStyle = icon ? getComputedStyle(icon) : null;
+        return {
+          radius: parseFloat(style.borderTopLeftRadius),
+          padding: parseFloat(style.paddingTop),
+          borderWidth: parseFloat(style.borderTopWidth),
+          bulkBorder: bulkStyle ? parseFloat(bulkStyle.borderTopWidth) : -1,
+          iconBorder: iconStyle ? parseFloat(iconStyle.borderTopWidth) : -1,
+        };
+      });
+      expect(look.radius).toBeGreaterThan(0);
+      expect(look.padding).toBeGreaterThan(0);
+      expect(look.borderWidth).toBeGreaterThan(0);
+      expect(look.bulkBorder).toBe(0);
+      expect(look.iconBorder).toBe(0);
+    });
   }
 }
 

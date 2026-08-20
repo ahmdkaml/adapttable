@@ -306,8 +306,11 @@ const FIXTURES = [
   { name: "antd · table", pkg: "adapter-antd", budgetKB: 123 },
   { name: "radix · table", pkg: "adapter-radix", budgetKB: 129 },
   { name: "base-ui · table", pkg: "adapter-base-ui", budgetKB: 136 },
-  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 131 },
-  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 128 },
+  // Overlay placement, empty-cell hit area, and dir on the columns panel
+  // grew the unstyled graph (~1 KB gzip). shadcn sits on that path, so both
+  // ceilings move; ~3 KB slack so the next small patch does not flake CI.
+  { name: "shadcn · table", pkg: "adapter-shadcn", budgetKB: 135 },
+  { name: "unstyled · table", pkg: "adapter-unstyled", budgetKB: 132 },
 ].map((f) => ({ code: `export { DataTable } from "PKG";`, ...f }));
 
 /**

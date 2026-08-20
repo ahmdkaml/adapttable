@@ -313,10 +313,11 @@ export function ColumnMenu<TRow>({
       <Popover.Content
         align="end"
         side="bottom"
+        avoidCollisions={false}
         minWidth="260px"
         dir={dir}
         maxHeight="min(70vh, 480px)"
-        style={{ overflowY: "auto" }}
+        style={{ overflowY: "auto", zIndex: 10050 }}
       >
         <Flex direction="column" gap="1">
           <Text

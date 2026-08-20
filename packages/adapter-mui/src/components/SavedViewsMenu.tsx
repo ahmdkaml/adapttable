@@ -55,12 +55,24 @@ export function SavedViewsMenu({
         open={anchor !== null}
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        marginThreshold={0}
       >
         <Box
           sx={{
             p: 0.75,
             minWidth: 250,
-            maxHeight: "min(70vh, 360px)",
+            maxHeight: anchor
+              ? Math.max(
+                  120,
+                  Math.min(
+                    360,
+                    window.innerHeight -
+                      anchor.getBoundingClientRect().bottom -
+                      8
+                  )
+                )
+              : 360,
             overflowY: "auto",
           }}
         >

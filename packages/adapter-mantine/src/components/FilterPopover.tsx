@@ -74,8 +74,8 @@ export function FilterPopover({
         returnFocus
         position={dir === "rtl" ? "bottom-start" : "bottom-end"}
         middlewares={{
-          shift: { padding: 8 },
-          flip: true,
+          shift: { padding: 8, mainAxis: false },
+          flip: false,
           size: {
             padding: 8,
             apply: ({ availableHeight, elements }) => {
@@ -87,6 +87,7 @@ export function FilterPopover({
           },
         }}
         withinPortal
+        zIndex={10050}
         shadow="md"
         radius="md"
         width={380}

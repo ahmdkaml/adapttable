@@ -59,11 +59,10 @@ export function FilterPopover({
           // operator reveals a second bound input). With the default
           // flip behaviour Base UI answered that by throwing the whole
           // panel above the trigger — it covered the page header and the
-          // control the user had just clicked. `shift` keeps it anchored
-          // below and slides it just enough to stay on screen; the popup's
-          // own max-height + overflow handle the extreme case.
+          // control the user had just clicked. Keep the side pinned to
+          // `bottom` (`side: "none"`) and only shift horizontally.
           collisionAvoidance={{
-            side: "shift",
+            side: "none",
             align: "shift",
             fallbackAxisSide: "none",
           }}

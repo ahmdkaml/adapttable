@@ -270,12 +270,25 @@ export function AntdDemo({
             source={source}
             columns={
               wide
-                ? makeWideColumns(locale, ANTD_CELLS)
+                ? makeWideColumns(locale, ANTD_CELLS, {
+                    editable: Boolean(
+                      editing === true ||
+                      rowMode === true ||
+                      batch === true ||
+                      editorShowcase === true
+                    ),
+                  })
                 : makeColumns(locale, ANTD_CELLS, {
                     groups: columnGroups,
                     sparkline,
                     editors: editorShowcase,
                     formulas: formulaColumns,
+                    editable: Boolean(
+                      editing === true ||
+                      rowMode === true ||
+                      batch === true ||
+                      editorShowcase === true
+                    ),
                   })
             }
             rowKey={(r) => r.id}

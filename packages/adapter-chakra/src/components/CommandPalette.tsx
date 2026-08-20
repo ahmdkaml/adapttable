@@ -6,7 +6,9 @@ import {
   type CommandPaletteSlots,
   type CommandPaletteSurfaceProps,
 } from "@adapttable/core/adapter";
-import { Button, Dialog, Input, Portal, Text } from "@chakra-ui/react";
+import { Button, Dialog, Input, Text } from "@chakra-ui/react";
+
+import { KitPortal } from "./kitPortal";
 
 /**
  * The kit's own dialog, holding core's combobox.
@@ -30,7 +32,7 @@ function Surface({
         if (!event.open) onClose();
       }}
     >
-      <Portal>
+      <KitPortal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
           <Dialog.Content
@@ -42,7 +44,7 @@ function Surface({
             {children}
           </Dialog.Content>
         </Dialog.Positioner>
-      </Portal>
+      </KitPortal>
     </Dialog.Root>
   );
 }

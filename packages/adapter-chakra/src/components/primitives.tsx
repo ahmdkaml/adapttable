@@ -2,7 +2,6 @@ import {
   Checkbox as ChakraCheckbox,
   Field as ChakraField,
   NativeSelect as ChakraNativeSelect,
-  Portal,
   Tooltip as ChakraTooltip,
 } from "@chakra-ui/react";
 import {
@@ -11,6 +10,8 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+
+import { KitPortal } from "./kitPortal";
 
 /**
  * Checkbox wrapper recomposing Chakra v3's compound `Checkbox.*` into the v2
@@ -109,11 +110,11 @@ export function Tooltip({
   return (
     <ChakraTooltip.Root>
       <ChakraTooltip.Trigger asChild>{children}</ChakraTooltip.Trigger>
-      <Portal>
+      <KitPortal>
         <ChakraTooltip.Positioner>
           <ChakraTooltip.Content>{label}</ChakraTooltip.Content>
         </ChakraTooltip.Positioner>
-      </Portal>
+      </KitPortal>
     </ChakraTooltip.Root>
   );
 }

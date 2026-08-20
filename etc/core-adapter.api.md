@@ -1294,6 +1294,9 @@ export function groupedHeaderChildRule(hairline: string): {
 };
 
 // @public
+export function groupedHeaderLabelStyle(): CSSProperties;
+
+// @public
 export function groupIndentStyle(level: number): CSSProperties;
 
 // @public

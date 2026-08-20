@@ -90,6 +90,8 @@ const ACTIVATE_STYLE = {
   boxSizing: "border-box",
   display: "block",
   width: "100%",
+  height: "100%",
+  minHeight: "1.25em",
   cursor: "text",
   textAlign: "inherit",
 } as const;

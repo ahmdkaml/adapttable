@@ -38,6 +38,9 @@ import { ChecklistFilter } from "./ChecklistFilter";
  */
 const FILTER_LABEL_STYLES = { label: { marginBottom: 16 } };
 
+/** Above the filter popover (`zIndex={10050}`) so a Select is clickable. */
+const FILTER_COMBOBOX_PROPS = { withinPortal: true, zIndex: 10051 } as const;
+
 /** Props for {@link AutoFilterForm}. */
 export interface AutoFilterFormProps<TRow> {
   /** The resolved declarative definitions, in render order. */
@@ -76,6 +79,7 @@ function RelativeTokenField({
     <>
       <Select
         size="sm"
+        comboboxProps={FILTER_COMBOBOX_PROPS}
         style={{ flex: "1 1 8.5rem", minWidth: "8.5rem" }}
         aria-label={labels.opRelative}
         data={RELATIVE_PRESETS.map((p) => ({
@@ -188,6 +192,7 @@ function RangeField<TRow>({
         <Select
           size="sm"
           clearable
+          comboboxProps={FILTER_COMBOBOX_PROPS}
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
           aria-label={`${label} ${labels.operator}`}
           data-adapttable-part="filter-operator"
@@ -222,6 +227,7 @@ function BooleanControl<TRow>({
       size="sm"
       label={label}
       styles={FILTER_LABEL_STYLES}
+      comboboxProps={FILTER_COMBOBOX_PROPS}
       data-adapttable-part="filter-select"
       data={[
         { value: "", label: labels.boolAny },
@@ -251,6 +257,7 @@ function SelectControl<TRow>({
       size="sm"
       label={label}
       styles={FILTER_LABEL_STYLES}
+      comboboxProps={FILTER_COMBOBOX_PROPS}
       data={data}
       value={asText(source.extra[def.key])}
       onChange={(next) => source.setExtra(def.key, next ?? "")}
@@ -274,6 +281,7 @@ function MultiSelectControl<TRow>({
       size="sm"
       label={label}
       styles={FILTER_LABEL_STYLES}
+      comboboxProps={FILTER_COMBOBOX_PROPS}
       searchable
       clearable
       hidePickedOptions={false}
@@ -309,6 +317,7 @@ function TextFilterField<TRow>({
       <Group gap="sm" align="flex-start">
         <Select
           size="sm"
+          comboboxProps={FILTER_COMBOBOX_PROPS}
           style={{ flex: "0 0 8.5rem", width: "8.5rem" }}
           aria-label={`${label} ${labels.operator}`}
           data-adapttable-part="filter-operator"

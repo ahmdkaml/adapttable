@@ -1149,7 +1149,9 @@ collapsed ids and inserts a stub (`COLUMN_GROUP_STUB_PREFIX`,
 beside the group band; a collapsed brief fills the header).
 `groupedHeaderChildRule` is the inset hairline under an open group title.
 `groupedHeaderCellStyle` applies that hairline and `columnGroupStubStyle`
-(the 36px lock so a stub cannot stretch).
+(the 36px lock so a stub cannot stretch). `groupedHeaderLabelStyle` keeps
+the collapse chevron on the same line as the group title so a one-child
+group cannot wrap the arrow above the caption.
 `isColumnGroup` narrows a `ColumnInput` to a parent.
 
 See it live in the [demo](https://orwa-mahmoud.github.io/adapttable/demo/mantine/column-groups/).
@@ -8385,7 +8387,7 @@ Notable non-hook helpers: `rowsToCsv` / `downloadCsv` / `downloadTableCsv`
 `sortRows` / `sortRowsMulti` / `compareValues` / `nextSort`,
 `computePagination`, `headerGroupRow` / `headerGroupRows` /
 `htmlGroupedHeaderPlan` / `groupedHeaderChildRule` /
-`groupedHeaderCellStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`,
+`groupedHeaderCellStyle` / `groupedHeaderLabelStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`,
 `columnGroupPath` / `columnGroupId` / `COLUMN_GROUP_ID_SEP` /
 `COLUMN_GROUP_STUB_PREFIX` / `COLUMN_GROUP_RENDER_PREFIX` /
 `isColumnGroupStubKey` / `isColumnGroupRenderKey` /
@@ -8554,7 +8556,7 @@ search binding), `FilterTriggerToggle` (popover/drawer trigger
 handlers). Editing/grouping glue: `focusEditorOnMount`,
 `rowEditingSignature`, `HeaderGroupCell`, `HtmlGroupedHeaderCell`, `headerGroupRow` /
 `headerGroupRows` / `htmlGroupedHeaderPlan` / `groupedHeaderChildRule` /
-`groupedHeaderCellStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`, `columnGroupHeaderCaption`. Each adapter mounts `ColumnGroupToggle` /
+`groupedHeaderCellStyle` / `groupedHeaderLabelStyle` / `groupedHeaderAlign` / `columnGroupStubStyle` / `COLUMN_GROUP_STUB_WIDTH`, `columnGroupHeaderCaption`. Each adapter mounts `ColumnGroupToggle` /
 `ColumnGroupToggleProps` over `ColumnGroupToggleChrome` /
 `ColumnGroupToggleChromeProps` / `ColumnGroupToggleSlots` /
 `ColumnGroupToggleButtonProps`. Shared

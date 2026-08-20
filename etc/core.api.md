@@ -2161,6 +2161,9 @@ export function groupedHeaderChildRule(hairline: string): {
 };
 
 // @public
+export function groupedHeaderLabelStyle(): CSSProperties;
+
+// @public
 export function groupLeafCount(entry: {
     leafIds: readonly string[];
     serverCount?: number;

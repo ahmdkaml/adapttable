@@ -111,6 +111,7 @@ export function SavedViewsMenu({
       open={open}
       onOpenChange={setOpen}
       placement={dir === "rtl" ? "bottomLeft" : "bottomRight"}
+      autoAdjustOverflow={{ adjustX: 1, adjustY: 0 }}
       content={content}
       styles={{ content: { padding: 0 } }}
     >

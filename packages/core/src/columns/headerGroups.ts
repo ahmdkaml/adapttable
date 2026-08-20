@@ -109,6 +109,22 @@ export function groupedHeaderAlign(
 }
 
 /**
+ * Cluster for the collapse chevron + group title. A one-child group is only
+ * as wide as that leaf, so without this the button wraps onto the line above
+ * the caption — worst when every neighbor is also collapsed.
+ */
+export function groupedHeaderLabelStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.2em",
+    whiteSpace: "nowrap",
+    verticalAlign: "middle",
+    maxWidth: "100%",
+  };
+}
+
+/**
  * Style on one HTML group header cell: inset hairline while children sit
  * below, and the stub lock when the caption is hidden.
  */
@@ -118,8 +134,11 @@ export function groupedHeaderCellStyle(
 ): CSSProperties {
   return {
     textAlign: groupedHeaderAlign(cell.cell.align),
+    whiteSpace: "nowrap",
     ...(cell.rowSpan > 1 ? {} : groupedHeaderChildRule(hairline)),
-    ...(cell.cell.hideLabel ? columnGroupStubStyle() : {}),
+    ...(cell.cell.hideLabel
+      ? columnGroupStubStyle()
+      : { minWidth: "max-content" }),
   };
 }
 
