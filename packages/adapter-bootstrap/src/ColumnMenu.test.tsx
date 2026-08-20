@@ -1,6 +1,5 @@
 import type { UseColumnLayoutResult } from "@adapttable/core";
 import { ACTIONS_COLUMN_KEY, REORDER_COLUMN_KEY } from "@adapttable/core";
-import type { ColumnMenuLabels } from "@adapttable/core/adapter";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -35,7 +34,7 @@ const mockLabels: ColumnMenuProps<Row>["labels"] = {
   filterColumn: "Filter column",
   autoSizeColumn: "Size column to content",
   resetColumn: "Reset column",
-} as ColumnMenuLabels & { actions: string; reorderRow: string };
+};
 
 function makeLayoutMock(
   overrides?: Partial<UseColumnLayoutResult<Row>>
