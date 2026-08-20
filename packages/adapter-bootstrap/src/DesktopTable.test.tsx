@@ -176,5 +176,7 @@ describe("DesktopTable", () => {
     const endHeader = screen.getByRole("columnheader", { name: /Email/ });
     expect(startHeader.style.insetInlineStart).toBe("0px");
     expect(endHeader.style.insetInlineEnd).toBe("10px");
+
+    expect(document.querySelectorAll(".table-responsive")).toHaveLength(1);
   });
 });

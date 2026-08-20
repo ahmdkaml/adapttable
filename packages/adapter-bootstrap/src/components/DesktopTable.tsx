@@ -104,8 +104,9 @@ export function DesktopTable<TRow>(
   const tableSizeClass = size === "sm" ? "table-sm" : "";
 
   return (
-    <div className="table-responsive" dir={dir} style={{ overflowX: "auto" }}>
+    <div className="table-responsive" dir={dir}>
       <Table
+        responsive={false}
         className={`align-middle mb-0 ${tableSizeClass} ${className ?? ""}`.trim()}
         style={{
           tableLayout: "fixed",
