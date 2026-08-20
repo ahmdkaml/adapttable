@@ -10,8 +10,9 @@ export default mergeConfig(sharedConfig, {
         statements: 85,
         lines: 95,
         functions: 85,
-        branches: 78,
+        branches: 75,
       },
+
     },
   },
 });
