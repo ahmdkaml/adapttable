@@ -1,5 +1,341 @@
 # @adapttable/radix
 
+## 2.4.0
+
+### Minor Changes
+
+- 894a534: Collapsible column groups are first-class tree parents (`ColumnGroupDef` with
+  `children`) rather than a collapsed-to-first-leaf shortcut. Each group decides
+  what remains: an arrow stub, `collapsedKey`, or `collapsedRender`. The spanning
+  header hides the stub caption; the toggle's `aria-label` names the group.
+  `align` on a group defaults to `"center"` (the previous hardcoded look).
+  `columns` is `ColumnInput[]`; flatten and collapse live in core.
+- 6f2be24: `commandPalette` opens a palette on Cmd/Ctrl+K listing every action the table
+  can perform: type to filter, arrows to move, Enter to run, Escape to close.
+
+  Its entries are the same objects the context menus take, so an action is
+  written once and offered in both rather than drifting between them. Matching
+  is case- and accent-folded, so "resume" finds "Résumé sync".
+
+  Shortcuts are data — a chord and a command key — because remapping is not a
+  preference when your app may already own Cmd/Ctrl+K. `mod` means Cmd on a Mac
+  and Ctrl elsewhere; pass `shortcuts: []` to bind nothing.
+
+  `onPrint` makes Print a command. Print opens a browser dialog, so it stays the
+  host's call rather than a permanent button.
+
+  New labels `commandPalette`, `commandSearch`, `commandEmpty` and `print` in all
+  17 locales.
+
+- fa40ade: `contextMenu` arms right-click menus for headers, rows and cells. A header
+  offers sort, filter, pin and hide; a cell offers copy and cut. Each entry
+  appears only when the handler behind it is wired and the column allows it, and
+  `{ items }` appends your own behind a divider.
+
+  Every route in works: right-click, Shift+F10 and the menu key for the keyboard,
+  and a long press for touch. Escape closes and puts focus back where it came
+  from.
+
+  `copyCells` on the grid-focus state copies a given cell, or the selection when
+  given none — the route a context menu needs and the key handler never did.
+
+  Every kit renders it with its own overlay — MUI's and Mantine's menus, Radix's
+  dropdown, and the Popover each of Chakra, antd and Base UI already builds its
+  column menu on — so positioning, portalling and dismissal behave the way that
+  kit's overlays always do.
+
+- 2401b28: `densityChooser` puts a density control in the toolbar and `fullscreen` puts a
+  fullscreen toggle beside it. `useDensityUrlState` keeps the density in the URL
+  beside sort and filters, so a reload and a shared link reproduce it.
+
+  Fullscreen hides everything outside the table, which is what breaks overlays: a
+  menu portalled to `document.body` sits inside the part being hidden, still
+  mounted and still focused. The table's own overlays are re-pointed at the
+  fullscreen element; `useFullscreen` exposes `container` for any you portal
+  yourself.
+
+  The fullscreen toggle hides itself where the browser will not allow fullscreen
+  at all, because a control that cannot work is worse than no control.
+
+  New labels `density`, `densityComfortable`, `densityCompact`, `enterFullscreen`
+  and `exitFullscreen` in all 17 locales.
+
+- e575a79: `PivotPanel` — the pivot configuration panel, built from this kit's own
+  buttons and selects.
+
+  Three zones, the fields in each, and controls that move them. It is drivable
+  with Tab and Enter alone: the move controls are buttons, not a drag handle, so
+  the panel works for anyone who does not use a pointer.
+
+- b93b52d: `SavedViewsPanel` is a titled card in every kit: the view's own name applies it,
+  the five management controls are the kit's icon buttons, and a read-only view
+  shows them disabled beside its badge. The new `footer` prop renders your own
+  note inside the card, under the list.
+- 3c9db4b: `SavedViewsPanel` — manage saved views with this kit's own controls: apply,
+  rename in place, reorder, choose the default, delete.
+
+  Drivable from the keyboard throughout. Reordering is buttons rather than drag,
+  and the move a row cannot make is disabled rather than removed so the row does
+  not jump as the list is reordered.
+
+### Patch Changes
+
+- 4c86382: The bulk action bar carries its part names in every kit. `bulk-bar`,
+  `bulk-button`, `bulk-error`, `select-all-banner`, `select-all-text` and
+  `select-all-button` were emitted by `@adapttable/unstyled` alone, so an app
+  styling or testing the selection bar got a different answer per kit. All seven
+  adapters now name the same elements.
+- 8845b98: Spanned cells now look like a spreadsheet merge: centered content and one fill across the span. Pass `cellSpanAppearance="plain"` to keep geometry only.
+- cc1a949: A cleared select shows its placeholder. Both kits forbid an empty item value,
+  so the wrapper maps the empty value onto a token — and a list that offers no
+  empty choice has no item under that token, which left the Radix trigger blank
+  and printed the token itself in Base UI. The pivot panel's "Add field" says
+  what it does again.
+- e4bfb52: `columnSelectionCheckbox` puts a checkbox in every column header that selects
+  that column. Ctrl/Cmd+click on a header still does what it always did; this is
+  the same selection reached two ways it cannot be — by a finger, which has no
+  modifier key to hold, and by a screen reader, which cannot discover a gesture
+  nothing announces. It needs `cellNavigation` for a selection to exist, so either
+  prop alone renders nothing.
+
+  The name is `labels.selectColumn` plus the column's own name, translated in all
+  seventeen locales. The control is each kit's own checkbox in core's
+  `ColumnSelectCheckboxChrome`, which owns the layout, the accessible name and
+  keeping the click off the header underneath — otherwise the same click would
+  sort the column it just selected. It carries
+  `data-adapttable-part="column-select"` and the `columnSelect` classNames key.
+
+  Where the pointer can hover, the box holds its space and fades in on hover or
+  focus, so a wide header row is not a row of checkboxes; a selected column keeps
+  its box visible. Where there is no hover, it is always visible.
+
+  `GridFocusState` gains `columnCheckbox`, `isColumnSelected(col)` and
+  `toggleColumn(col)`.
+
+- c7f7537: An emptied editable cell keeps a full-cell hit area, so a second double-click
+  opens the editor again.
+- eec7ebc: `slots.error` replaces the load-failure state, in every adapter — the last
+  piece of chrome that was not replaceable.
+
+  It takes a node like the other slots, and it also takes a function, because an
+  error state is about something: the function receives the error being reported,
+  the retry the source can actually perform, and whether a retry is already in
+  flight. `retry` is absent when there is nothing to re-fetch, so a replacement
+  can hide its retry control rather than render one that does nothing.
+
+- 2ac7bbd: A full-width extra with `beforeRowId` stays in front of that person when
+  they are pinned. Drag-reorder already followed the id; pin sections now
+  splice the same extras instead of dropping them.
+- 31a5bf5: A named extra stays a full-width row in front of its person, with its own
+  height. It uses that person's `rowStyle` fill and sits above a continuing
+  Team span so the note is not hidden under the merge.
+- b3475de: `filterFields={false}` keeps only the AND/OR tree in the Filters chrome — the per-field form is not mounted.
+- 42b6d58: Put the AND/OR builder at the top of the Filters panel, keep the Filters button in header mode when the tree is on, separate Advanced from the field list with kit-native spacing and a rule, and indent nested groups on a rail so depth is visible.
+- 807b467: Column headers carry `data-adapttable-part="header-cell"` in every kit. Seven
+  named no header cell, so an app styling or testing `[data-adapttable-part=
+"header-cell"]` got nothing from them.
+- 8845b98: Header-filter overlays stay open after picking an operator on a multi-input field. Nested kit dropdowns are not treated as outside clicks. Auto-close after a finished single-control write is opt-in via `closeHeaderFilterOnSelect` (default off).
+- b3475de: The rows-per-page list keeps the table's default size after you pick another one, so a 500-row scale view can switch to 10 and back to 500.
+- 1a20be6: Boolean and multi-select cell editors now use each kit's own controls. Ant
+  Design and Mantine open their own multi-select, Chakra renders a styled list
+  box, and Radix Themes and Base UI — whose select holds one value — show a group
+  of their own checkboxes through the new `MultiSelectEditorChrome`. Booleans tick
+  the kit's checkbox everywhere.
+
+  Radix and Base UI select editors gained the `edit-cell-editor` part name, the
+  validation ARIA and focus-on-open that every other kit's editor already had.
+
+- d4fbbce: Built-in row actions and the header-filter trigger use each kit's own icons. Duplicate, delete and pin are icon-only; the label is the tooltip and accessible name. Host `rowActions` still pass `icon` for the same treatment, or omit it for a text button.
+- bb876ec: Mobile cards carry their part names. `cards`, `card-detail` and `summary-card`
+  were emitted by `@adapttable/unstyled` and `@adapttable/antd` only, so an app
+  styling or testing the card layout got nothing from these five kits.
+- 75994c6: Toolbar overlays (filters, columns, saved views) stay under their trigger and
+  paint above sticky headers. They no longer flip into the page chrome or
+  disappear under the table head.
+- 31a5bf5: Consecutive Team (or any row span) stays one cell across a pin. Pinned
+  rows render in the same tbody as the scroll body so HTML can express the
+  span; sticky is skipped while a cell is taller than one row.
+- d7f12d8: The pivot panel's zones are drawn in their own kit: Mantine's theme border and
+  radius, MUI's outlined surface, Chakra's border tokens, a Radix Card, the
+  Base UI card. The zone stays a `fieldset` with a `legend`, so a screen reader
+  still hears which zone a field belongs to.
+
+  Radix and Base UI also stack their zones and wrap a field's controls, rather
+  than laying the three zones out in a row that ran past the panel.
+
+- 50ca0c5: `printButton` puts Print in the toolbar. It renders only when the option and
+  `onPrint` are both set — the option alone would open nothing, and the handler
+  alone stays what it was, the palette's Print command. The caption is
+  `labels.print`, already translated in every locale. The button carries
+  `data-adapttable-part="print-button"` in all seven kits and honours the
+  `printButton` classNames key in unstyled and shadcn.
+
+  `printToolbar(wanted, onPrint, labels)` is the one rule that resolves the pair,
+  exported from `@adapttable/core/adapter` beside `undoRedoToolbar`.
+
+- b3475de: The Radix table no longer draws a card outline around the grid. Toolbar, rows, and footer sit on the page like the other adapters.
+- b3475de: Page-scroll sticky headers on the Radix adapter stay under the toolbar instead of dropping into the first rows. `Table.Root`'s ScrollArea was trapping `position: sticky` in its own box.
+- 2bf386e: The filters popover stays on screen under RTL. Collision handling had been
+  turned off to stop the panel flipping above its trigger when the form grew, but
+  that switch covers both axes — so a 380px panel anchored near the start edge ran
+  off the side of the viewport, 136px of it unreachable in Arabic. The panel's
+  max-height already caps it to the room under the trigger, so it cannot flip;
+  collision handling is back on for the axis that needed it.
+- 8845b98: Radix tables no longer crash when they sit just wider than the card. `Table.Root`'s inner ScrollArea is neutralized on every table, so it cannot fight the wrapper's scrollbar and loop React into "Maximum update depth exceeded".
+- 241f9d4: `renderCard` replaces a mobile card's body with your own layout, in every
+  adapter.
+
+  Only the body: the list-item semantics, selection checkbox, expand and tree
+  toggles, reorder controls, row actions and detail panel keep rendering around
+  what you return, so a custom card cannot drop the parts that make the list
+  usable.
+
+  It is handed the fields the built-in would have laid out — each one's column,
+  resolved label and value node, cell renderers and editors included — so a custom
+  card is a layout decision rather than a re-implementation. Omit it and the
+  built-in card renders, byte for byte.
+
+- 8845b98: Row actions can stay as today's button strip, collapse into a 3-dot menu, or be replaced entirely. Omit `rowActionsLayout` (or pass `"buttons"`) for the strip; `"menu"` uses each kit's own Menu; `renderRowActions` wins over the layout.
+- d490ff8: Body rows carry `data-adapttable-part="row"` in every kit, and every row carries
+  `data-row-id`. Six kits named no body row at all, so an app styling or testing
+  `[data-adapttable-part="row"]` got nothing from them.
+- 853385d: Body-row props come from one place. `getRowProps` emits
+  `data-adapttable-part="row"`, so MUI, Mantine, Chakra, Radix and Base UI take
+  the row part, `role`, `data-row-id`, `data-index` and `aria-selected` from core
+  in a single spread. Rows in those kits carry the dataset index of the row they
+  render — pinned and windowed rows included — and say `aria-selected` while bulk
+  selection is armed.
+- 7e260c4: The saved-views panel names its badges in every kit. `saved-view-readonly` and
+  `saved-view-default` were emitted by `@adapttable/unstyled` alone, so an app
+  styling or testing the read-only and default markers got a different answer per
+  kit. All seven adapters now name the same elements.
+- 010beb4: A saved view's row keeps its controls together in a narrow panel. The chrome
+  owns the row's layout and every kit spreads it, so the name never runs into its
+  read-only badge, and Apply / Rename / ↑ / ↓ / Set as default / Delete wrap as
+  one group under the name instead of being truncated to "Set a" or spilling into
+  the next view's row.
+
+  Two part names come with it — `saved-view-caption` around the name and its
+  badges, `saved-view-controls` around the buttons — on the same elements in
+  every kit.
+
+- 8359d83: Saved views can live on a server: pass `useSavedViews` a `store` and it replaces
+  `localStorage`, which stays the zero-config default.
+
+  Views gain `visibility` (`"private"` or `"team"`) and `readOnly`. A shared view
+  someone else owns is visibly read-only in every adapter — a Read-only badge with
+  its rename, reorder, set-default and delete controls disabled — and the hook
+  refuses those operations too, so the UI and the state agree. Applying it stays
+  enabled, which is the point of a shared view.
+
+  The store is asked for one view at a time rather than the whole list, so a save
+  cannot overwrite what someone else changed in the meantime, and a store that
+  cannot be reached leaves the list empty instead of throwing into a render.
+
+- 972c272: The selection column's cells carry their part names. `selection-cell` and
+  `selection-header` were emitted by `@adapttable/unstyled` alone, so an app
+  styling or testing against those parts got a different answer per kit. They now
+  land on the same element in all six.
+- fb30d4a: `sidePanel` docks table settings beside the table instead of in a popover over
+  them — a column list, a filter form, anything the host supplies. With more than
+  one panel the labels become a tab strip with the keyboard behaviour a tab strip
+  owes: one tab stop, wrapping arrows that carry the selection, Home and End,
+  Escape to close.
+
+  It is controlled — `{ panels, open, onOpenChange, side }` — because the control
+  that opens it is yours; `toolbarSlots` is where it usually goes. Omit it and
+  nothing renders and the table's markup is unchanged.
+
+  New labels `sidePanel` and `closePanel`, translated in all 17 locales.
+
+- b3475de: A sticky header now keeps search and page-size pinned with it on page-scroll tables, in every adapter. Pass `stickyToolbar={false}` to let the toolbar scroll away.
+- 3be8b2f: Seven structural parts are addressable in every kit — `row`, `cell`, `table`,
+  `thead`, `tbody`, `toolbar`, `header-cell`. The table element, its header
+  section and the toolbar carry `data-adapttable-part` alongside the parts that
+  already did, so one stylesheet or test selector reaches the same element in
+  MUI, Mantine, Chakra, antd, Radix and Base UI. In antd, a bounded height splits
+  the grid into a header table and a body table; both carry the `table` name.
+- 864ef5d: Three pieces of optional chrome, each off unless asked for.
+
+  `toolbarSlots` puts a host's own controls at either end of the toolbar —
+  `{ start, end }` — where `toolbar` has always filled the middle.
+
+  `undoRedoButtons` shows Undo and Redo in the toolbar. The buttons render only
+  when `editHistory` is armed and disable rather than disappear, so the toolbar
+  does not reflow as someone works. The shortcuts and `table.editHistory` are
+  unchanged.
+
+  `statusBar` shows a strip under the table: the row range, how many rows are
+  selected, and what a multi-cell selection adds up to. It reads the same range
+  as the pagination footer and hosts the selection statistics rather than
+  repeating them.
+
+  New label `redoEdit`, translated in all 17 locales.
+
+- Updated dependencies [0bfd172]
+- Updated dependencies [8845b98]
+- Updated dependencies [1bb8ad7]
+- Updated dependencies [894a534]
+- Updated dependencies [e4bfb52]
+- Updated dependencies [6f2be24]
+- Updated dependencies [aec669e]
+- Updated dependencies [fa40ade]
+- Updated dependencies [d506851]
+- Updated dependencies [e27bd64]
+- Updated dependencies [0a2dbfc]
+- Updated dependencies [2401b28]
+- Updated dependencies [96a0b6e]
+- Updated dependencies [eec7ebc]
+- Updated dependencies [dc8dfda]
+- Updated dependencies [57dde1f]
+- Updated dependencies [2ac7bbd]
+- Updated dependencies [31a5bf5]
+- Updated dependencies [b3475de]
+- Updated dependencies [42b6d58]
+- Updated dependencies [96515e8]
+- Updated dependencies [7fd1e26]
+- Updated dependencies [0dee45f]
+- Updated dependencies [5df7f9f]
+- Updated dependencies [340f14b]
+- Updated dependencies [8845b98]
+- Updated dependencies [29d155e]
+- Updated dependencies [b3475de]
+- Updated dependencies [1a20be6]
+- Updated dependencies [5c3d728]
+- Updated dependencies [19467ec]
+- Updated dependencies [31a5bf5]
+- Updated dependencies [b30f8ae]
+- Updated dependencies [25d4981]
+- Updated dependencies [9384217]
+- Updated dependencies [ce10f8e]
+- Updated dependencies [2b184ca]
+- Updated dependencies [d1753b2]
+- Updated dependencies [50ca0c5]
+- Updated dependencies [241f9d4]
+- Updated dependencies [7477cde]
+- Updated dependencies [aec3bf8]
+- Updated dependencies [8845b98]
+- Updated dependencies [d490ff8]
+- Updated dependencies [853385d]
+- Updated dependencies [d9bbd70]
+- Updated dependencies [aa88f46]
+- Updated dependencies [26d6855]
+- Updated dependencies [010beb4]
+- Updated dependencies [6997d72]
+- Updated dependencies [adbd98e]
+- Updated dependencies [44df311]
+- Updated dependencies [c4ffc69]
+- Updated dependencies [8e9c854]
+- Updated dependencies [8359d83]
+- Updated dependencies [4b8e0aa]
+- Updated dependencies [0b58368]
+- Updated dependencies [fb30d4a]
+- Updated dependencies [2ac7bbd]
+- Updated dependencies [b3475de]
+- Updated dependencies [864ef5d]
+- Updated dependencies [b3475de]
+  - @adapttable/core@2.6.0
+
 ## 2.3.0
 
 ### Minor Changes

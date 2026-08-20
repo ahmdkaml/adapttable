@@ -1,5 +1,525 @@
 # @adapttable/core
 
+## 2.6.0
+
+### Minor Changes
+
+- 894a534: Collapsible column groups are first-class tree parents (`ColumnGroupDef` with
+  `children`) rather than a collapsed-to-first-leaf shortcut. Each group decides
+  what remains: an arrow stub, `collapsedKey`, or `collapsedRender`. The spanning
+  header hides the stub caption; the toggle's `aria-label` names the group.
+  `align` on a group defaults to `"center"` (the previous hardcoded look).
+  `columns` is `ColumnInput[]`; flatten and collapse live in core.
+- e4bfb52: `columnSelectionCheckbox` puts a checkbox in every column header that selects
+  that column. Ctrl/Cmd+click on a header still does what it always did; this is
+  the same selection reached two ways it cannot be — by a finger, which has no
+  modifier key to hold, and by a screen reader, which cannot discover a gesture
+  nothing announces. It needs `cellNavigation` for a selection to exist, so either
+  prop alone renders nothing.
+
+  The name is `labels.selectColumn` plus the column's own name, translated in all
+  seventeen locales. The control is each kit's own checkbox in core's
+  `ColumnSelectCheckboxChrome`, which owns the layout, the accessible name and
+  keeping the click off the header underneath — otherwise the same click would
+  sort the column it just selected. It carries
+  `data-adapttable-part="column-select"` and the `columnSelect` classNames key.
+
+  Where the pointer can hover, the box holds its space and fades in on hover or
+  focus, so a wide header row is not a row of checkboxes; a selected column keeps
+  its box visible. Where there is no hover, it is always visible.
+
+  `GridFocusState` gains `columnCheckbox`, `isColumnSelected(col)` and
+  `toggleColumn(col)`.
+
+- 6f2be24: `commandPalette` opens a palette on Cmd/Ctrl+K listing every action the table
+  can perform: type to filter, arrows to move, Enter to run, Escape to close.
+
+  Its entries are the same objects the context menus take, so an action is
+  written once and offered in both rather than drifting between them. Matching
+  is case- and accent-folded, so "resume" finds "Résumé sync".
+
+  Shortcuts are data — a chord and a command key — because remapping is not a
+  preference when your app may already own Cmd/Ctrl+K. `mod` means Cmd on a Mac
+  and Ctrl elsewhere; pass `shortcuts: []` to bind nothing.
+
+  `onPrint` makes Print a command. Print opens a browser dialog, so it stays the
+  host's call rather than a permanent button.
+
+  New labels `commandPalette`, `commandSearch`, `commandEmpty` and `print` in all
+  17 locales.
+
+- fa40ade: `contextMenu` arms right-click menus for headers, rows and cells. A header
+  offers sort, filter, pin and hide; a cell offers copy and cut. Each entry
+  appears only when the handler behind it is wired and the column allows it, and
+  `{ items }` appends your own behind a divider.
+
+  Every route in works: right-click, Shift+F10 and the menu key for the keyboard,
+  and a long press for touch. Escape closes and puts focus back where it came
+  from.
+
+  `copyCells` on the grid-focus state copies a given cell, or the selection when
+  given none — the route a context menu needs and the key handler never did.
+
+  Every kit renders it with its own overlay — MUI's and Mantine's menus, Radix's
+  dropdown, and the Popover each of Chakra, antd and Base UI already builds its
+  column menu on — so positioning, portalling and dismissal behave the way that
+  kit's overlays always do.
+
+- d506851: New entry: `@adapttable/core/query` — the query model without React.
+
+  It carries the `ft=1.{…}` filter-tree codec (`parseFilterTree`,
+  `serializeFilterTree`, `isActiveFilterTree`, `FILTER_TREE_PARAM`,
+  `FILTER_TREE_VERSION`), the `pivot=rows:…` codec (`serializePivot`,
+  `deserializePivot`), `isFilterGroup`, and the types those speak in —
+  `QueryCondition`, `QueryFilterGroup`, `SortLevel`, `SortDirection`,
+  `PivotConfig`, `PivotMeasure`. Nothing else: the entry imports no module of its
+  own and carries no `"use client"` boundary, so a route handler, a loader or a
+  plain Node service can decode a shared link in a process where React is not
+  installed. It measures 0.5 KB gzipped.
+
+  Every name is the one `@adapttable/core` already exports, from the same source
+  module, so the encoding a server reads is the encoding the table wrote.
+
+- 2401b28: `densityChooser` puts a density control in the toolbar and `fullscreen` puts a
+  fullscreen toggle beside it. `useDensityUrlState` keeps the density in the URL
+  beside sort and filters, so a reload and a shared link reproduce it.
+
+  Fullscreen hides everything outside the table, which is what breaks overlays: a
+  menu portalled to `document.body` sits inside the part being hidden, still
+  mounted and still focused. The table's own overlays are re-pointed at the
+  fullscreen element; `useFullscreen` exposes `container` for any you portal
+  yourself.
+
+  The fullscreen toggle hides itself where the browser will not allow fullscreen
+  at all, because a control that cannot work is worse than no control.
+
+  New labels `density`, `densityComfortable`, `densityCompact`, `enterFullscreen`
+  and `exitFullscreen` in all 17 locales.
+
+- eec7ebc: `slots.error` replaces the load-failure state, in every adapter — the last
+  piece of chrome that was not replaceable.
+
+  It takes a node like the other slots, and it also takes a function, because an
+  error state is about something: the function receives the error being reported,
+  the retry the source can actually perform, and whether a retry is already in
+  flight. `retry` is absent when there is nothing to re-fetch, so a replacement
+  can hide its retry control rather than render one that does nothing.
+
+- dc8dfda: `scope: "all"` can now export everything from a server tier. Handing the export
+  to a backend sends the query with `page` and `limit` undefined, so "all" cannot
+  be answered with one page, and the new opt-in `fetchAll` lets the table walk the
+  query itself — capped at `EXPORT_FETCH_ALL_MAX_ROWS` (50,000) by default, with
+  `onCapped` firing if the cap stopped it short.
+
+  With neither wired, a server-backed `"all"` export no longer renders a button at
+  all. It previously exported the current page as if it were the whole set.
+
+- 7fd1e26: `@adapttable/core/formula` — spreadsheet columns computed from your rows.
+
+  `buildFormulaColumns` turns user-typed formulas into columns, reporting the
+  ones that will not parse and any that reference each other in a loop rather
+  than throwing: a formula bar has to show something useful while someone is
+  still typing.
+
+  A formula is parsed, never evaluated. It does not reach `eval` or
+  `new Function` — a user-typed formula is untrusted input in the way a URL is,
+  and in a shared saved view that means whoever sent the link.
+
+  Values are tagged rather than bare primitives, so data containing the text
+  `#REF!` is not mistaken for a cell that failed. Errors propagate the way a
+  spreadsheet's do, so a wrong number is never quietly totalled.
+
+  A separate entry: 2.6 KB gzipped for the tables that import it, and the bundle
+  budget asserts the main entry carries none of it.
+
+- 5df7f9f: Formula columns travel in the URL and in saved views.
+
+  `useFormulaUrlState` keeps the typed columns in the query string —
+  `formula=total:%3Dquantity%20*%20unitPrice:Total`, one `key:formula[:header]`
+  entry per column — so a computed column survives a reload and can be sent to
+  someone. Writes are debounced; reads stay instant through an optimistic
+  overlay.
+
+  `serializeFormulaColumns` and `deserializeFormulaColumns` are the encoding on
+  its own, exported from `@adapttable/core/formula` and from the React-free
+  `@adapttable/core/query`, so a route handler can read which columns a shared
+  link asks for. Reading never evaluates: the codec produces specs and stops, a
+  hand-edited entry it cannot make sense of is dropped, and a formula that will
+  not parse arrives as the text it is.
+
+  Saved views capture the parameter with the rest of the table's state. A view
+  saved before formula columns existed carries none, and applying it clears them.
+
+- 29d155e: `useHighlight` marks a row or a cell for a moment — the "flash the row I just
+  saved" that otherwise gets written as a `setTimeout` in every host.
+
+  It composes with `rowClassName` rather than adding a prop, so it works in every
+  adapter without one of them being touched, and the highlight looks like your
+  design system rather than ours.
+
+  Marks are keyed by row id, so one survives the sort, filter or page change that
+  moves the row. Under `prefers-reduced-motion` the mark still appears and still
+  clears — `animated` goes false and it holds steady, and longer, because a steady
+  mark is easier to miss than one that moves. Reduced motion means less movement,
+  not less feedback.
+
+- 1a20be6: Boolean and multi-select cell editors now use each kit's own controls. Ant
+  Design and Mantine open their own multi-select, Chakra renders a styled list
+  box, and Radix Themes and Base UI — whose select holds one value — show a group
+  of their own checkboxes through the new `MultiSelectEditorChrome`. Booleans tick
+  the kit's checkbox everywhere.
+
+  Radix and Base UI select editors gained the `edit-cell-editor` part name, the
+  validation ARIA and focus-on-open that every other kit's editor already had.
+
+- 19467ec: `pdfWriter` and `buildTablePdf` take a `font`: a TrueType file as bytes.
+  The writer embeds a subset of it — only the glyphs the table drew — so a
+  downloaded PDF can draw Arabic, CJK, Cyrillic or any script the built-in
+  Helvetica cannot. Arabic letters take their contextual forms, lam-alef
+  becomes one glyph, and right-to-left runs are reordered for drawing, with
+  the logical text preserved for copy-paste and screen readers. A 421 KB
+  Arabic face adds about 20 KB to the file.
+
+  `openPrintLayout` and `printTable` take `font` too, embedding it as an
+  `@font-face` so a printed page matches the downloaded one.
+
+  Omit `font` and nothing changes: the file is byte-for-byte what it was.
+
+- b30f8ae: The pivot configuration model joins `@adapttable/core/pivot`: `assignField`,
+  `removeField`, `moveField`, `setMeasureAgg` and `availableFields`.
+
+  Every operation returns a new configuration and none of them can produce an
+  invalid one. Placing a dimension on one axis takes it off the other rather than
+  pivoting the same field twice; an index past the end appends; a step past either
+  end is a no-op rather than a wrap. Measures are the exception — summing and
+  counting the same column in one pivot is ordinary, so a measure is added rather
+  than moved.
+
+- 25d4981: `@adapttable/core/pivot` — rows down the side, dimensions across the top, a
+  measure in every cell.
+
+  Multiple dimensions on both axes, the built-in aggregations and your own,
+  subtotals for every level and a grand total, and collapsible groups. It returns
+  the column header tree, the rendered columns and every body line; the rendering
+  stays with your adapter.
+
+  A separate entry, so it costs 1.4 KB gzipped to the tables that import it and
+  nothing to the rest — the bundle budget asserts the main entry carries none of
+  it, even when you import everything from it.
+
+- 9384217: `PivotPanelChrome` — the pivot configuration panel's structure, with every
+  visible control a kit slot.
+
+  Keyboard-first by construction. Every pivot UI in every spreadsheet is
+  drag-and-drop, and every one of them is unusable without a mouse; here each
+  field carries buttons that move it one step, so the panel is drivable with Tab
+  and Enter alone. A kit that wants dragging can add it on top.
+
+  Its eight labels are localized in all 17 locales.
+
+- ce10f8e: A shared pivot keeps its subtotals, its grand totals and its folded groups.
+
+  The `pivot` parameter carries all of it —
+  `pivot=rows:region,team;cols:quarter;sum:amount;sub:0;hide:EU/Alpha` — so a link
+  or a saved view reopens showing what its sender was looking at, not the axes
+  with everything else switched back on. `usePivotUrlState` returns `collapsed`
+  and `onCollapsedChange` beside the configuration, and `collapsed` is what
+  `pivot`'s option takes, so the link and the rendering cannot disagree.
+
+  `serializePivotState` and `deserializePivotState` are the encoding including the
+  folded set, as a `PivotUrlState`; both are on `@adapttable/core/pivot` and on the
+  React-free `@adapttable/core/query`. Only departures from the defaults are
+  written, so a link or a view from before these fields existed reads back exactly
+  as it did.
+
+  `parseTableQuery` keeps the switches on its `pivot` and reports the folded keys
+  as `pivotCollapsed`. They are dimension values rather than column names, so no
+  schema vouches for them: parameterise them like a search term.
+
+- 2b184ca: `pivotTableModel(result)` turns a pivot into the props a `DataTable` takes, so
+  the pivot is rendered by your kit instead of by markup of your own.
+
+  The column tree becomes `column.group` — one header row per level, spans
+  included — every line becomes a row, and the grand total becomes the table's
+  `summaryRow`, the column-aligned footer it already had. The row-header column
+  carries the indent and each line's caption; `renderRowHeader` is where a fold
+  control goes, since core ships no user-facing controls.
+
+  Two new labels ride with it, localized in every locale: `pivotTotal` captions
+  the grand-total column and `pivotGrandTotal` the grand-total line.
+
+- d1753b2: `usePivotUrlState` puts the pivot configuration in the URL, with
+  `serializePivot` / `deserializePivot` exported for saved views and anywhere
+  else a configuration is stored.
+
+  The parameter is compact and readable rather than JSON in a query string —
+  `?pivot=rows:region,team;cols:quarter;sum:amount` — and a hand-edited value
+  degrades to a simpler pivot instead of throwing.
+
+  A custom aggregator has no URL form, so a measure carrying one is left out of
+  the link rather than written as `sum`, which would quietly change what the link
+  computes.
+
+- 50ca0c5: `printButton` puts Print in the toolbar. It renders only when the option and
+  `onPrint` are both set — the option alone would open nothing, and the handler
+  alone stays what it was, the palette's Print command. The caption is
+  `labels.print`, already translated in every locale. The button carries
+  `data-adapttable-part="print-button"` in all seven kits and honours the
+  `printButton` classNames key in unstyled and shadcn.
+
+  `printToolbar(wanted, onPrint, labels)` is the one rule that resolves the pair,
+  exported from `@adapttable/core/adapter` beside `undoRedoToolbar`.
+
+- 241f9d4: `renderCard` replaces a mobile card's body with your own layout, in every
+  adapter.
+
+  Only the body: the list-item semantics, selection checkbox, expand and tree
+  toggles, reorder controls, row actions and detail panel keep rendering around
+  what you return, so a custom card cannot drop the parts that make the list
+  usable.
+
+  It is handed the fields the built-in would have laid out — each one's column,
+  resolved label and value node, cell renderers and editors included — so a custom
+  card is a layout decision rather than a re-implementation. Omit it and the
+  built-in card renders, byte for byte.
+
+- 7477cde: Two knobs for the width between a desktop table and a phone.
+
+  `mobileBreakpoint` sets the width at which the cards take over, so a table in a
+  sidebar or a split pane can switch on its own width rather than the window's.
+
+  `responsivePriority` on a column says how readily it is given up when the table
+  is too narrow for all of them — priority 1 is kept longest, and a column that
+  omits it is never dropped, so the columns carrying the row's identity stay by
+  saying nothing. The budget is arithmetic on declared widths, so it settles in
+  one pass instead of the measure-drop-remeasure loop that makes other tables
+  flicker. A dropped column never reaches the layout state, the URL or a saved
+  view.
+
+- aec3bf8: `routerUrlAdapter` turns the documented router recipes into a supported export.
+
+  Every recipe — React Router, TanStack Router, Next.js App Router — was the same
+  twelve lines with two names changed, copied into each app where nobody could fix
+  it centrally. They are the same because the question is: given a way to read the
+  current query string and a way to navigate, what is a correct adapter? Each
+  router is now two lines.
+
+  It depends on no router, which is what lets it ship: a package importing
+  `next/navigation` would work for one framework and break the build of every
+  other.
+
+- aa88f46: `useSavedViews` gains `rename`, `move`, `setDefault` and `defaultView` — the
+  operations a view-management UI needs.
+
+  `rename` keeps a view's place and refuses a name already in use, because
+  silently merging two views is how a rename loses one. `move` steps through the
+  list and stops at the ends rather than wrapping. `setDefault` marks the view the
+  table opens with; naming the same view again clears it, and only one view can
+  hold it. Every operation is a no-op on an unknown name.
+
+- 6997d72: Saved views carry a schema version, and `useSavedViews` takes a `migrate` hook,
+  so views saved by an older table keep working after it changes.
+
+  `migrate` runs only for views behind `SAVED_VIEW_VERSION` and is told which
+  version each came from. Returning `null` drops a view — a view whose columns no
+  longer exist restores a table nobody asked for, and applying it silently is
+  worse than losing it. A migration that throws costs that view alone.
+
+  `reload()` joins the result: loading happens on mount and on a `storageKey`
+  change, because a `store` or `migrate` written inline changes identity every
+  render and cannot be allowed to trigger one.
+
+- 44df311: `SavedViewsPanelChrome` — the saved-views management panel's structure, with
+  every visible control a kit slot.
+
+  The saved-views menu answers "switch to a view"; keeping the list in order is a
+  different job, and putting both in one dropdown makes the common one harder.
+  Reordering is buttons rather than drag, and renaming is an inline input that
+  Escape abandons.
+
+  Six new labels, translated in all 17 locales.
+
+- c4ffc69: The saved-views management panel is a titled card. Applying a view is clicking
+  its name — the widest target on the row — and rename, move up, move down,
+  set-default and delete are an icon cluster at the end of the line, each with
+  its own localized accessible name. `SavedViewsPanelChromeProps` takes a
+  `footer` that renders inside the card, under the list.
+
+  Adapters build the cluster by mapping over `controls` (`SavedViewRowControl`,
+  keyed by `SavedViewControlKey`) instead of writing five buttons each, and the
+  card names two more parts: `saved-views-title` and `saved-views-footer`.
+
+- 8e9c854: A saved-views `store` can keep the list's order. Implement the new optional
+  `reorder(names)` and a reordered list survives a reload, a renamed view included.
+  A store without it keeps working unchanged — saving, renaming, deleting and the
+  default all go through `save` and `remove` as before, and `move` reorders on
+  screen for the session.
+- 8359d83: Saved views can live on a server: pass `useSavedViews` a `store` and it replaces
+  `localStorage`, which stays the zero-config default.
+
+  Views gain `visibility` (`"private"` or `"team"`) and `readOnly`. A shared view
+  someone else owns is visibly read-only in every adapter — a Read-only badge with
+  its rename, reorder, set-default and delete controls disabled — and the hook
+  refuses those operations too, so the UI and the state agree. Applying it stays
+  enabled, which is the point of a shared view.
+
+  The store is asked for one view at a time rather than the whole list, so a save
+  cannot overwrite what someone else changed in the meantime, and a store that
+  cannot be reached leaves the list empty instead of throwing into a render.
+
+- 0b58368: `serverPivotResult` — render a pivot the server computed.
+
+  A translator rather than a second engine: the server decides the arithmetic and
+  the ordering, core rebuilds the column tree and the leaf ordering from the paths
+  it named, and the result is the same `PivotResult` the local engine returns, so
+  every adapter keeps one rendering path.
+
+  The wire format is small on purpose — `count`, `subtotal` and `total` are all
+  optional, and a cell the server omits is an empty cell rather than a zero.
+
+- fb30d4a: `sidePanel` docks table settings beside the table instead of in a popover over
+  them — a column list, a filter form, anything the host supplies. With more than
+  one panel the labels become a tab strip with the keyboard behaviour a tab strip
+  owes: one tab stop, wrapping arrows that carry the selection, Home and End,
+  Escape to close.
+
+  It is controlled — `{ panels, open, onOpenChange, side }` — because the control
+  that opens it is yours; `toolbarSlots` is where it usually goes. Omit it and
+  nothing renders and the table's markup is unchanged.
+
+  New labels `sidePanel` and `closePanel`, translated in all 17 locales.
+
+- 864ef5d: Three pieces of optional chrome, each off unless asked for.
+
+  `toolbarSlots` puts a host's own controls at either end of the toolbar —
+  `{ start, end }` — where `toolbar` has always filled the middle.
+
+  `undoRedoButtons` shows Undo and Redo in the toolbar. The buttons render only
+  when `editHistory` is armed and disable rather than disappear, so the toolbar
+  does not reflow as someone works. The shortcuts and `table.editHistory` are
+  unchanged.
+
+  `statusBar` shows a strip under the table: the row range, how many rows are
+  selected, and what a multi-cell selection adds up to. It reads the same range
+  as the pagination footer and hosts the selection statistics rather than
+  repeating them.
+
+  New label `redoEdit`, translated in all 17 locales.
+
+### Patch Changes
+
+- 0bfd172: Size-to-content no longer grows a column on every click. A cell that already
+  fits its content is measured as-is; only a clipped cell gets breathing room.
+- 8845b98: Spanned cells now look like a spreadsheet merge: centered content and one fill across the span. Pass `cellSpanAppearance="plain"` to keep geometry only.
+- 1bb8ad7: Checklist filters window long option lists again. A column with hundreds of
+  distinct values mounts only the options in view plus a margin instead of every
+  one of them, and `data-virtualized` reports what the list actually does. Lists
+  under 40 options are unchanged.
+- aec669e: The packed-consumer harness now exercises the pivot entry, the server package
+  and the cache-key helpers from a real tarball install — with neither TanStack
+  Query nor SWR present, which is what makes the types-only peer promise a proof
+  rather than a claim.
+- e27bd64: `defaultExpandedRowIds` opens those detail panels (and nested tables) on
+  the first render. The nested-tables demo starts with the first row open.
+- 0a2dbfc: The density and pivot parameters hold their optimistic value until the URL write
+  lands, so both survive a router that navigates asynchronously. A choice made
+  through `useDensityUrlState` or `usePivotUrlState` no longer flicks back to the
+  previous one for a render while a router adapter's navigation is in flight, a
+  burst of changes coalesces into one write, and a change left pending when the
+  table unmounts is flushed rather than dropped — the behaviour the column-layout
+  and formula hooks already had.
+- 96a0b6e: The live-edit conflict notice shows the incoming value (`labels.theirsValue`)
+  so Keep mine / Take theirs is a choice the reader can see.
+- 57dde1f: An export scoped to `"all"` now writes the rows inside collapsed tree folders.
+  The rows were always in scope — a folded folder is display state, not a filter —
+  but the file was built from the rendered hierarchy, which stops at every closed
+  node, so whole subtrees went missing without a warning.
+- 2ac7bbd: A full-width extra with `beforeRowId` stays in front of that person when
+  they are pinned. Drag-reorder already followed the id; pin sections now
+  splice the same extras instead of dropping them.
+- 31a5bf5: A named extra stays a full-width row in front of its person, with its own
+  height. It uses that person's `rowStyle` fill and sits above a continuing
+  Team span so the note is not hidden under the merge.
+- b3475de: `filterFields={false}` keeps only the AND/OR tree in the Filters chrome — the per-field form is not mounted.
+- 42b6d58: Put the AND/OR builder at the top of the Filters panel, keep the Filters button in header mode when the tree is on, separate Advanced from the field list with kit-native spacing and a rule, and indent nested groups on a rail so depth is visible.
+- 96515e8: `&` binds below `+` and `-`, as it does in a spreadsheet: `="a" & 2 + 3` is
+  `"a5"`, and `=1+2 & "x" & 3*4` is `"3x12"`. Comparisons still bind loosest, so
+  `="a"&"b" = "ab"` is `TRUE`.
+- 0dee45f: A formula column sorts by what its value is: text alphabetically, numbers
+  numerically, `FALSE` before `TRUE`. A text formula such as `=UPPER(name)` is
+  sortable from its header, where before every row shared one key and clicking
+  reordered nothing.
+
+  A blank and an error group at the end of the column in either direction — where
+  a spreadsheet leaves an error — rather than sorting as zero among real values.
+
+  A column that declares `sortValue` now owns its whole ordering, including the
+  rows it answers `null` for. Those rows group at the end instead of falling back
+  to the column's accessor, which ordered one column by two extractors at once.
+
+- 340f14b: A one-child column group keeps its collapse chevron on the same line as the
+  title, including when every neighboring group is also collapsed.
+- 8845b98: Header-filter overlays stay open after picking an operator on a multi-input field. Nested kit dropdowns are not treated as outside clicks. Auto-close after a finished single-control write is opt-in via `closeHeaderFilterOnSelect` (default off).
+- b3475de: The rows-per-page list keeps the table's default size after you pick another one, so a 500-row scale view can switch to 10 and back to 500.
+- 5c3d728: The command palette closes on an outside click from core, beside Escape,
+  instead of each adapter hanging a handler on its own scrim.
+
+  A scrim that listens has to carry an ARIA role to justify the handler, and
+  `presentation` is ignored on an element wrapping a dialog — so the markup was
+  claiming something ARIA will not honour. The scrims are now inert.
+
+- 31a5bf5: Consecutive Team (or any row span) stays one cell across a pin. Pinned
+  rows render in the same tbody as the scroll body so HTML can express the
+  span; sticky is skipped while a cell is taller than one row.
+- 8845b98: Row actions can stay as today's button strip, collapse into a 3-dot menu, or be replaced entirely. Omit `rowActionsLayout` (or pass `"buttons"`) for the strip; `"menu"` uses each kit's own Menu; `renderRowActions` wins over the layout.
+- d490ff8: Body rows carry `data-adapttable-part="row"` in every kit, and every row carries
+  `data-row-id`. Six kits named no body row at all, so an app styling or testing
+  `[data-adapttable-part="row"]` got nothing from them.
+- 853385d: Body-row props come from one place. `getRowProps` emits
+  `data-adapttable-part="row"`, so MUI, Mantine, Chakra, Radix and Base UI take
+  the row part, `role`, `data-row-id`, `data-index` and `aria-selected` from core
+  in a single spread. Rows in those kits carry the dataset index of the row they
+  render — pinned and windowed rows included — and say `aria-selected` while bulk
+  selection is armed.
+- d9bbd70: Switching the default saved view writes both views the switch touches — the one
+  that gains the flag and the one that loses it — so a `store` holds exactly one
+  default view, and a store already holding more than one is settled by the next
+  switch.
+- 26d6855: Moving a saved view this reader does not own is refused, matching the panel's
+  disabled controls and the way rename, set-default and delete already behave.
+- 010beb4: A saved view's row keeps its controls together in a narrow panel. The chrome
+  owns the row's layout and every kit spreads it, so the name never runs into its
+  read-only badge, and Apply / Rename / ↑ / ↓ / Set as default / Delete wrap as
+  one group under the name instead of being truncated to "Set a" or spilling into
+  the next view's row.
+
+  Two part names come with it — `saved-view-caption` around the name and its
+  badges, `saved-view-controls` around the buttons — on the same elements in
+  every kit.
+
+- adbd98e: A saved view now captures the whole table state.
+
+  The advanced filter tree, which groups are collapsed, the density and the pivot
+  configuration were being left behind: a view restored everything else and looked
+  like it had worked. These are the parts that take longest to rebuild by hand,
+  which is what makes them worth saving.
+
+- 4b8e0aa: A server-computed pivot keeps its grand-total column. `serverPivotResult` builds
+  the total columns under the same rule the local engine follows — grand totals on,
+  and something splitting the columns — so a table that moves from pivoting in the
+  browser to pivoting on the server renders the same columns it did before.
+
+  A line carries that column's values in `totals`, one per measure. The field is
+  optional: a server that does not total leaves the column empty, exactly as any
+  cell it does not send is empty, and `grandTotals: false` asks for no column at
+  all.
+
+- 2ac7bbd: `getCellSpan` receives the visual body order (`sectionRows` /
+  `sectionRowIndex`) — pinned top, then scroll, then pinned bottom — so a
+  consecutive merge stays one cell when a teammate is pinned.
+- b3475de: A sticky header now keeps search and page-size pinned with it on page-scroll tables, in every adapter. Pass `stickyToolbar={false}` to let the toolbar scroll away.
+- b3475de: Window virtualization measures the list's document offset so a table below page chrome no longer opens with a blank gap under the header.
+
 ## 2.5.0
 
 ### Minor Changes
