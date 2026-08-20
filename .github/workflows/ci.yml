@@ -278,8 +278,10 @@ jobs:
         # fileParallelism remedy, applied at the turbo level for CI).
         run: pnpm test:coverage --concurrency=1
 
+  # Exact required-check name. Do not rename without updating the ruleset
+  # in the same sitting.
   package:
-    name: Package (build · publint · smoke · budget)
+    name: Package (build · api · publint · smoke · budget)
     needs: [changes, build]
     if: needs.changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
