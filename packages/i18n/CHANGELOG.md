@@ -1,5 +1,181 @@
 # @adapttable/i18n
 
+## 2.3.0
+
+### Minor Changes
+
+- 245eeaf: Every bundled locale preset carries the 33 labels the newest chrome needs, in
+  all 16 non-English languages: the pivot panel (its three zones, add, remove,
+  move up and down, the aggregation chooser, subtotal and grand total),
+  saved-view management (apply, rename, reorder, set default, plus the default
+  and read-only badges), the command palette and its search and empty states,
+  context menus with cell copy and cut, the side panel, the print button,
+  density, fullscreen, redo, and the column-select checkbox.
+
+### Patch Changes
+
+- e4bfb52: `columnSelectionCheckbox` puts a checkbox in every column header that selects
+  that column. Ctrl/Cmd+click on a header still does what it always did; this is
+  the same selection reached two ways it cannot be — by a finger, which has no
+  modifier key to hold, and by a screen reader, which cannot discover a gesture
+  nothing announces. It needs `cellNavigation` for a selection to exist, so either
+  prop alone renders nothing.
+
+  The name is `labels.selectColumn` plus the column's own name, translated in all
+  seventeen locales. The control is each kit's own checkbox in core's
+  `ColumnSelectCheckboxChrome`, which owns the layout, the accessible name and
+  keeping the click off the header underneath — otherwise the same click would
+  sort the column it just selected. It carries
+  `data-adapttable-part="column-select"` and the `columnSelect` classNames key.
+
+  Where the pointer can hover, the box holds its space and fades in on hover or
+  focus, so a wide header row is not a row of checkboxes; a selected column keeps
+  its box visible. Where there is no hover, it is always visible.
+
+  `GridFocusState` gains `columnCheckbox`, `isColumnSelected(col)` and
+  `toggleColumn(col)`.
+
+- 6f2be24: `commandPalette` opens a palette on Cmd/Ctrl+K listing every action the table
+  can perform: type to filter, arrows to move, Enter to run, Escape to close.
+
+  Its entries are the same objects the context menus take, so an action is
+  written once and offered in both rather than drifting between them. Matching
+  is case- and accent-folded, so "resume" finds "Résumé sync".
+
+  Shortcuts are data — a chord and a command key — because remapping is not a
+  preference when your app may already own Cmd/Ctrl+K. `mod` means Cmd on a Mac
+  and Ctrl elsewhere; pass `shortcuts: []` to bind nothing.
+
+  `onPrint` makes Print a command. Print opens a browser dialog, so it stays the
+  host's call rather than a permanent button.
+
+  New labels `commandPalette`, `commandSearch`, `commandEmpty` and `print` in all
+  17 locales.
+
+- 2401b28: `densityChooser` puts a density control in the toolbar and `fullscreen` puts a
+  fullscreen toggle beside it. `useDensityUrlState` keeps the density in the URL
+  beside sort and filters, so a reload and a shared link reproduce it.
+
+  Fullscreen hides everything outside the table, which is what breaks overlays: a
+  menu portalled to `document.body` sits inside the part being hidden, still
+  mounted and still focused. The table's own overlays are re-pointed at the
+  fullscreen element; `useFullscreen` exposes `container` for any you portal
+  yourself.
+
+  The fullscreen toggle hides itself where the browser will not allow fullscreen
+  at all, because a control that cannot work is worse than no control.
+
+  New labels `density`, `densityComfortable`, `densityCompact`, `enterFullscreen`
+  and `exitFullscreen` in all 17 locales.
+
+- 96a0b6e: The live-edit conflict notice shows the incoming value (`labels.theirsValue`)
+  so Keep mine / Take theirs is a choice the reader can see.
+- 2b184ca: `pivotTableModel(result)` turns a pivot into the props a `DataTable` takes, so
+  the pivot is rendered by your kit instead of by markup of your own.
+
+  The column tree becomes `column.group` — one header row per level, spans
+  included — every line becomes a row, and the grand total becomes the table's
+  `summaryRow`, the column-aligned footer it already had. The row-header column
+  carries the indent and each line's caption; `renderRowHeader` is where a fold
+  control goes, since core ships no user-facing controls.
+
+  Two new labels ride with it, localized in every locale: `pivotTotal` captions
+  the grand-total column and `pivotGrandTotal` the grand-total line.
+
+- 8845b98: Row actions can stay as today's button strip, collapse into a 3-dot menu, or be replaced entirely. Omit `rowActionsLayout` (or pass `"buttons"`) for the strip; `"menu"` uses each kit's own Menu; `renderRowActions` wins over the layout.
+- fb30d4a: `sidePanel` docks table settings beside the table instead of in a popover over
+  them — a column list, a filter form, anything the host supplies. With more than
+  one panel the labels become a tab strip with the keyboard behaviour a tab strip
+  owes: one tab stop, wrapping arrows that carry the selection, Home and End,
+  Escape to close.
+
+  It is controlled — `{ panels, open, onOpenChange, side }` — because the control
+  that opens it is yours; `toolbarSlots` is where it usually goes. Omit it and
+  nothing renders and the table's markup is unchanged.
+
+  New labels `sidePanel` and `closePanel`, translated in all 17 locales.
+
+- 864ef5d: Three pieces of optional chrome, each off unless asked for.
+
+  `toolbarSlots` puts a host's own controls at either end of the toolbar —
+  `{ start, end }` — where `toolbar` has always filled the middle.
+
+  `undoRedoButtons` shows Undo and Redo in the toolbar. The buttons render only
+  when `editHistory` is armed and disable rather than disappear, so the toolbar
+  does not reflow as someone works. The shortcuts and `table.editHistory` are
+  unchanged.
+
+  `statusBar` shows a strip under the table: the row range, how many rows are
+  selected, and what a multi-cell selection adds up to. It reads the same range
+  as the pagination footer and hosts the selection statistics rather than
+  repeating them.
+
+  New label `redoEdit`, translated in all 17 locales.
+
+- Updated dependencies [0bfd172]
+- Updated dependencies [8845b98]
+- Updated dependencies [1bb8ad7]
+- Updated dependencies [894a534]
+- Updated dependencies [e4bfb52]
+- Updated dependencies [6f2be24]
+- Updated dependencies [aec669e]
+- Updated dependencies [fa40ade]
+- Updated dependencies [d506851]
+- Updated dependencies [e27bd64]
+- Updated dependencies [0a2dbfc]
+- Updated dependencies [2401b28]
+- Updated dependencies [96a0b6e]
+- Updated dependencies [eec7ebc]
+- Updated dependencies [dc8dfda]
+- Updated dependencies [57dde1f]
+- Updated dependencies [2ac7bbd]
+- Updated dependencies [31a5bf5]
+- Updated dependencies [b3475de]
+- Updated dependencies [42b6d58]
+- Updated dependencies [96515e8]
+- Updated dependencies [7fd1e26]
+- Updated dependencies [0dee45f]
+- Updated dependencies [5df7f9f]
+- Updated dependencies [340f14b]
+- Updated dependencies [8845b98]
+- Updated dependencies [29d155e]
+- Updated dependencies [b3475de]
+- Updated dependencies [1a20be6]
+- Updated dependencies [5c3d728]
+- Updated dependencies [19467ec]
+- Updated dependencies [31a5bf5]
+- Updated dependencies [b30f8ae]
+- Updated dependencies [25d4981]
+- Updated dependencies [9384217]
+- Updated dependencies [ce10f8e]
+- Updated dependencies [2b184ca]
+- Updated dependencies [d1753b2]
+- Updated dependencies [50ca0c5]
+- Updated dependencies [241f9d4]
+- Updated dependencies [7477cde]
+- Updated dependencies [aec3bf8]
+- Updated dependencies [8845b98]
+- Updated dependencies [d490ff8]
+- Updated dependencies [853385d]
+- Updated dependencies [d9bbd70]
+- Updated dependencies [aa88f46]
+- Updated dependencies [26d6855]
+- Updated dependencies [010beb4]
+- Updated dependencies [6997d72]
+- Updated dependencies [adbd98e]
+- Updated dependencies [44df311]
+- Updated dependencies [c4ffc69]
+- Updated dependencies [8e9c854]
+- Updated dependencies [8359d83]
+- Updated dependencies [4b8e0aa]
+- Updated dependencies [0b58368]
+- Updated dependencies [fb30d4a]
+- Updated dependencies [2ac7bbd]
+- Updated dependencies [b3475de]
+- Updated dependencies [864ef5d]
+- Updated dependencies [b3475de]
+  - @adapttable/core@2.6.0
+
 ## 2.2.0
 
 ### Minor Changes
