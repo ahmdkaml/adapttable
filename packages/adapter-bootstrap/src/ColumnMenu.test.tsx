@@ -30,6 +30,11 @@ const mockLabels: ColumnMenuProps<Row>["labels"] = {
   columnActions: "Column actions",
   moveStart: "Move start",
   moveEnd: "Move end",
+  sortAscending: "Sort ascending",
+  sortDescending: "Sort descending",
+  filterColumn: "Filter column",
+  autoSizeColumn: "Size column to content",
+  resetColumn: "Reset column",
 } as ColumnMenuLabels & { actions: string; reorderRow: string };
 
 function makeLayoutMock(
@@ -58,8 +63,8 @@ function makeProps(
 ): ColumnMenuProps<Row> {
   return {
     allColumns: [
-      { key: "name", header: "Name" },
-      { key: "age", header: "Age" },
+      { key: "name", header: "Name", sortable: true },
+      { key: "age", header: "Age", sortable: true },
     ],
     layout: makeLayoutMock(),
     labels: mockLabels,
@@ -153,13 +158,30 @@ describe("ColumnMenu", () => {
     });
     fireEvent.click(actionsTrigger);
 
-    // Click an action inside submenu
-    const submenuAction = screen.getAllByRole("button", {
-      name: /sort|filter|auto-fit|hide/i,
-    })[0];
-    if (submenuAction) {
-      fireEvent.click(submenuAction);
-    }
+    const sortDesc = screen.getByRole("button", {
+      name: mockLabels.sortDescending,
+    });
+    fireEvent.click(sortDesc);
+    expect(onSortColumn).toHaveBeenCalledWith("name", "desc");
+  });
+
+  it("pins the reserved actions column to the end when it is not pinned", () => {
+    const layout = makeLayoutMock();
+    layout.state.pinned = {};
+    const props = makeProps({
+      layout,
+      hasRowReorder: false,
+      hasRowActions: true,
+    });
+
+    render(<ColumnMenu {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: mockLabels.columns }));
+
+    const actionsPin = screen.getByRole("button", {
+      name: `${mockLabels.pinEnd}: ${mockLabels.actions}`,
+    });
+    fireEvent.click(actionsPin);
+    expect(layout.setPinned).toHaveBeenCalledWith(ACTIONS_COLUMN_KEY, "end");
   });
 
   it("handles reserved reorder and actions column toggling and pinning", () => {
@@ -226,5 +248,37 @@ describe("ColumnMenu", () => {
     });
     fireEvent.click(resetBtn);
     expect(layout.reset).toHaveBeenCalled();
+  });
+
+  it("disables move, hide, and pin when the column is locked", () => {
+    const props = makeProps({
+      allColumns: [
+        {
+          key: "name",
+          header: "Name",
+          sortable: true,
+          lockPosition: true,
+          lockVisibility: true,
+          lockPin: true,
+        },
+      ],
+      hasRowActions: false,
+      hasRowReorder: false,
+    });
+
+    render(<ColumnMenu {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: mockLabels.columns }));
+
+    expect(screen.getByText("⋮⋮").closest("button")).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: `${mockLabels.hideColumn}: Name`,
+      })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: `${mockLabels.pinStart}: Name`,
+      })
+    ).toBeDisabled();
   });
 });

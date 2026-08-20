@@ -210,6 +210,22 @@ describe("DataTable", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
+  it("hides the column menu on mobile even when enableColumnMenu is set", () => {
+    mockShellState = { body: "mobile", isMobile: true };
+
+    render(
+      <DataTable
+        {...defaultProps}
+        enableColumnMenu={true}
+        prefetch={vi.fn()}
+        classNames={{ root: "rt", table: "tbl" }}
+      />
+    );
+
+    expect(screen.queryByTestId("mock-column-menu")).not.toBeInTheDocument();
+    expect(document.querySelector(".rt")).toBeInTheDocument();
+  });
+
   it("executes ColumnMenu inline callbacks: onSortColumn, onFilterColumn, onAutoSize, onAutoSizeColumn", () => {
     mockShellState = {
       body: "desktop",
@@ -304,6 +320,22 @@ describe("DataTable", () => {
       />
     );
     expect(screen.getByTestId("custom-no-results")).toBeInTheDocument();
+  });
+
+  it("uses the empty slot when the table has no data", () => {
+    mockShellState = { body: "empty", emptyVariant: "noData" };
+
+    render(
+      <DataTable
+        {...defaultProps}
+        classNames={{ table: "tbl" }}
+        slots={{
+          empty: <div data-testid="custom-empty">Custom Empty</div>,
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("custom-empty")).toBeInTheDocument();
   });
 
   it("hides PaginationFooter when chrome.showFooter is false and sets aria-busy on refreshing", () => {
