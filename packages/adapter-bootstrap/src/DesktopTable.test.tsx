@@ -166,9 +166,15 @@ describe("DesktopTable", () => {
       />
     );
 
-    const resizeHandles = document.querySelectorAll(
+    const resizeHandles = document.querySelectorAll<HTMLElement>(
       '[aria-label*="Resize column"]'
     );
     expect(resizeHandles.length).toBeGreaterThan(0);
+    expect(resizeHandles[0]?.style.insetInlineEnd).toBe("0px");
+
+    const startHeader = screen.getByRole("columnheader", { name: /Name/ });
+    const endHeader = screen.getByRole("columnheader", { name: /Email/ });
+    expect(startHeader.style.insetInlineStart).toBe("0px");
+    expect(endHeader.style.insetInlineEnd).toBe("10px");
   });
 });

@@ -36,9 +36,9 @@ export interface BootstrapDesktopTableProps<
 
 const RESIZE_HANDLE_STYLE: CSSProperties = {
   position: "absolute",
-  right: 0,
+  insetInlineEnd: 0,
   top: 0,
-  bottom: 0,
+  height: "100%",
   width: "8px",
   cursor: "col-resize",
   touchAction: "none",
@@ -57,8 +57,8 @@ function getPinStyle(
     zIndex,
     backgroundColor: "var(--bs-body-bg, #fff)",
     ...(isStart
-      ? { left: `${offset.inset}px` }
-      : { right: `${offset.inset}px` }),
+      ? { insetInlineStart: `${offset.inset}px` }
+      : { insetInlineEnd: `${offset.inset}px` }),
   };
 }
 
